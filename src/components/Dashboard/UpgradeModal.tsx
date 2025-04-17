@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Check, Crown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -11,6 +13,29 @@ interface UpgradeModalProps {
 
 const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
   const [plan, setPlan] = useState<"monthly" | "annual">("annual");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleSubscribe = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('create-checkout');
+      
+      if (error) {
+        toast.error("Failed to start checkout process");
+        console.error("Checkout error:", error);
+        return;
+      }
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+      console.error("Checkout error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -78,9 +103,13 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
         </div>
         
         <DialogFooter className="flex-col gap-3 mt-2">
-          <Button className="w-full bg-gold hover:bg-gold-dark text-black font-medium">
+          <Button 
+            className="w-full bg-gold hover:bg-gold-dark text-black font-medium"
+            onClick={handleSubscribe}
+            disabled={isLoading}
+          >
             <Crown className="h-4 w-4 mr-2" />
-            Subscribe Now
+            {isLoading ? "Processing..." : "Subscribe Now"}
           </Button>
           <Button variant="outline" className="w-full" onClick={onClose}>
             Maybe Later

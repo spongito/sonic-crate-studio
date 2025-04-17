@@ -4,9 +4,11 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, signInWithSpotify } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-lg bg-background/80 border-b border-border">
@@ -21,9 +23,17 @@ const Navbar = () => {
           
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            <Button variant="ghost">Support</Button>
-            <Button variant="outline">Sign In</Button>
-            <Button>Sign Up</Button>
+            {!user ? (
+              <>
+                <Button variant="ghost" onClick={signInWithSpotify}>Support</Button>
+                <Button variant="outline" onClick={signInWithSpotify}>Sign In</Button>
+                <Button onClick={signInWithSpotify}>Sign Up</Button>
+              </>
+            ) : (
+              <Link to="/dashboard">
+                <Button>Dashboard</Button>
+              </Link>
+            )}
           </div>
           
           <div className="md:hidden">
@@ -40,9 +50,17 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col">
-            <Button variant="ghost">Support</Button>
-            <Button variant="outline" className="my-2">Sign In</Button>
-            <Button className="mb-2">Sign Up</Button>
+            {!user ? (
+              <>
+                <Button variant="ghost" onClick={signInWithSpotify}>Support</Button>
+                <Button variant="outline" className="my-2" onClick={signInWithSpotify}>Sign In</Button>
+                <Button className="mb-2" onClick={signInWithSpotify}>Sign Up</Button>
+              </>
+            ) : (
+              <Link to="/dashboard">
+                <Button className="my-2">Dashboard</Button>
+              </Link>
+            )}
             <div className="flex justify-end pt-2">
               <ThemeToggle />
             </div>

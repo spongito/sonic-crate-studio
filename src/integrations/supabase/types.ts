@@ -51,7 +51,9 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_premium: boolean | null
           playlists_generated: number
+          stripe_customer_id: string | null
           subscription_status: string
           updated_at: string
           username: string | null
@@ -61,7 +63,9 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          is_premium?: boolean | null
           playlists_generated?: number
+          stripe_customer_id?: string | null
           subscription_status?: string
           updated_at?: string
           username?: string | null
@@ -71,10 +75,39 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_premium?: boolean | null
           playlists_generated?: number
+          stripe_customer_id?: string | null
           subscription_status?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

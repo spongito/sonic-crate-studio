@@ -3,13 +3,20 @@ import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
 
 const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
+  const { signInWithSpotify, user } = useAuth();
 
   const handleGenerate = () => {
-    console.log("Generating playlist with prompt:", prompt);
-    // This would later integrate with GPT-4o
+    if (!user) {
+      signInWithSpotify();
+      return;
+    }
+    
+    // If user is logged in, redirect to dashboard
+    window.location.href = "/dashboard";
   };
 
   return (
@@ -38,8 +45,8 @@ const HeroSection = () => {
               className="bg-gold hover:bg-gold-dark text-black font-medium"
               onClick={handleGenerate}
             >
-              Generate Playlist
-              <ArrowRight className="ml-2 h-4 w-4" />
+              {user ? "Generate Playlist" : "Sign in with Spotify"}
+              {user && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">

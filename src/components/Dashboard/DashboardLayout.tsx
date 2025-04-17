@@ -11,12 +11,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAuth } from "@/context/AuthContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+  const { signOut, subscription } = useAuth();
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Sidebar navigation */}
@@ -96,14 +99,22 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div className="p-4 mt-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="text-sm text-muted-foreground">
-              Generations left: <span className="text-foreground font-medium">9/15</span>
+              {subscription?.is_premium ? (
+                <span className="text-foreground font-medium">Premium</span>
+              ) : (
+                <>
+                  Generations left: <span className="text-foreground font-medium">
+                    {subscription?.remaining_generations || 15}/15
+                  </span>
+                </>
+              )}
             </div>
             <ThemeToggle />
           </div>
           <Button 
             variant="outline" 
             className="w-full justify-start"
-            onClick={() => console.log("Logout clicked")}
+            onClick={signOut}
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out

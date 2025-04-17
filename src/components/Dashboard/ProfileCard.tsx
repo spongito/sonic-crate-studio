@@ -2,22 +2,50 @@
 import { User, Crown, Music } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProfileCardProps {
-  name?: string;
-  email?: string;
-  generationsUsed?: number;
-  generationsTotal?: number;
-  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
-const ProfileCard = ({
-  name = "User",
-  email = "user@example.com",
-  generationsUsed = 6,
-  generationsTotal = 15,
-  isPremium = false
-}: ProfileCardProps) => {
+const ProfileCard = ({ onUpgrade }: ProfileCardProps) => {
+  const { user, subscription } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleUpgrade = async () => {
+    if (onUpgrade) {
+      onUpgrade();
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('create-checkout');
+      
+      if (error) {
+        toast.error("Failed to start checkout process");
+        console.error("Checkout error:", error);
+        return;
+      }
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+      console.error("Checkout error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generationsUsed = subscription?.playlists_generated || 0;
+  const generationsTotal = 15;
+  const isPremium = subscription?.is_premium || false;
+  
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -30,8 +58,8 @@ const ProfileCard = ({
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-lg">{name}</h3>
-              <p className="text-sm text-muted-foreground">{email}</p>
+              <h3 className="font-semibold text-lg">{user?.user_metadata.name || 'User'}</h3>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
             {isPremium ? (
               <div className="bg-gold/20 px-3 py-1 rounded-full flex items-center">
@@ -58,18 +86,25 @@ const ProfileCard = ({
             <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gold"
-                style={{ width: `${(generationsUsed / generationsTotal) * 100}%` }}
+                style={{ width: `${Math.min(generationsUsed / generationsTotal, 1) * 100}%` }}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              {generationsTotal - generationsUsed} generations left this month
+              {isPremium ? 
+                "Unlimited generations with Premium" : 
+                `${generationsTotal - generationsUsed} generations left this month`
+              }
             </p>
           </div>
           
           {!isPremium && (
-            <Button className="bg-gold hover:bg-gold-dark text-black w-full">
+            <Button 
+              className="bg-gold hover:bg-gold-dark text-black w-full"
+              onClick={handleUpgrade}
+              disabled={isLoading}
+            >
               <Crown className="h-4 w-4 mr-2" />
-              Upgrade to Premium
+              {isLoading ? "Processing..." : "Upgrade to Premium"}
             </Button>
           )}
         </div>
