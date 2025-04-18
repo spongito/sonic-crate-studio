@@ -50,23 +50,12 @@ export function usePlaylistGeneration() {
       if (error) {
         console.error("Processing error details:", error);
         addDebugLog(`Error: ${error.message}`);
-        
-        if (error.message.includes("non-2xx status code") || 
-            (processedData && processedData.error && processedData.error.includes("quota"))) {
-          toast.error("We're experiencing high demand. Using simplified playlist generation.");
-          addDebugLog("Using simplified playlist generation due to API limitations.");
-        } else {
-          throw error;
-        }
+        throw error;
       }
       
       if (processedData && processedData.error) {
         addDebugLog(`Function error: ${processedData.error}`);
-        if (processedData.error.includes("quota")) {
-          toast.error("AI processing limited. Using simplified playlist generation.");
-        } else {
-          throw new Error(processedData.error);
-        }
+        throw new Error(processedData.error);
       }
       
       if (!processedData) {
@@ -99,7 +88,7 @@ export function usePlaylistGeneration() {
           results: processedData.tracks || [],
           user_id: user?.id || '',
           is_public: true,
-          genres: [advancedParams.genre, processedData.intent?.genre].filter(Boolean),
+          genres: [advancedParams.genre, ...(processedData.intent?.genres || [])].filter(Boolean),
           settings: {
             ...advancedParams,
             intent: processedData.intent
