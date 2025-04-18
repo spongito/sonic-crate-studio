@@ -1,7 +1,7 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Info, Music, Save, Spotify } from "lucide-react";
+import { Info, Music, Save } from "lucide-react";
+import { SpotifyIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PlaylistViewerProps {
@@ -68,7 +68,7 @@ const PlaylistViewer = ({ playlistData }: PlaylistViewerProps) => {
                 <TableCell className="text-center">
                   {track.platform === "spotify" ? (
                     <a href={track.external_url} target="_blank" rel="noreferrer">
-                      <Spotify className="h-5 w-5 mx-auto text-green-500" />
+                      <SpotifyIcon className="h-5 w-5 mx-auto text-green-500" />
                     </a>
                   ) : (
                     <Music className="h-5 w-5 mx-auto" />
