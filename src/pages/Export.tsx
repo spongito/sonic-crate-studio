@@ -1,10 +1,9 @@
-
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
-import { Download, FileType, Spotify, Music, Crown, Lock } from "lucide-react";
+import { Download, FileType, Music, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import UpgradeModal from "@/components/Dashboard/UpgradeModal";
 
@@ -121,7 +120,7 @@ const Export = () => {
           <Card className={!isPremium ? "opacity-80" : ""}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Spotify className="h-5 w-5" />
+                <Music className="h-5 w-5" />
                 <span>Spotify Export</span>
               </CardTitle>
               <CardDescription>
