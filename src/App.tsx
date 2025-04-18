@@ -9,11 +9,13 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import Assistant from "./pages/Assistant";
+import MusicFinder from "./pages/MusicFinder";
 import Export from "./pages/Export";
 import Community from "./pages/Community";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Playlists from "./pages/Playlists";
+import CurationAssistant from "./pages/CurationAssistant";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,9 +34,19 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
-            <Route path="/assistant" element={
+            <Route path="/music-finder" element={
               <ProtectedRoute>
-                <Assistant />
+                <MusicFinder />
+              </ProtectedRoute>
+            } />
+            <Route path="/curation-assistant" element={
+              <ProtectedRoute>
+                <CurationAssistant />
+              </ProtectedRoute>
+            } />
+            <Route path="/playlists" element={
+              <ProtectedRoute>
+                <Playlists />
               </ProtectedRoute>
             } />
             <Route path="/export" element={

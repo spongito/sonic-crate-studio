@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { 
   Music, 
@@ -8,7 +7,9 @@ import {
   User, 
   Settings, 
   LogOut,
-  Sparkles
+  Sparkles,
+  LayoutDashboard,
+  ListMusic
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -25,10 +26,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="min-h-screen flex flex-col md:flex-row bg-[#0B0B0B]">
       {/* Sidebar navigation */}
       <aside className="w-full md:w-64 bg-[#12121A] border-r border-white/5 shadow-xl">
-        <div className="p-6 flex items-center gap-3">
+        <Link to="/" className="p-6 flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gold to-gold-dark shadow-gold-glow"></div>
           <span className="font-semibold text-lg text-white/90">Assorted Audio</span>
-        </div>
+        </Link>
         
         <nav className="p-4">
           <ul className="space-y-2">
@@ -37,17 +38,35 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 to="/dashboard" 
                 className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
-                <Music className="h-5 w-5 sidebar-item-icon" />
-                <span>Playlist Generator</span>
+                <LayoutDashboard className="h-5 w-5 sidebar-item-icon" />
+                <span>Dashboard</span>
               </Link>
             </li>
             <li>
               <Link 
-                to="/assistant" 
+                to="/music-finder" 
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
+              >
+                <Music className="h-5 w-5 sidebar-item-icon" />
+                <span>Music Finder</span>
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/curation-assistant" 
                 className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
                 <Sparkles className="h-5 w-5 sidebar-item-icon" />
-                <span>New Music Finder</span>
+                <span>Curation Assistant</span>
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/playlists" 
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
+              >
+                <ListMusic className="h-5 w-5 sidebar-item-icon" />
+                <span>My Playlists</span>
               </Link>
             </li>
             <li>
