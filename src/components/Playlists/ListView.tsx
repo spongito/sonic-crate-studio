@@ -4,9 +4,27 @@ import { format } from "date-fns";
 import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+interface Track {
+  title: string;
+  artist: string;
+  album?: string;
+  spotify_id?: string;
+  duration?: string;
+  match_score?: number;
+}
+
+interface Playlist {
+  id: string;
+  name: string;
+  prompt: string;
+  created_at: string;
+  results: Track[];
+  user_id: string;
+}
+
 interface ListViewProps {
-  playlists: any[];
-  onPlaylistClick: (playlist: any) => void;
+  playlists: Playlist[];
+  onPlaylistClick: (playlist: Playlist) => void;
 }
 
 export function ListView({ playlists, onPlaylistClick }: ListViewProps) {
@@ -17,6 +35,7 @@ export function ListView({ playlists, onPlaylistClick }: ListViewProps) {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Tracks</TableHead>
             <TableHead>Created</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
@@ -26,6 +45,7 @@ export function ListView({ playlists, onPlaylistClick }: ListViewProps) {
             <TableRow key={playlist.id}>
               <TableCell className="font-medium">{playlist.name}</TableCell>
               <TableCell className="max-w-[300px] truncate">{playlist.prompt}</TableCell>
+              <TableCell>{playlist.results.length}</TableCell>
               <TableCell>
                 {format(new Date(playlist.created_at), "MMM d, yyyy")}
               </TableCell>

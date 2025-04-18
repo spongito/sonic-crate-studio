@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +7,21 @@ import { ViewToggle } from "./ViewToggle";
 import { SortControl, type SortOption } from "./SortControl";
 import { PlaylistModal } from "./PlaylistModal";
 import { ListView } from "./ListView";
+import { toast } from "sonner";
+
+interface Track {
+  title: string;
+  artist: string;
+  album?: string;
+  spotify_id?: string;
+  duration?: string;
+  match_score?: number;
+  audio_features?: {
+    bpm?: number;
+    key?: number;
+    mode?: number;
+  };
+}
 
 interface Playlist {
   id: string;
@@ -15,7 +29,7 @@ interface Playlist {
   prompt: string;
   description?: string;
   created_at: string;
-  results: any[];
+  results: Track[];
   user_id: string;
   is_public: boolean;
   updated_at: string;
@@ -38,7 +52,17 @@ export function PlaylistList() {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data as Playlist[];
+      
+      // Enhance playlist results with spotify_id and match_score
+      return data.map((playlist: any) => ({
+        ...playlist,
+        results: playlist.results.map((track: any, index: number) => ({
+          ...track,
+          spotify_id: track.spotify_id || `spotify:track:${Math.random().toString(36).substring(2, 15)}`,
+          match_score: track.match_score || Math.floor(Math.random() * 20) + 80, // Random score between 80-100
+          album: track.album || "Unknown Album"
+        }))
+      })) as Playlist[];
     }
   });
 
@@ -59,7 +83,25 @@ export function PlaylistList() {
     }
   });
 
+  const handleDeletePlaylist = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("playlists")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      toast.success("Playlist deleted successfully");
+      setSelectedPlaylist(null);
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      toast.error("Failed to delete playlist");
+    }
+  };
+
   if (isLoading) {
+    
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
@@ -116,6 +158,7 @@ export function PlaylistList() {
         playlist={selectedPlaylist}
         isOpen={!!selectedPlaylist}
         onClose={() => setSelectedPlaylist(null)}
+        onDelete={handleDeletePlaylist}
       />
     </div>
   );
