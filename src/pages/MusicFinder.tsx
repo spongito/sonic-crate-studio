@@ -1,13 +1,10 @@
-
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sliders } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
-import ProfileCard from "@/components/Dashboard/ProfileCard";
-import UpgradeModal from "@/components/Dashboard/UpgradeModal";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +13,6 @@ import { format } from "date-fns";
 const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
   const [showPlaylist, setShowPlaylist] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchParams] = useSearchParams();
   const { subscription, checkSubscription, user } = useAuth();
@@ -75,7 +71,7 @@ const MusicFinder = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col gap-6">
           <div className="flex-1 space-y-6">
             <h1 className="text-4xl font-bold bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent">
               Music Finder
@@ -109,17 +105,8 @@ const MusicFinder = () => {
               </div>
             )}
           </div>
-          
-          <div className="md:w-80">
-            <ProfileCard onUpgrade={() => setShowUpgradeModal(true)} />
-          </div>
         </div>
       </div>
-      
-      <UpgradeModal 
-        open={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)} 
-      />
     </DashboardLayout>
   );
 };
