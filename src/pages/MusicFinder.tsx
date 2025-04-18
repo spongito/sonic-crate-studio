@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -41,6 +40,7 @@ const MusicFinder = () => {
         .insert({
           name: format(new Date(), "MMM d - h:mm a"),
           prompt: prompt,
+          description: "", // Optional description
           results: [] // Placeholder for now
         });
 

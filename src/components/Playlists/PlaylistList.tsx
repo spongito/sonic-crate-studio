@@ -8,7 +8,9 @@ interface Playlist {
   id: string;
   name: string;
   prompt: string;
+  description?: string;
   created_at: string;
+  results: any[];
 }
 
 export function PlaylistList() {
