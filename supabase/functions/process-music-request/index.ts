@@ -44,6 +44,8 @@ serve(async (req) => {
 
 async function processWithGPT(prompt: string, advancedParams: any) {
   try {
+    console.log("Processing with GPT:", { prompt, advancedParams });
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -66,7 +68,20 @@ async function processWithGPT(prompt: string, advancedParams: any) {
       }),
     });
 
+    // Check if the response is ok
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GPT API error: ${response.status} - ${errorText}`);
+    }
+
     const data = await response.json();
+    
+    // Check if the expected fields exist before accessing them
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error("Unexpected OpenAI API response:", JSON.stringify(data));
+      throw new Error("Invalid response format from OpenAI API");
+    }
+    
     const processedData = JSON.parse(data.choices[0].message.content);
     
     return {
@@ -81,66 +96,114 @@ async function processWithGPT(prompt: string, advancedParams: any) {
 }
 
 async function getSpotifyToken() {
-  const response = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${btoa(`${spotifyClientId}:${spotifyClientSecret}`)}`
-    },
-    body: 'grant_type=client_credentials'
-  });
-
-  const data = await response.json();
-  return data.access_token;
+  try {
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${btoa(`${spotifyClientId}:${spotifyClientSecret}`)}`
+      },
+      body: 'grant_type=client_credentials'
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Spotify auth error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    console.error("Spotify token error:", error);
+    throw new Error("Failed to get Spotify access token");
+  }
 }
 
 async function searchSpotify(processedIntent: any) {
-  const token = await getSpotifyToken();
-  
-  // Build search query based on processed intent
-  const searchParams = new URLSearchParams();
-  
-  let query = '';
-  if (processedIntent.genre) query += `genre:"${processedIntent.genre}" `;
-  if (processedIntent.reference_artists && processedIntent.reference_artists.length > 0) {
-    query += `artist:"${processedIntent.reference_artists[0]}" `;
-  }
-  if (processedIntent.mood && processedIntent.mood.length > 0) {
-    query += processedIntent.mood.slice(0, 2).join(' ');
-  }
-  
-  searchParams.append('q', query.trim());
-  searchParams.append('type', 'track');
-  searchParams.append('limit', '30');
-  
-  const response = await fetch(`https://api.spotify.com/v1/search?${searchParams.toString()}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`
+  try {
+    const token = await getSpotifyToken();
+    
+    // Build search query based on processed intent
+    const searchParams = new URLSearchParams();
+    
+    let query = '';
+    if (processedIntent.genre) query += `genre:"${processedIntent.genre}" `;
+    if (processedIntent.reference_artists && processedIntent.reference_artists.length > 0) {
+      if (Array.isArray(processedIntent.reference_artists)) {
+        query += `artist:"${processedIntent.reference_artists[0]}" `;
+      } else if (typeof processedIntent.reference_artists === 'string') {
+        query += `artist:"${processedIntent.reference_artists}" `;
+      }
     }
-  });
-
-  const data = await response.json();
-  
-  if (data.error) {
-    console.error("Spotify API error:", data.error);
-    return [];
+    if (processedIntent.mood && processedIntent.mood.length > 0) {
+      if (Array.isArray(processedIntent.mood)) {
+        query += processedIntent.mood.slice(0, 2).join(' ');
+      } else if (typeof processedIntent.mood === 'string') {
+        query += processedIntent.mood;
+      }
+    }
+    
+    // If query is still empty, use the original prompt as a fallback
+    if (!query.trim()) {
+      query = processedIntent.original_prompt || "";
+    }
+    
+    searchParams.append('q', query.trim());
+    searchParams.append('type', 'track');
+    searchParams.append('limit', '30');
+    
+    console.log("Spotify search query:", query);
+    
+    const response = await fetch(`https://api.spotify.com/v1/search?${searchParams.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Spotify API error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error("Spotify API error:", data.error);
+      return [];
+    }
+    
+    if (!data.tracks || !data.tracks.items) {
+      return [];
+    }
+    
+    return data.tracks.items.map((track: any) => ({
+      id: track.id,
+      name: track.name,
+      artist: track.artists.map((artist: any) => artist.name).join(', '),
+      album: track.album.name,
+      image: track.album.images[0]?.url || '',
+      preview_url: track.preview_url,
+      external_url: track.external_urls.spotify,
+      popularity: track.popularity,
+      platform: 'spotify'
+    }));
+  } catch (error) {
+    console.error("Spotify search error:", error);
+    throw new Error("Failed to search Spotify");
   }
-  
-  return data.tracks.items.map((track: any) => ({
-    id: track.id,
-    name: track.name,
-    artist: track.artists.map((artist: any) => artist.name).join(', '),
-    album: track.album.name,
-    image: track.album.images[0]?.url || '',
-    preview_url: track.preview_url,
-    external_url: track.external_urls.spotify,
-    popularity: track.popularity,
-    platform: 'spotify'
-  }));
 }
 
 async function createPlaylistWithGPT(processedIntent: any, tracks: any[]) {
   try {
+    if (tracks.length === 0) {
+      return {
+        tracks: [],
+        intent: processedIntent,
+        created_at: new Date().toISOString(),
+        name: `Playlist - ${new Date().toLocaleDateString()}`
+      };
+    }
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -153,13 +216,13 @@ async function createPlaylistWithGPT(processedIntent: any, tracks: any[]) {
           { 
             role: 'system', 
             content: `You are a professional DJ and music curator. Your task is to analyze a list of tracks and select the best 20 that match the user's intent. 
-            Return a JSON array of track objects with the following properties:
+            Return a JSON object with a "tracks" array containing track objects with the following properties:
             - id: The original track ID
             - score: A number from 0-100 indicating how well it matches
             - reasoning: A brief explanation of why this track was selected
             - position: The recommended position in the playlist (1-20)
             
-            Only return a valid JSON array with no other text.` 
+            Only return a valid JSON object with no other text.` 
           },
           { 
             role: 'user', 
@@ -170,21 +233,42 @@ async function createPlaylistWithGPT(processedIntent: any, tracks: any[]) {
       }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GPT API error: ${response.status} - ${errorText}`);
+    }
+
     const data = await response.json();
+    
+    // Check if the expected fields exist before accessing them
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error("Unexpected OpenAI API response for playlist creation:", JSON.stringify(data));
+      throw new Error("Invalid response format from OpenAI API");
+    }
+    
     const processedPlaylist = JSON.parse(data.choices[0].message.content);
     
     // Match the selected tracks with full track data
     const trackMap = new Map();
     tracks.forEach((track) => trackMap.set(track.id, track));
     
-    const finalPlaylist = Array.isArray(processedPlaylist.tracks) 
-      ? processedPlaylist.tracks.map((item: any) => ({
-          ...trackMap.get(item.id),
-          score: item.score,
-          reasoning: item.reasoning,
-          position: item.position
-        })).sort((a: any, b: any) => a.position - b.position)
-      : [];
+    let finalPlaylist = [];
+    
+    if (processedPlaylist && processedPlaylist.tracks && Array.isArray(processedPlaylist.tracks)) {
+      finalPlaylist = processedPlaylist.tracks
+        .map((item: any) => {
+          const trackData = trackMap.get(item.id);
+          if (!trackData) return null;
+          return {
+            ...trackData,
+            score: item.score || 50,
+            reasoning: item.reasoning || "Selected based on your preferences",
+            position: item.position || 0
+          };
+        })
+        .filter(Boolean) // Remove any null entries
+        .sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+    }
     
     return {
       tracks: finalPlaylist,
