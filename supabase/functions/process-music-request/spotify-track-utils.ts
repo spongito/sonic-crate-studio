@@ -12,6 +12,7 @@ export async function enrichTracksWithAudioFeatures(tracks: any[], token: string
     }
     
     const featuresPromises = trackIdChunks.map(async (chunk) => {
+      console.log(`Fetching audio features for ${chunk.length} tracks`);
       const response = await fetch(`https://api.spotify.com/v1/audio-features?ids=${chunk.join(',')}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -19,11 +20,15 @@ export async function enrichTracksWithAudioFeatures(tracks: any[], token: string
       });
       
       if (!response.ok) {
-        console.error(`Spotify API error: ${response.status}`);
+        console.error(`Spotify API error when fetching audio features: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
         return { audio_features: [] };
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log(`Received audio features for ${data.audio_features?.filter(Boolean).length || 0} tracks`);
+      return data;
     });
     
     const featuresResponses = await Promise.all(featuresPromises);
@@ -35,10 +40,13 @@ export async function enrichTracksWithAudioFeatures(tracks: any[], token: string
       }
     });
     
+    console.log(`Total audio features retrieved: ${allAudioFeatures.length} out of ${tracks.length} tracks`);
+    
     return tracks.map(track => {
       const features = allAudioFeatures.find(item => item && item.id === track.id);
       
       if (features) {
+        console.log(`Enriching track ${track.name || track.title} with audio features: BPM=${Math.round(features.tempo)}, Key=${features.key}`);
         return {
           ...track,
           audio_features: {
@@ -55,6 +63,7 @@ export async function enrichTracksWithAudioFeatures(tracks: any[], token: string
         };
       }
       
+      console.log(`No audio features found for track: ${track.name || track.title}`);
       return track;
     });
   } catch (error) {

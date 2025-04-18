@@ -68,6 +68,7 @@ serve(async (req) => {
     console.log(`Combined unique tracks: ${uniqueTracks.length}`);
     
     // Enrich with audio features and score tracks
+    console.log("Enriching tracks with audio features...");
     const tracksWithFeatures = await enrichTracksWithAudioFeatures(uniqueTracks, spotifyToken).catch(error => {
       console.error("Audio features enrichment failed:", error);
       // Continue without audio features if needed

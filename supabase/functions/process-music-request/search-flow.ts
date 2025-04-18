@@ -1,4 +1,3 @@
-
 import { searchTracks, searchArtists, getArtistTopTracks, getRelatedArtists } from './spotify-client.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
@@ -10,11 +9,11 @@ const supabase = createClient(
 async function saveMasterTrack(track: any, audioFeatures: any) {
   try {
     // Debug log to see what we're trying to insert
-    console.log('Attempting to save track:', {
+    console.log('Attempting to save track with audio features:', {
       id: track.id,
-      spotify_id: track.spotify_id,
       title: track.title || track.name,
-      artist: Array.isArray(track.artist) ? track.artist : [track.artist]
+      artist: Array.isArray(track.artist) ? track.artist : [track.artist],
+      audioFeatures: audioFeatures ? 'present' : 'missing'
     });
     
     if (!track.spotify_id) {
@@ -25,7 +24,7 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
     // Check if track already exists
     const { data: existingTrack, error: checkError } = await supabase
       .from('tracks_master')
-      .select('id')
+      .select('id, bpm, key_signature')
       .eq('spotify_id', track.spotify_id)
       .maybeSingle();
       
@@ -34,27 +33,80 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       return null;
     }
 
-    if (existingTrack) {
-      console.log(`Track ${track.title} already exists with ID ${existingTrack.id}`);
-      return existingTrack.id;
-    }
-    
     // Extract BPM and key from audio features if available
     let bpm = null;
     let keySignature = null;
+    let energy = null;
+    let danceability = null;
+    let valence = null;
+    let instrumentalness = null;
+    let acousticness = null;
     
     if (audioFeatures) {
-      if (audioFeatures.tempo) {
+      // Direct from Spotify API response
+      if (audioFeatures.tempo !== undefined) {
         bpm = Math.round(audioFeatures.tempo);
-      } else if (track.audio_features?.bpm) {
-        bpm = track.audio_features.bpm;
       }
       
       if (audioFeatures.key !== undefined && audioFeatures.mode !== undefined) {
         keySignature = formatKey(audioFeatures.key, audioFeatures.mode);
-      } else if (track.audio_features?.key !== undefined && track.audio_features?.mode !== undefined) {
-        keySignature = formatKey(track.audio_features.key, track.audio_features.mode);
       }
+      
+      // Capture other audio features
+      energy = audioFeatures.energy;
+      danceability = audioFeatures.danceability;
+      valence = audioFeatures.valence;
+      instrumentalness = audioFeatures.instrumentalness;
+      acousticness = audioFeatures.acousticness;
+    } 
+    // From track's audio_features property (already processed tracks)
+    else if (track.audio_features) {
+      if (track.audio_features.bpm !== undefined) {
+        bpm = track.audio_features.bpm;
+      } else if (track.audio_features.tempo !== undefined) {
+        bpm = Math.round(track.audio_features.tempo);
+      }
+      
+      if (track.audio_features.key !== undefined && track.audio_features.mode !== undefined) {
+        keySignature = formatKey(track.audio_features.key, track.audio_features.mode);
+      } else if (track.audio_features.key_signature) {
+        keySignature = track.audio_features.key_signature;
+      }
+      
+      energy = track.audio_features.energy;
+      danceability = track.audio_features.danceability;
+      valence = track.audio_features.valence;
+      instrumentalness = track.audio_features.instrumentalness;
+      acousticness = track.audio_features.acousticness;
+    }
+
+    if (existingTrack) {
+      console.log(`Track ${track.title || track.name} already exists with ID ${existingTrack.id}`);
+      
+      // Only update if we have new audio features and they were missing before
+      if (audioFeatures && (!existingTrack.bpm || !existingTrack.key_signature)) {
+        console.log(`Updating existing track ${existingTrack.id} with audio features`);
+        
+        const { error: updateError } = await supabase
+          .from('tracks_master')
+          .update({
+            bpm,
+            key_signature: keySignature,
+            energy,
+            danceability,
+            valence,
+            instrumentalness,
+            acousticness,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingTrack.id);
+          
+        if (updateError) {
+          console.error('Error updating track with audio features:', updateError);
+        }
+      }
+      
+      return existingTrack.id;
     }
     
     // Prepare data for insertion
@@ -70,14 +122,18 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       popularity: track.popularity,
       bpm: bpm,
       key_signature: keySignature,
-      energy: audioFeatures?.energy || track.audio_features?.energy,
-      danceability: audioFeatures?.danceability || track.audio_features?.danceability,
-      valence: audioFeatures?.valence || track.audio_features?.valence,
-      instrumentalness: audioFeatures?.instrumentalness || track.audio_features?.instrumentalness,
-      acousticness: audioFeatures?.acousticness || track.audio_features?.acousticness
+      energy: energy,
+      danceability: danceability,
+      valence: valence,
+      instrumentalness: instrumentalness,
+      acousticness: acousticness
     };
 
-    console.log('Track data prepared for insertion:', trackData);
+    console.log('Track data prepared for insertion:', {
+      ...trackData,
+      bpm_present: bpm !== null,
+      key_present: keySignature !== null
+    });
 
     // Insert new track with audio features
     const { data: newTrack, error } = await supabase
@@ -91,7 +147,7 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       return null;
     }
 
-    console.log(`Successfully saved track ${track.title} with ID ${newTrack.id}`);
+    console.log(`Successfully saved track ${track.title || track.name} with ID ${newTrack.id}`);
     return newTrack.id;
   } catch (error) {
     console.error('Error in saveMasterTrack:', error);
