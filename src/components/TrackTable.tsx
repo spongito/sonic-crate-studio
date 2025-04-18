@@ -3,23 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Track {
-  title: string;
-  artist: string;
-  album?: string;
-  spotify_id?: string;
-  match_score?: number;
-  audio_features?: {
-    bpm?: number;
-    key_signature?: string;
-  };
-  platform?: string;
-  platform_url?: string;
-  cover_url?: string;
-  release_year?: number;
-  genre?: string[];
-}
+import type { Track } from "@/components/Playlists/types";
 
 interface TrackTableProps {
   tracks: Track[];
@@ -48,8 +32,15 @@ export function TrackTable({ tracks, onSortColumn, sortConfig }: TrackTableProps
           >
             Match
           </TableHead>
-          <TableHead className="hidden md:table-cell">BPM</TableHead>
-          <TableHead className="hidden md:table-cell">Key</TableHead>
+          <TableHead 
+            className="hidden md:table-cell cursor-pointer"
+            onClick={() => isSortable && onSortColumn('bpm')}
+          >
+            BPM
+          </TableHead>
+          <TableHead className="hidden md:table-cell">
+            Key
+          </TableHead>
           <TableHead 
             className="hidden md:table-cell cursor-pointer"
             onClick={() => isSortable && onSortColumn('genre')}
