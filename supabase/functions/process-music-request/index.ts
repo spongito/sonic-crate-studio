@@ -132,4 +132,3 @@ function determineErrorStatus(error: Error): number {
   if (error.message.includes("No tracks") || error.message.includes("Failed to score")) return 404;
   return 500;
 }
-
