@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -13,7 +12,7 @@ export const BackgroundCells = ({ children, className }: BackgroundCellsProps) =
     <div className={cn("relative h-screen flex justify-center overflow-hidden", className)}>
       <BackgroundCellCore />
       {children && (
-        <div className="relative z-50 pointer-events-none select-none">
+        <div className="relative z-50 pointer-events-auto select-none">
           {children}
         </div>
       )}
@@ -40,12 +39,12 @@ const BackgroundCellCore = () => {
     <div
       ref={ref}
       onMouseMove={handleMouseMove}
-      className="h-full absolute inset-0"
+      className="h-full absolute inset-0 pointer-events-none"
     >
       <div className="absolute h-[20rem] inset-y-0 overflow-hidden">
-        <div className="absolute h-full w-full pointer-events-none -bottom-2 z-40 bg-background [mask-image:linear-gradient(to_bottom,transparent,black)]" />
+        <div className="absolute h-full w-full pointer-events-none -bottom-2 z-10 bg-background [mask-image:linear-gradient(to_bottom,transparent,black)]" />
         <div
-          className="absolute inset-0 z-20 bg-transparent"
+          className="absolute inset-0 z-10 bg-transparent pointer-events-none"
           style={{
             maskImage: `radial-gradient(${size / 4}px circle at center, white, transparent)`,
             WebkitMaskImage: `radial-gradient(${size / 4}px circle at center, white, transparent)`,
@@ -54,12 +53,11 @@ const BackgroundCellCore = () => {
             }px`,
             WebkitMaskSize: `${size}px`,
             maskSize: `${size}px`,
-            pointerEvents: "none",
             maskRepeat: "no-repeat",
             WebkitMaskRepeat: "no-repeat",
           }}
         >
-          <Pattern cellClassName="border-gold/40 relative z-[100]" />
+          <Pattern cellClassName="border-gold/40 relative z-10" />
         </div>
         <Pattern className="opacity-[0.5]" cellClassName="border-white/10" />
       </div>
@@ -79,11 +77,11 @@ const Pattern = ({ className, cellClassName }: PatternProps) => {
   const [clickedCell, setClickedCell] = useState<[number, number] | null>(null);
 
   return (
-    <div className={cn("flex flex-row relative z-30", className)}>
+    <div className={cn("flex flex-row relative z-10", className)}>
       {matrix.map((row, rowIdx) => (
         <div
           key={`matrix-row-${rowIdx}`}
-          className="flex flex-col relative z-20 border-b"
+          className="flex flex-col relative z-10 border-b"
         >
           {row.map((column, colIdx) => {
             const controls = useAnimation();
