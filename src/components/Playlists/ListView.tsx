@@ -11,6 +11,11 @@ interface Track {
   spotify_id?: string;
   duration?: string;
   match_score?: number;
+  audio_features?: {
+    bpm?: number;
+    key?: number;
+    mode?: number;
+  };
 }
 
 interface Playlist {
@@ -20,6 +25,12 @@ interface Playlist {
   created_at: string;
   results: Track[];
   user_id: string;
+  is_public: boolean;
+  updated_at: string;
+  genres: string[];
+  description?: string;
+  settings?: any;
+  tags?: string[];
 }
 
 interface ListViewProps {
