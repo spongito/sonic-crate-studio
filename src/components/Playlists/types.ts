@@ -14,6 +14,8 @@ export interface Track {
   platform?: string;
   platform_url?: string;
   cover_url?: string;
+  release_year?: number;
+  genre?: string[];
 }
 
 export interface Playlist {
