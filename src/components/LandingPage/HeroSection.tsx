@@ -7,19 +7,21 @@ import { useAuth } from "@/context/AuthContext";
 import BackgroundCells from "@/components/ui/background-cells";
 import { SearchDialog, SearchParams } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { SignInDialog } from "@/components/auth/SignInDialog";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleGenerate = () => {
     if (!user) {
       setShowSignIn(true);
       return;
     }
-    window.location.href = "/dashboard";
+    navigate("/dashboard");
   };
 
   const handleAdvancedSearchSubmit = (params: SearchParams) => {
@@ -29,7 +31,7 @@ const HeroSection = () => {
 
   return (
     <div className="relative min-h-screen">
-      <BackgroundCells className="absolute inset-0 z-0" />
+      <BackgroundCells className="absolute inset-0 -z-10" />
       
       <div className="relative z-10 flex items-center justify-center min-h-screen">
         <div className="animate-fade-in max-w-4xl w-full text-center space-y-6 pt-24">

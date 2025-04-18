@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
@@ -11,7 +11,8 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { user, signInWithSpotify } = useAuth();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleOpenSignIn = (signup: boolean = false) => {
     setIsSignUp(signup);
@@ -33,14 +34,12 @@ const Navbar = () => {
             <ThemeToggle />
             {!user ? (
               <>
-                <Button variant="ghost" onClick={signInWithSpotify}>Support</Button>
+                <Button variant="ghost">Support</Button>
                 <Button variant="outline" onClick={() => handleOpenSignIn(false)}>Sign In</Button>
                 <Button onClick={() => handleOpenSignIn(true)}>Sign Up</Button>
               </>
             ) : (
-              <Link to="/dashboard">
-                <Button>Dashboard</Button>
-              </Link>
+              <Button onClick={() => navigate("/dashboard")}>Dashboard</Button>
             )}
           </div>
           
@@ -60,14 +59,12 @@ const Navbar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col">
             {!user ? (
               <>
-                <Button variant="ghost" onClick={signInWithSpotify}>Support</Button>
+                <Button variant="ghost">Support</Button>
                 <Button variant="outline" className="my-2" onClick={() => handleOpenSignIn(false)}>Sign In</Button>
                 <Button className="mb-2" onClick={() => handleOpenSignIn(true)}>Sign Up</Button>
               </>
             ) : (
-              <Link to="/dashboard">
-                <Button className="my-2">Dashboard</Button>
-              </Link>
+              <Button className="my-2" onClick={() => navigate("/dashboard")}>Dashboard</Button>
             )}
             <div className="flex justify-end pt-2">
               <ThemeToggle />

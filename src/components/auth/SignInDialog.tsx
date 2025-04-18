@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { Music, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface SignInDialogProps {
   open: boolean;
@@ -25,10 +27,12 @@ export const SignInDialog = ({
   onOpenChange, 
   initialMode = false 
 }: SignInDialogProps) => {
-  const { signInWithSpotify, signInWithGoogle, signInWithEmail } = useAuth();
+  const { signInWithSpotify, signInWithGoogle, signInWithEmail, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(initialMode);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
@@ -36,9 +40,49 @@ export const SignInDialog = ({
     }
   }, [open, initialMode]);
 
+  // If user is logged in, close dialog and redirect to dashboard
+  useEffect(() => {
+    if (user && open) {
+      onOpenChange(false);
+      navigate("/dashboard");
+    }
+  }, [user, open, onOpenChange, navigate]);
+
+  const handleSpotifySignIn = async () => {
+    setIsProcessing(true);
+    try {
+      await signInWithSpotify();
+    } catch (error) {
+      console.error("Error signing in with Spotify:", error);
+      toast.error("Failed to sign in with Spotify");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsProcessing(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
+      toast.error("Failed to sign in with Google");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signInWithEmail(email, password, isSignUp);
+    setIsProcessing(true);
+    try {
+      await signInWithEmail(email, password, isSignUp);
+    } catch (error) {
+      console.error("Error signing in with email:", error);
+      toast.error(`Failed to ${isSignUp ? "sign up" : "sign in"} with email`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -57,7 +101,8 @@ export const SignInDialog = ({
             <div className="grid gap-4">
               <Button 
                 className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-white font-medium"
-                onClick={signInWithSpotify}
+                onClick={handleSpotifySignIn}
+                disabled={isProcessing}
               >
                 <Music className="mr-2 h-4 w-4" />
                 Continue with Spotify
@@ -66,7 +111,8 @@ export const SignInDialog = ({
               <Button 
                 variant="outline" 
                 className="w-full border-white/10 hover:bg-white/5"
-                onClick={signInWithGoogle}
+                onClick={handleGoogleSignIn}
+                disabled={isProcessing}
               >
                 <Mail className="mr-2 h-4 w-4" />
                 Continue with Google
@@ -95,6 +141,7 @@ export const SignInDialog = ({
                   className="bg-background/60 border-white/10"
                   placeholder="name@example.com"
                   required
+                  disabled={isProcessing}
                 />
               </div>
               
@@ -107,14 +154,16 @@ export const SignInDialog = ({
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-background/60 border-white/10"
                   required
+                  disabled={isProcessing}
                 />
               </div>
 
               <Button 
                 type="submit" 
                 className="w-full"
+                disabled={isProcessing}
               >
-                {isSignUp ? "Sign up" : "Sign in"}
+                {isProcessing ? "Processing..." : (isSignUp ? "Sign up" : "Sign in")}
               </Button>
             </form>
 
@@ -122,6 +171,7 @@ export const SignInDialog = ({
               variant="link" 
               className="w-full text-muted-foreground"
               onClick={() => setIsSignUp(!isSignUp)}
+              disabled={isProcessing}
             >
               {isSignUp 
                 ? "Already have an account? Sign in" 
