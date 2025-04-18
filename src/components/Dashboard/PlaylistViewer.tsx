@@ -1,7 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Info, Music, Save } from "lucide-react";
-import { SpotifyIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PlaylistViewerProps {
@@ -68,7 +67,18 @@ const PlaylistViewer = ({ playlistData }: PlaylistViewerProps) => {
                 <TableCell className="text-center">
                   {track.platform === "spotify" ? (
                     <a href={track.external_url} target="_blank" rel="noreferrer">
-                      <SpotifyIcon className="h-5 w-5 mx-auto text-green-500" />
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 24 24" 
+                        width="20" 
+                        height="20" 
+                        className="mx-auto text-green-500"
+                      >
+                        <path 
+                          fill="currentColor" 
+                          d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.701 1.32.36.179.48.659.24 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.479.12-1.02.66-1.2 3.6-1.141 10.561-.899 14.719 1.62.539.3.719.9.419 1.379-.299.48-.9.66-1.379.419z"
+                        />
+                      </svg>
                     </a>
                   ) : (
                     <Music className="h-5 w-5 mx-auto" />
