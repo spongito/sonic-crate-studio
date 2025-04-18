@@ -4,13 +4,14 @@ import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Bug } from "lucide-react";
 import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
@@ -19,6 +20,8 @@ const MusicFinder = () => {
   const [playlistData, setPlaylistData] = useState<any>(null);
   const [searchParams] = useSearchParams();
   const { subscription, checkSubscription, user } = useAuth();
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
   
   const [advancedParams, setAdvancedParams] = useState<AdvancedSettingsParams>({
     mode: "club-ready",
@@ -39,6 +42,11 @@ const MusicFinder = () => {
       referenceArtists: ""
     });
     setPrompt("");
+    setDebugLogs([]);
+  };
+
+  const addDebugLog = (message: string) => {
+    setDebugLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
   };
 
   const handleGenerate = async () => {
@@ -54,8 +62,12 @@ const MusicFinder = () => {
     
     try {
       setIsGenerating(true);
+      setDebugLogs([]);
+      addDebugLog(`Starting generation with prompt: "${prompt}"`);
+      addDebugLog(`Using advanced params: ${JSON.stringify(advancedParams)}`);
       
       // Step 1: Process with GPT and music APIs
+      addDebugLog("Calling process-music-request function...");
       const { data: processedData, error: processingError } = await supabase.functions
         .invoke('process-music-request', {
           body: { 
@@ -66,29 +78,49 @@ const MusicFinder = () => {
       
       if (processingError) {
         console.error("Processing error details:", processingError);
+        addDebugLog(`Error: ${processingError.message}`);
         
         if (processingError.message.includes("quota")) {
           toast.error("AI processing quota exceeded. Using simplified playlist generation.");
+          addDebugLog("AI quota exceeded, falling back to simplified generation.");
         } else {
           throw processingError;
         }
       }
       
-      if (!processedData || (!processedData.tracks && !processingError)) {
-        throw new Error("Failed to generate playlist data");
+      if (!processedData) {
+        addDebugLog("Error: No data returned from function");
+        throw new Error("Failed to generate playlist data: No data returned");
+      }
+      
+      if (!processedData.tracks && !processingError) {
+        addDebugLog("Error: No tracks returned in the response");
+        throw new Error("Failed to generate playlist data: No tracks found");
+      }
+      
+      addDebugLog(`Received ${processedData.tracks?.length || 0} tracks from API`);
+      
+      if (processedData.intent) {
+        addDebugLog(`Detected intent: ${JSON.stringify(processedData.intent, null, 2)}`);
+      }
+
+      // Check if we got no tracks
+      if (!processedData.tracks || processedData.tracks.length === 0) {
+        throw new Error("No tracks found matching your criteria. Please try with different parameters.");
       }
       
       // Step 2: Save the playlist to the database
+      addDebugLog("Saving playlist to database...");
       const { error: insertError } = await supabase
         .from("playlists")
         .insert({
-          name: format(new Date(), "MMM d - h:mm a"),
+          name: processedData.name || format(new Date(), "MMM d - h:mm a"),
           prompt: prompt,
           description: advancedParams.description,
           results: processedData.tracks || [],
           user_id: user?.id || '',
           is_public: true,
-          genres: [advancedParams.genre].filter(Boolean),
+          genres: [advancedParams.genre, processedData.intent?.genre].filter(Boolean),
           settings: {
             ...advancedParams,
             intent: processedData.intent
@@ -97,7 +129,10 @@ const MusicFinder = () => {
 
       if (insertError) {
         console.error("Database insertion error:", insertError);
+        addDebugLog(`Database error: ${insertError.message}`);
         toast.error("Playlist was generated but could not be saved.");
+      } else {
+        addDebugLog("Playlist saved to database successfully");
       }
       
       setPlaylistData(processedData);
@@ -105,14 +140,18 @@ const MusicFinder = () => {
       if (!subscription?.is_premium) {
         await supabase.functions.invoke('increment-playlist-count');
         await checkSubscription();
+        addDebugLog("Incremented playlist count for free tier user");
       }
       
       setShowPlaylist(true);
       toast.success("Playlist generated successfully!");
+      addDebugLog("Generation complete!");
       
     } catch (error) {
       console.error("Generation error:", error);
-      toast.error("Failed to generate playlist. Please try again with a different prompt.");
+      addDebugLog(`Critical error: ${error.message}`);
+      toast.error(error.message || "Failed to generate playlist. Please try again with a different prompt.");
+      setShowDebug(true); // Automatically show debug panel on error
     } finally {
       setIsGenerating(false);
     }
@@ -171,6 +210,37 @@ const MusicFinder = () => {
                 <PlaylistViewer playlistData={playlistData} />
               </div>
             )}
+            
+            {/* Debug Panel */}
+            <Collapsible 
+              open={showDebug} 
+              onOpenChange={setShowDebug}
+              className="mt-8 glass-morphism p-2 rounded-xl border border-white/10"
+            >
+              <div className="flex items-center justify-between px-4">
+                <h3 className="text-sm font-medium">Debug Information</h3>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <Bug className="h-4 w-4 mr-2" />
+                    {showDebug ? "Hide" : "Show"} Debug Logs
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              
+              <CollapsibleContent className="mt-2">
+                <div className="bg-black/50 rounded-lg p-4 max-h-64 overflow-y-auto text-xs font-mono">
+                  {debugLogs.length === 0 ? (
+                    <p className="text-gray-400">No logs yet. Generate a playlist to see debug information.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {debugLogs.map((log, index) => (
+                        <p key={index} className="text-gray-300">{log}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </div>
       </div>

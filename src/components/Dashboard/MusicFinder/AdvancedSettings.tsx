@@ -8,7 +8,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { RefreshCw } from "lucide-react";
 
-const genres = ["House", "Techno", "Deep House", "Tech House", "Minimal", "Progressive"];
+const genres = [
+  "Afrobeat",
+  "Ambient",
+  "Blues",
+  "Classical",
+  "Deep House",
+  "Disco",
+  "Drum & Bass",
+  "Funk",
+  "Hip-Hop",
+  "House",
+  "Jazz",
+  "Lo-fi",
+  "Minimal",
+  "Pop",
+  "Progressive",
+  "R&B",
+  "Reggae",
+  "Rock",
+  "Soul",
+  "Tech House",
+  "Techno",
+  "Trance",
+];
+
 const lengths = ["30m", "1h", "1.5h", "2h", "2.5h", "3h"];
 
 export interface AdvancedSettingsParams {
@@ -27,14 +51,26 @@ interface AdvancedSettingsProps {
 }
 
 export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettingsProps) {
+  const [expanded, setExpanded] = useState(false);
+  
   const updateParams = (update: Partial<AdvancedSettingsParams>) => {
     onChange({ ...params, ...update });
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="text-xl font-semibold text-gradient mb-4">
-        Dial In Your Playlist
+      <div className="flex items-center justify-between">
+        <div className="text-xl font-semibold text-gradient">
+          Dial In Your Playlist
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs"
+        >
+          {expanded ? "Simple View" : "Show All Options"}
+        </Button>
       </div>
 
       <Tabs defaultValue={params.mode} onValueChange={(value) => updateParams({ mode: value })}>
@@ -47,22 +83,13 @@ export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettings
 
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium mb-2 block">Description</label>
-          <Textarea
-            placeholder="Describe your set..."
-            value={params.description}
-            onChange={(e) => updateParams({ description: e.target.value })}
-            className="resize-none bg-background/60 min-h-[80px]"
-          />
-        </div>
-
-        <div>
           <label className="text-sm font-medium mb-2 block">Genre</label>
           <Select value={params.genre} onValueChange={(value) => updateParams({ genre: value })}>
             <SelectTrigger>
               <SelectValue placeholder="Select a genre" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-60">
+              <SelectItem value="">Any Genre</SelectItem>
               {genres.map((genre) => (
                 <SelectItem key={genre} value={genre.toLowerCase()}>
                   {genre}
@@ -104,22 +131,47 @@ export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettings
             </div>
           </div>
         </div>
+        
+        {expanded && (
+          <>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
+              <Textarea
+                placeholder="Add more details about the mood, context, or specific instructions..."
+                value={params.description}
+                onChange={(e) => updateParams({ description: e.target.value })}
+                className="resize-none bg-background/60 min-h-[80px]"
+              />
+            </div>
 
-        <div>
-          <label className="text-sm font-medium mb-2 block">Reference Artists</label>
-          <Input
-            placeholder="Add reference artists..."
-            value={params.referenceArtists}
-            onChange={(e) => updateParams({ referenceArtists: e.target.value })}
-            className="bg-background/60"
-          />
-        </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Reference Artists (Optional)</label>
+              <Input
+                placeholder="Add reference artists separated by commas..."
+                value={params.referenceArtists}
+                onChange={(e) => updateParams({ referenceArtists: e.target.value })}
+                className="bg-background/60"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Example: Bonobo, Four Tet, Floating Points
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onReset}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Reset
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? "Show Less" : "Show More Options"}
         </Button>
       </div>
     </div>
