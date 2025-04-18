@@ -6,7 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 
 const genres = [
   "Afrobeat",
@@ -67,73 +67,83 @@ export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettings
           variant="outline" 
           size="sm" 
           onClick={() => setExpanded(!expanded)}
-          className="text-xs"
+          className="text-xs flex items-center gap-1"
         >
-          {expanded ? "Simple View" : "Show All Options"}
+          {expanded ? (
+            <>
+              Hide Options
+              <ChevronUp className="h-4 w-4" />
+            </>
+          ) : (
+            <>
+              Show All Options
+              <ChevronDown className="h-4 w-4" />
+            </>
+          )}
         </Button>
       </div>
 
-      <Tabs defaultValue={params.mode} onValueChange={(value) => updateParams({ mode: value })}>
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="club-ready">Club Ready</TabsTrigger>
-          <TabsTrigger value="crate-dig">Crate Dig & Mix</TabsTrigger>
-          <TabsTrigger value="classic">Classic</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {expanded && (
+        <div className="space-y-6 animate-fade-in">
+          <Tabs defaultValue={params.mode} onValueChange={(value) => updateParams({ mode: value })}>
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="club-ready">Club Ready</TabsTrigger>
+              <TabsTrigger value="crate-dig">Crate Dig & Mix</TabsTrigger>
+              <TabsTrigger value="classic">Classic</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-      <div className="space-y-4">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Genre</label>
-          <Select value={params.genre} onValueChange={(value) => updateParams({ genre: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a genre" />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              <SelectItem value="any">Any Genre</SelectItem>
-              {genres.map((genre) => (
-                <SelectItem key={genre} value={genre.toLowerCase()}>
-                  {genre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium mb-2 block">Set Length</label>
-          <div className="flex gap-2 flex-wrap">
-            {lengths.map((length) => (
-              <Button
-                key={length}
-                variant={params.length === length ? "default" : "outline"}
-                onClick={() => updateParams({ length })}
-                className="rounded-full"
-              >
-                {length}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium mb-2 block">Underground ↔ Commercial</label>
-          <div className="px-2">
-            <Slider
-              value={[params.commercialFactor]}
-              onValueChange={([value]) => updateParams({ commercialFactor: value })}
-              max={100}
-              step={1}
-              className="my-4"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>More Underground</span>
-              <span>More Commercial</span>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Genre</label>
+              <Select value={params.genre} onValueChange={(value) => updateParams({ genre: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a genre" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="any">Any Genre</SelectItem>
+                  {genres.map((genre) => (
+                    <SelectItem key={genre} value={genre.toLowerCase()}>
+                      {genre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-        </div>
-        
-        {expanded && (
-          <>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Set Length</label>
+              <div className="flex gap-2 flex-wrap">
+                {lengths.map((length) => (
+                  <Button
+                    key={length}
+                    variant={params.length === length ? "default" : "outline"}
+                    onClick={() => updateParams({ length })}
+                    className="rounded-full"
+                  >
+                    {length}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Underground ↔ Commercial</label>
+              <div className="px-2">
+                <Slider
+                  value={[params.commercialFactor]}
+                  onValueChange={([value]) => updateParams({ commercialFactor: value })}
+                  max={100}
+                  step={1}
+                  className="my-4"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>More Underground</span>
+                  <span>More Commercial</span>
+                </div>
+              </div>
+            </div>
+            
             <div>
               <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
               <Textarea
@@ -156,24 +166,16 @@ export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettings
                 Example: Bonobo, Four Tet, Floating Points
               </p>
             </div>
-          </>
-        )}
-      </div>
+          </div>
 
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={onReset}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Reset
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setExpanded(!expanded)}
-        >
-          {expanded ? "Show Less" : "Show More Options"}
-        </Button>
-      </div>
+          <div className="flex justify-start pt-4">
+            <Button variant="outline" onClick={onReset}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Reset
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

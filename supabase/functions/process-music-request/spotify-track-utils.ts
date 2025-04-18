@@ -46,13 +46,16 @@ export async function enrichTracksWithAudioFeatures(tracks: any[], token: string
       const features = allAudioFeatures.find(item => item && item.id === track.id);
       
       if (features) {
-        console.log(`Enriching track ${track.name || track.title} with audio features: BPM=${Math.round(features.tempo)}, Key=${features.key}`);
+        const keySignature = formatKeySignature(features.key, features.mode);
+        console.log(`Enriching track ${track.name || track.title} with audio features: BPM=${Math.round(features.tempo)}, Key=${keySignature}`);
+        
         return {
           ...track,
           audio_features: {
             bpm: Math.round(features.tempo),
             key: features.key,
             mode: features.mode,
+            key_signature: keySignature,
             time_signature: features.time_signature,
             energy: features.energy,
             valence: features.valence,
@@ -102,4 +105,15 @@ function msToMinutesAndSeconds(ms: number) {
   const minutes = Math.floor(ms / 60000);
   const seconds = ((ms % 60000) / 1000).toFixed(0);
   return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}
+
+function formatKeySignature(key: number, mode: number): string {
+  if (key === undefined || mode === undefined || key < 0 || key > 11) {
+    return "Unknown";
+  }
+  
+  const keys = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+  const modes = ["Minor", "Major"];
+  
+  return `${keys[key]} ${modes[mode]}`;
 }

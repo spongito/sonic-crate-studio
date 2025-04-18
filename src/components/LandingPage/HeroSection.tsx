@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { ArrowRight, Sliders } from "lucide-react";
+import { ArrowRight, Sliders, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
@@ -8,25 +8,101 @@ import BackgroundCells from "@/components/ui/background-cells";
 import { SearchDialog, SearchParams } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { SignInDialog } from "@/components/auth/SignInDialog";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-const HeroSection = () => {
+interface HeroSectionProps {
+  onPlaylistGenerated?: (data: any) => void;
+  setShowPlaylist?: (show: boolean) => void;
+}
+
+const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps) => {
   const [prompt, setPrompt] = useState("");
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
-  const { user } = useAuth();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { user, subscription, checkSubscription } = useAuth();
   const navigate = useNavigate();
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!user) {
       setShowSignIn(true);
       return;
     }
-    navigate("/dashboard");
+    
+    if (!prompt.trim()) {
+      toast.error("Please enter a prompt");
+      return;
+    }
+    
+    if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
+      toast.info("This is a Premium feature. Upgrade to continue.");
+      navigate("/dashboard");
+      return;
+    }
+    
+    try {
+      setIsGenerating(true);
+      if (setShowPlaylist) setShowPlaylist(false);
+      
+      const { data: processedData, error } = await supabase.functions
+        .invoke('process-music-request', {
+          body: { 
+            prompt,
+            advancedParams: {
+              mode: "club-ready",
+              description: "",
+              genre: "",
+              length: "1.5h",
+              commercialFactor: 50,
+              referenceArtists: ""
+            }
+          }
+        });
+      
+      if (error) {
+        console.error("Processing error details:", error);
+        throw error;
+      }
+      
+      if (processedData && processedData.error) {
+        throw new Error(processedData.error);
+      }
+      
+      if (!processedData) {
+        throw new Error("Failed to generate playlist data: No data returned");
+      }
+      
+      if (!processedData.tracks) {
+        throw new Error("Failed to generate playlist data: No tracks found");
+      }
+      
+      if (!subscription?.is_premium) {
+        await supabase.functions.invoke('increment-playlist-count');
+        await checkSubscription();
+      }
+      
+      if (onPlaylistGenerated) {
+        onPlaylistGenerated(processedData);
+      }
+      
+      toast.success("Playlist generated successfully!");
+      
+    } catch (error: any) {
+      console.error("Generation error:", error);
+      toast.error(error.message || "Failed to generate playlist. Please try again with a different prompt.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
-
-  const handleAdvancedSearchSubmit = (params: SearchParams) => {
-    console.log("Advanced search params:", params);
-    handleGenerate();
+  
+  const handleAdvancedSearchSubmit = async (params: SearchParams) => {
+    if (!user) {
+      setShowSignIn(true);
+      return;
+    }
+    
+    navigate("/music-finder");
   };
 
   return (
@@ -53,21 +129,33 @@ const HeroSection = () => {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+                disabled={isGenerating}
               />
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   className="border-white/10 hover:bg-white/5"
                   onClick={() => setShowAdvancedSearch(true)}
+                  disabled={isGenerating}
                 >
                   <Sliders className="h-4 w-4" />
                 </Button>
                 <Button 
                   className="bg-gold hover:bg-gold-dark text-black font-medium"
                   onClick={handleGenerate}
+                  disabled={isGenerating}
                 >
-                  Find Songs
-                  {user && <ArrowRight className="ml-2 h-4 w-4" />}
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      Find Songs
+                      {user && <ArrowRight className="ml-2 h-4 w-4" />}
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
