@@ -3,6 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { ViewToggle } from "./ViewToggle";
+import { SortControl, type SortOption } from "./SortControl";
+import { PlaylistModal } from "./PlaylistModal";
+import { ListView } from "./ListView";
 
 interface Playlist {
   id: string;
@@ -18,6 +23,12 @@ interface Playlist {
 }
 
 export function PlaylistList() {
+  const [view, setView] = useState<"grid" | "list">(() => 
+    localStorage.getItem("playlistView") as "grid" | "list" || "grid"
+  );
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+
   const { data: playlists, isLoading } = useQuery({
     queryKey: ["playlists"],
     queryFn: async () => {
@@ -28,6 +39,23 @@ export function PlaylistList() {
       
       if (error) throw error;
       return data as Playlist[];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("playlistView", view);
+  }, [view]);
+
+  const sortedPlaylists = playlists?.slice().sort((a, b) => {
+    switch (sortBy) {
+      case "oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "name-asc":
+        return a.name.localeCompare(b.name);
+      case "name-desc":
+        return b.name.localeCompare(a.name);
+      default: // newest
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }
   });
 
@@ -47,24 +75,48 @@ export function PlaylistList() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {playlists?.map((playlist) => (
-        <Card key={playlist.id} className="neo-card group hover:border-gold/20 transition-colors">
-          <CardHeader>
-            <CardTitle className="text-xl group-hover:text-gold transition-colors">
-              {playlist.name}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(playlist.created_at), "MMM d, yyyy 'at' h:mm a")}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-white/60 line-clamp-2">
-              {playlist.prompt}
-            </p>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <SortControl value={sortBy} onValueChange={setSortBy} />
+        <ViewToggle view={view} onViewChange={setView} />
+      </div>
+
+      {view === "grid" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sortedPlaylists?.map((playlist) => (
+            <Card 
+              key={playlist.id} 
+              className="neo-card group hover:border-gold/20 transition-colors cursor-pointer"
+              onClick={() => setSelectedPlaylist(playlist)}
+            >
+              <CardHeader>
+                <CardTitle className="text-xl group-hover:text-gold transition-colors">
+                  {playlist.name}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {format(new Date(playlist.created_at), "MMM d, yyyy 'at' h:mm a")}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-white/60 line-clamp-2">
+                  {playlist.prompt}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <ListView 
+          playlists={sortedPlaylists || []} 
+          onPlaylistClick={setSelectedPlaylist} 
+        />
+      )}
+
+      <PlaylistModal 
+        playlist={selectedPlaylist}
+        isOpen={!!selectedPlaylist}
+        onClose={() => setSelectedPlaylist(null)}
+      />
     </div>
   );
 }
