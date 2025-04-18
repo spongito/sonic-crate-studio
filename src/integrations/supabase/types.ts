@@ -197,6 +197,7 @@ export type Database = {
           danceability: number | null
           energy: number | null
           external_url: string
+          genre: string[] | null
           id: string
           image_url: string | null
           instrumentalness: number | null
@@ -204,6 +205,7 @@ export type Database = {
           platform: Database["public"]["Enums"]["platform_type"]
           popularity: number | null
           preview_url: string | null
+          release_year: number | null
           spotify_id: string | null
           title: string
           updated_at: string
@@ -218,6 +220,7 @@ export type Database = {
           danceability?: number | null
           energy?: number | null
           external_url: string
+          genre?: string[] | null
           id?: string
           image_url?: string | null
           instrumentalness?: number | null
@@ -225,6 +228,7 @@ export type Database = {
           platform?: Database["public"]["Enums"]["platform_type"]
           popularity?: number | null
           preview_url?: string | null
+          release_year?: number | null
           spotify_id?: string | null
           title: string
           updated_at?: string
@@ -239,6 +243,7 @@ export type Database = {
           danceability?: number | null
           energy?: number | null
           external_url?: string
+          genre?: string[] | null
           id?: string
           image_url?: string | null
           instrumentalness?: number | null
@@ -246,6 +251,7 @@ export type Database = {
           platform?: Database["public"]["Enums"]["platform_type"]
           popularity?: number | null
           preview_url?: string | null
+          release_year?: number | null
           spotify_id?: string | null
           title?: string
           updated_at?: string

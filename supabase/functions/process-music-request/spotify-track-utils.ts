@@ -81,6 +81,11 @@ export function formatSpotifyTrack(track: any) {
     return null;
   }
   
+  // Extract year from release_date
+  const releaseYear = track.album.release_date 
+    ? parseInt(track.album.release_date.split('-')[0])
+    : null;
+
   return {
     id: track.id,
     spotify_id: track.id,
@@ -97,6 +102,8 @@ export function formatSpotifyTrack(track: any) {
     duration_ms: track.duration_ms,
     duration: msToMinutesAndSeconds(track.duration_ms),
     platform: 'spotify',
+    release_year: releaseYear,
+    genre: [], // Will be populated by enrichment process
     release_date: track.album.release_date || null
   };
 }
