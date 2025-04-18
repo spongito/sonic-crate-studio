@@ -15,8 +15,7 @@ export {
 export {
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
-  type SidebarMenuButtonProps
+  SidebarMenuButton
 } from "./sidebar-menu"
 
 // Export context and hooks
@@ -24,5 +23,4 @@ export { useSidebar } from "./sidebar-context"
 export { SidebarProvider } from "./sidebar-provider"
 
 // Export types
-export type { SidebarContext } from "./types"
-
+export type { SidebarContext, SidebarMenuButtonProps } from "./types"
