@@ -101,7 +101,7 @@ export function TrackTable({ tracks, onSortColumn, sortConfig }: TrackTableProps
             </TableCell>
             <TableCell className="hidden md:table-cell">
               <Badge variant="outline" className="bg-white/5">
-                {track.audio_features?.key_signature ?? "—"}
+                {formatKeySignature(track.audio_features?.key, track.audio_features?.mode) ?? "—"}
               </Badge>
             </TableCell>
             <TableCell className="hidden md:table-cell">
@@ -125,4 +125,15 @@ function getMatchScoreColor(score: number): string {
   if (score >= 90) return "bg-green-500/20 text-green-300";
   if (score >= 75) return "bg-gold/20 text-gold";
   return "bg-white/10";
+}
+
+function formatKeySignature(key?: number, mode?: number): string {
+  if (key === undefined || mode === undefined || key < 0 || key > 11) {
+    return "—";
+  }
+  
+  const keys = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+  const modes = ["Minor", "Major"];
+  
+  return `${keys[key]} ${modes[mode]}`;
 }
