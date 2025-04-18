@@ -1,56 +1,63 @@
 
+import { formatSpotifyTrack } from './spotify-track-utils.ts';
+
 export async function getArtistTopTracks(artistIds: string[], token: string) {
   try {
     const allTracks = [];
     
     for (const artistId of artistIds) {
-      const response = await fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const response = await fetch(
+        `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         }
-      });
+      );
       
       if (!response.ok) {
-        console.error(`Spotify top tracks error: ${response.status}`);
+        console.error(`Spotify API error for artist ${artistId}: ${response.status}`);
         continue;
       }
       
       const data = await response.json();
-      
-      if (data.tracks && data.tracks.length > 0) {
-        allTracks.push(...data.tracks.map(formatSpotifyTrack));
+      if (data.tracks && Array.isArray(data.tracks)) {
+        const formattedTracks = data.tracks.map(track => formatSpotifyTrack(track)).filter(Boolean);
+        allTracks.push(...formattedTracks);
       }
     }
     
     return allTracks;
   } catch (error) {
-    console.error("Error getting artist top tracks:", error);
+    console.error("Error fetching artist top tracks:", error);
     return [];
   }
 }
 
 export async function getRelatedArtists(artistId: string, token: string) {
   try {
-    const response = await fetch(`https://api.spotify.com/v1/artists/${artistId}/related-artists`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+    const response = await fetch(
+      `https://api.spotify.com/v1/artists/${artistId}/related-artists`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       }
-    });
+    );
     
     if (!response.ok) {
-      console.error(`Spotify related artists error: ${response.status}`);
+      console.error(`Spotify API error for related artists: ${response.status}`);
       return [];
     }
     
     const data = await response.json();
-    
-    if (data.artists && data.artists.length > 0) {
-      return data.artists.slice(0, 3).map(artist => artist.id);
+    if (!data.artists || !Array.isArray(data.artists)) {
+      return [];
     }
     
-    return [];
+    return data.artists.map(artist => artist.id);
   } catch (error) {
-    console.error("Error getting related artists:", error);
+    console.error("Error fetching related artists:", error);
     return [];
   }
 }

@@ -17,6 +17,11 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       artist: Array.isArray(track.artist) ? track.artist : [track.artist]
     });
     
+    if (!track.spotify_id) {
+      console.error('Cannot save track without spotify_id:', track);
+      return null;
+    }
+    
     // Check if track already exists
     const { data: existingTrack, error: checkError } = await supabase
       .from('tracks_master')
@@ -34,6 +39,24 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       return existingTrack.id;
     }
     
+    // Extract BPM and key from audio features if available
+    let bpm = null;
+    let keySignature = null;
+    
+    if (audioFeatures) {
+      if (audioFeatures.tempo) {
+        bpm = Math.round(audioFeatures.tempo);
+      } else if (track.audio_features?.bpm) {
+        bpm = track.audio_features.bpm;
+      }
+      
+      if (audioFeatures.key !== undefined && audioFeatures.mode !== undefined) {
+        keySignature = formatKey(audioFeatures.key, audioFeatures.mode);
+      } else if (track.audio_features?.key !== undefined && track.audio_features?.mode !== undefined) {
+        keySignature = formatKey(track.audio_features.key, track.audio_features.mode);
+      }
+    }
+    
     // Prepare data for insertion
     const trackData = {
       spotify_id: track.spotify_id,
@@ -45,15 +68,16 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       external_url: track.external_url,
       preview_url: track.preview_url,
       popularity: track.popularity,
-      bpm: audioFeatures?.tempo ? Math.round(audioFeatures.tempo) : null,
-      key_signature: audioFeatures?.key !== undefined ? 
-        formatKey(audioFeatures.key, audioFeatures.mode) : null,
-      energy: audioFeatures?.energy,
-      danceability: audioFeatures?.danceability,
-      valence: audioFeatures?.valence,
-      instrumentalness: audioFeatures?.instrumentalness,
-      acousticness: audioFeatures?.acousticness
+      bpm: bpm,
+      key_signature: keySignature,
+      energy: audioFeatures?.energy || track.audio_features?.energy,
+      danceability: audioFeatures?.danceability || track.audio_features?.danceability,
+      valence: audioFeatures?.valence || track.audio_features?.valence,
+      instrumentalness: audioFeatures?.instrumentalness || track.audio_features?.instrumentalness,
+      acousticness: audioFeatures?.acousticness || track.audio_features?.acousticness
     };
+
+    console.log('Track data prepared for insertion:', trackData);
 
     // Insert new track with audio features
     const { data: newTrack, error } = await supabase
