@@ -6,15 +6,17 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import BackgroundCells from "@/components/ui/background-cells";
 import { SearchDialog, SearchParams } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
+import { SignInDialog } from "@/components/auth/SignInDialog";
 
 const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const { signInWithSpotify, user } = useAuth();
+  const [showSignIn, setShowSignIn] = useState(false);
+  const { user } = useAuth();
 
   const handleGenerate = () => {
     if (!user) {
-      signInWithSpotify();
+      setShowSignIn(true);
       return;
     }
     window.location.href = "/dashboard";
@@ -59,7 +61,7 @@ const HeroSection = () => {
                 className="bg-gold hover:bg-gold-dark text-black font-medium"
                 onClick={handleGenerate}
               >
-                {user ? "Generate Playlist" : "Sign in with Spotify"}
+                Find Songs
                 {user && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
@@ -74,6 +76,11 @@ const HeroSection = () => {
         open={showAdvancedSearch}
         onOpenChange={setShowAdvancedSearch}
         onSubmit={handleAdvancedSearchSubmit}
+      />
+
+      <SignInDialog 
+        open={showSignIn} 
+        onOpenChange={setShowSignIn}
       />
     </BackgroundCells>
   );
