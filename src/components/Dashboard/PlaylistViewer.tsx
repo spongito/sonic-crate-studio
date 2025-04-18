@@ -1,14 +1,19 @@
-
+import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Info, Music, Save } from "lucide-react";
+import { Info, Music, Save, Globe2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { usePlaylistOperations } from "@/hooks/use-playlist-operations";
+import { Switch } from "@/components/ui/switch";
 
 interface PlaylistViewerProps {
   playlistData?: any;
 }
 
 const PlaylistViewer = ({ playlistData }: PlaylistViewerProps) => {
+  const { savePlaylist, isSaving } = usePlaylistOperations();
+  const [isPublic, setIsPublic] = useState(false);
+
   if (!playlistData || !playlistData.tracks) {
     return (
       <div className="glass-morphism rounded-xl p-6 space-y-4">
@@ -21,14 +26,34 @@ const PlaylistViewer = ({ playlistData }: PlaylistViewerProps) => {
     );
   }
 
+  const handleSave = async () => {
+    await savePlaylist(playlistData, isPublic);
+  };
+
   return (
     <div className="glass-morphism rounded-xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gradient">{playlistData.name || "Your Playlist"}</h2>
-        <Button variant="outline" size="sm">
-          <Save className="mr-2 h-4 w-4" />
-          Save Playlist
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+              className="data-[state=checked]:bg-gold"
+            />
+            <Globe2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Public</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isSaving ? "Saving..." : "Save Playlist"}
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg overflow-hidden border border-white/10">

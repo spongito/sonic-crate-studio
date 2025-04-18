@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -55,6 +54,11 @@ const MusicFinder = () => {
       return;
     }
     
+    if (!user) {
+      toast.error("Please sign in to generate playlists");
+      return;
+    }
+    
     if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
       toast.info("This is a Premium feature. Upgrade to continue.");
       return;
@@ -66,7 +70,6 @@ const MusicFinder = () => {
       addDebugLog(`Starting generation with prompt: "${prompt}"`);
       addDebugLog(`Using advanced params: ${JSON.stringify(advancedParams)}`);
       
-      // Call process-music-request function directly
       addDebugLog("Calling process-music-request function...");
       const { data: processedData, error } = await supabase.functions
         .invoke('process-music-request', {
@@ -80,7 +83,6 @@ const MusicFinder = () => {
         console.error("Processing error details:", error);
         addDebugLog(`Error: ${error.message}`);
         
-        // Show a more friendly message for API quota errors
         if (error.message.includes("non-2xx status code") || 
             (processedData && processedData.error && processedData.error.includes("quota"))) {
           toast.error("We're experiencing high demand. Using simplified playlist generation.");
@@ -90,7 +92,6 @@ const MusicFinder = () => {
         }
       }
       
-      // Check if we got a response with error details from the function
       if (processedData && processedData.error) {
         addDebugLog(`Function error: ${processedData.error}`);
         if (processedData.error.includes("quota")) {
@@ -116,12 +117,10 @@ const MusicFinder = () => {
         addDebugLog(`Detected intent: ${JSON.stringify(processedData.intent, null, 2)}`);
       }
 
-      // Check if we got no tracks
       if (!processedData.tracks || processedData.tracks.length === 0) {
         throw new Error("No tracks found matching your criteria. Please try with different parameters.");
       }
       
-      // Save the playlist to the database
       addDebugLog("Saving playlist to database...");
       const { error: insertError } = await supabase
         .from("playlists")
@@ -163,7 +162,7 @@ const MusicFinder = () => {
       console.error("Generation error:", error);
       addDebugLog(`Critical error: ${error.message}`);
       toast.error(error.message || "Failed to generate playlist. Please try again with a different prompt.");
-      setShowDebug(true); // Automatically show debug panel on error
+      setShowDebug(true);
     } finally {
       setIsGenerating(false);
     }
@@ -223,7 +222,6 @@ const MusicFinder = () => {
               </div>
             )}
             
-            {/* Debug Panel */}
             <Collapsible 
               open={showDebug} 
               onOpenChange={setShowDebug}
