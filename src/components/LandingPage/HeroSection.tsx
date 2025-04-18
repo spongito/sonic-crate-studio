@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import BackgroundCells from "@/components/ui/background-cells";
 
 const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
@@ -20,8 +21,8 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-24 pb-12">
-      <div className="animate-fade-in max-w-4xl w-full text-center space-y-6">
+    <BackgroundCells className="min-h-screen">
+      <div className="animate-fade-in max-w-4xl w-full text-center space-y-6 pt-24">
         <div className="h-24 w-24 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark animate-pulse-gold mb-4"></div>
         
         <h1 className="text-gradient text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight">
@@ -54,7 +55,7 @@ const HeroSection = () => {
           </p>
         </div>
       </div>
-    </section>
+    </BackgroundCells>
   );
 };
 
