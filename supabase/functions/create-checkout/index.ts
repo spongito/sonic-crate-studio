@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@12.0.0";
@@ -15,6 +14,9 @@ serve(async (req) => {
   }
 
   try {
+    // Log the environment variables for debugging
+    console.log("Stripe Secret Key:", Deno.env.get("STRIPE_SECRET_KEY") ? "✓ Present" : "✗ Missing");
+    
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
@@ -26,6 +28,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.log("No authorization header");
       return new Response(JSON.stringify({ error: "No authorization header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -35,6 +38,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData.user) {
+      console.log("Invalid user token:", userError);
       return new Response(JSON.stringify({ error: "Invalid user token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -108,6 +112,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    console.error("Checkout Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
