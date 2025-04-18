@@ -55,7 +55,8 @@ const Dashboard = () => {
       
       // Update playlist generation count in database
       if (!subscription?.is_premium) {
-        await supabase.rpc('increment_playlist_count');
+        // Fix: Pass params as an object with empty parameters object
+        await supabase.rpc('increment_playlist_count', {});
         await checkSubscription();
       }
       
