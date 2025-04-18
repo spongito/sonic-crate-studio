@@ -61,10 +61,6 @@ const MusicFinder = () => {
           body: { 
             prompt,
             advancedParams
-          },
-          // Adding timeout for longer processing time
-          options: {
-            timeout: 60000 // 60 seconds timeout
           }
         });
       
