@@ -11,6 +11,10 @@ interface Playlist {
   description?: string;
   created_at: string;
   results: any[];
+  user_id: string;
+  is_public: boolean;
+  updated_at: string;
+  genres: string[];
 }
 
 export function PlaylistList() {

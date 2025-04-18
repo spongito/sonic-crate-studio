@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -41,7 +42,10 @@ const MusicFinder = () => {
           name: format(new Date(), "MMM d - h:mm a"),
           prompt: prompt,
           description: "", // Optional description
-          results: [] // Placeholder for now
+          results: [], // Placeholder for now
+          user_id: subscription?.user_id || '', // Add user_id
+          is_public: true,
+          genres: [] // Add empty genres array
         });
 
       if (insertError) throw insertError;
