@@ -259,6 +259,10 @@ export function PlaylistModal({ playlist, isOpen, onClose, onDelete }: PlaylistM
                         size="icon" 
                         className="h-6 w-6 opacity-70 group-hover:opacity-100"
                         title="Open in Spotify"
+                        as="a"
+                        href={`https://open.spotify.com/track/${track.spotify_id.split(':').pop()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         <ExternalLink className="h-3 w-3" />
                       </Button>

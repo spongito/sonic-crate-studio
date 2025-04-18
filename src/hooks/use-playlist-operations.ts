@@ -19,12 +19,32 @@ export const usePlaylistOperations = () => {
       setIsSaving(true);
       const name = format(new Date(), "MMM d - h:mm a");
       
+      // Ensure all tracks have the required metadata fields
+      const processedTracks = playlistData.tracks.map((track: any) => ({
+        ...track,
+        // Normalize field names
+        title: track.title || track.name || "Unknown Track",
+        artist: track.artist || "Unknown Artist",
+        album: track.album || "Unknown Album",
+        spotify_id: track.spotify_id || track.id,
+        match_score: track.match_score || track.score || 100,
+        platform: track.platform || "spotify",
+        platform_url: track.external_url || track.platform_url || `https://open.spotify.com/track/${(track.spotify_id || '').split(':').pop()}`,
+        cover_url: track.image || track.cover_url || "",
+        // Preserve audio features if present
+        audio_features: track.audio_features || {
+          bpm: undefined,
+          key: undefined,
+          mode: undefined
+        }
+      }));
+      
       const { error } = await supabase.from("playlists").insert({
         name,
         user_id: user.id,
         prompt: playlistData.intent?.original_prompt || "",
         description: playlistData.intent?.description || "",
-        results: playlistData.tracks || [],
+        results: processedTracks,
         genres: playlistData.intent?.genre ? [playlistData.intent.genre] : [],
         settings: {
           ...playlistData.intent,

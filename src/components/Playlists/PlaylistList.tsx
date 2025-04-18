@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,9 @@ interface Track {
     key?: number;
     mode?: number;
   };
+  platform?: string;
+  platform_url?: string;
+  cover_url?: string;
 }
 
 interface Playlist {
@@ -34,6 +38,8 @@ interface Playlist {
   is_public: boolean;
   updated_at: string;
   genres: string[];
+  settings?: any;
+  tags?: string[];
 }
 
 export function PlaylistList() {
@@ -53,14 +59,26 @@ export function PlaylistList() {
       
       if (error) throw error;
       
-      // Enhance playlist results with spotify_id and match_score
+      // Process and enhance playlist results
       return data.map((playlist: any) => ({
         ...playlist,
-        results: playlist.results.map((track: any, index: number) => ({
+        results: (playlist.results || []).map((track: any, index: number) => ({
           ...track,
-          spotify_id: track.spotify_id || `spotify:track:${Math.random().toString(36).substring(2, 15)}`,
-          match_score: track.match_score || Math.floor(Math.random() * 20) + 80, // Random score between 80-100
-          album: track.album || "Unknown Album"
+          // Ensure all required fields are present
+          title: track.title || track.name || "Unknown Track",
+          artist: track.artist || "Unknown Artist",
+          album: track.album || "Unknown Album",
+          spotify_id: track.spotify_id || track.id || `spotify:track:${Math.random().toString(36).substring(2, 15)}`,
+          match_score: track.match_score || track.score || Math.floor(Math.random() * 20) + 80,
+          platform: track.platform || "spotify",
+          platform_url: track.external_url || track.platform_url || `https://open.spotify.com/track/${(track.spotify_id || '').split(':').pop()}`,
+          cover_url: track.image || track.cover_url || "",
+          audio_features: track.audio_features || {
+            // We'll fetch these later, but provide placeholder structure
+            bpm: undefined,
+            key: undefined,
+            mode: undefined
+          }
         }))
       })) as Playlist[];
     }

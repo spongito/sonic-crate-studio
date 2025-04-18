@@ -16,6 +16,9 @@ interface Track {
     key?: number;
     mode?: number;
   };
+  platform?: string;
+  platform_url?: string;
+  cover_url?: string;
 }
 
 interface Playlist {

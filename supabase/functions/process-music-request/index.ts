@@ -37,11 +37,15 @@ serve(async (req) => {
       throw new Error("No tracks found matching your criteria");
     }
     
+    // Get audio features for the tracks
+    const tracksWithFeatures = await enrichTracksWithAudioFeatures(spotifyTracks.slice(0, 20));
+    
     // Create a simple playlist without GPT
     const fallbackPlaylist = {
-      tracks: spotifyTracks.slice(0, 20).map((track, index) => ({
+      tracks: tracksWithFeatures.map((track, index) => ({
         ...track,
         score: 100 - index * 3, // Simple decreasing score based on search relevance
+        match_score: 100 - index * 3, // Add match_score for consistency
         reasoning: "Selected based on search relevance to your query",
         position: index + 1
       })),
@@ -207,19 +211,105 @@ async function searchSpotifyDirectly(query, advancedParams) {
     
     return data.tracks.items.map((track) => ({
       id: track.id,
+      spotify_id: track.id,
+      title: track.name,
       name: track.name,
       artist: track.artists.map((artist) => artist.name).join(', '),
       album: track.album.name,
       image: track.album.images[0]?.url || '',
+      cover_url: track.album.images[0]?.url || '',
       preview_url: track.preview_url,
       external_url: track.external_urls.spotify,
+      platform_url: track.external_urls.spotify,
       popularity: track.popularity,
+      duration_ms: track.duration_ms,
+      duration: msToMinutesAndSeconds(track.duration_ms),
       platform: 'spotify',
       release_date: track.album.release_date || null
     }));
   } catch (error) {
     console.error("Spotify direct search error:", error);
     throw new Error("Failed to search Spotify directly: " + error.message);
+  }
+}
+
+// Function to convert MS to MM:SS format
+function msToMinutesAndSeconds(ms) {
+  const minutes = Math.floor(ms / 60000);
+  const seconds = ((ms % 60000) / 1000).toFixed(0);
+  return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}
+
+// Function to get audio features for tracks
+async function enrichTracksWithAudioFeatures(tracks) {
+  if (tracks.length === 0) return tracks;
+  
+  try {
+    const token = await getSpotifyToken();
+    
+    // Get all track IDs
+    const trackIds = tracks.map(track => track.id);
+    
+    // Split into chunks of 100 (Spotify API limit)
+    const chunkSize = 100;
+    const trackIdChunks = [];
+    
+    for (let i = 0; i < trackIds.length; i += chunkSize) {
+      trackIdChunks.push(trackIds.slice(i, i + chunkSize));
+    }
+    
+    // Fetch audio features for each chunk
+    const featuresPromises = trackIdChunks.map(async (chunk) => {
+      const response = await fetch(`https://api.spotify.com/v1/audio-features?ids=${chunk.join(',')}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Spotify API error: ${response.status}`);
+      }
+      
+      return response.json();
+    });
+    
+    const featuresResponses = await Promise.all(featuresPromises);
+    
+    // Flatten all responses into one array of audio features
+    let allAudioFeatures = [];
+    featuresResponses.forEach(res => {
+      if (res && res.audio_features) {
+        allAudioFeatures = [...allAudioFeatures, ...res.audio_features];
+      }
+    });
+    
+    // Match audio features with tracks
+    return tracks.map(track => {
+      const features = allAudioFeatures.find(item => item && item.id === track.id);
+      
+      if (features) {
+        return {
+          ...track,
+          audio_features: {
+            bpm: Math.round(features.tempo),
+            key: features.key,
+            mode: features.mode,
+            time_signature: features.time_signature,
+            energy: features.energy,
+            valence: features.valence,
+            danceability: features.danceability,
+            acousticness: features.acousticness,
+            instrumentalness: features.instrumentalness
+          }
+        };
+      }
+      
+      return track;
+    });
+  } catch (error) {
+    console.error("Error fetching audio features:", error);
+    // Return original tracks if audio features fetch fails
+    return tracks;
   }
 }
 
