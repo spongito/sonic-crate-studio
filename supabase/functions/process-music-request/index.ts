@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -20,27 +19,113 @@ serve(async (req) => {
   try {
     const { prompt, advancedParams } = await req.json();
     
-    // Step 1: Process the user's request with GPT-4o
-    const processedIntent = await processWithGPT(prompt, advancedParams);
-    
-    // Step 2: Query music APIs with the processed intent
-    const spotifyTracks = await searchSpotify(processedIntent);
-    
-    // Step 3: Post-process with GPT to create the final playlist
-    const finalPlaylist = await createPlaylistWithGPT(processedIntent, spotifyTracks);
-    
-    return new Response(JSON.stringify(finalPlaylist), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    try {
+      // Step 1: Process the user's request with GPT-4o
+      const processedIntent = await processWithGPT(prompt, advancedParams);
+      
+      // Step 2: Query music APIs with the processed intent
+      const spotifyTracks = await searchSpotify(processedIntent);
+      
+      // Step 3: Post-process with GPT to create the final playlist
+      const finalPlaylist = await createPlaylistWithGPT(processedIntent, spotifyTracks);
+      
+      return new Response(JSON.stringify(finalPlaylist), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } catch (error) {
+      // Check if this is an OpenAI quota error
+      if (error.message && error.message.includes("insufficient_quota")) {
+        console.error("OpenAI API quota exceeded:", error);
+        
+        // Create a simple fallback playlist without the GPT processing
+        const simpleIntent = createSimpleIntent(prompt, advancedParams);
+        const spotifyTracks = await searchSpotifyDirectly(prompt, advancedParams);
+        
+        const fallbackPlaylist = {
+          tracks: spotifyTracks.slice(0, 20).map((track, index) => ({
+            ...track,
+            score: 100 - index * 3, // Simple decreasing score based on search relevance
+            reasoning: "Selected based on search relevance to your query",
+            position: index + 1
+          })),
+          intent: simpleIntent,
+          created_at: new Date().toISOString(),
+          name: `Playlist - ${new Date().toLocaleDateString()}`
+        };
+        
+        return new Response(JSON.stringify(fallbackPlaylist), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
+      // Other errors
+      throw error;
+    }
   } catch (error) {
     console.error("Error processing music request:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: error.toString(),
+      type: error.name || "Unknown error type"
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
   }
 });
+
+// Create a simple intent object without using GPT
+function createSimpleIntent(prompt, advancedParams) {
+  return {
+    original_prompt: prompt,
+    advanced_params: advancedParams,
+    genre: advancedParams.genre || extractGenre(prompt),
+    mood: extractMood(prompt),
+    energy: advancedParams.commercialFactor > 50 ? "high" : "medium",
+    reference_artists: advancedParams.referenceArtists ? advancedParams.referenceArtists.split(',').map(a => a.trim()) : []
+  };
+}
+
+// Basic genre extraction from prompt
+function extractGenre(prompt) {
+  const commonGenres = [
+    "rock", "pop", "hip hop", "rap", "jazz", "blues", "country", "r&b", "soul",
+    "electronic", "dance", "techno", "house", "ambient", "classical", "folk",
+    "reggae", "metal", "punk", "indie", "alternative", "disco", "funk"
+  ];
+  
+  const promptLower = prompt.toLowerCase();
+  for (const genre of commonGenres) {
+    if (promptLower.includes(genre)) {
+      return genre;
+    }
+  }
+  return "";
+}
+
+// Basic mood extraction from prompt
+function extractMood(prompt) {
+  const moodMap = {
+    happy: ["happy", "upbeat", "cheerful", "joyful", "uplifting"],
+    sad: ["sad", "melancholy", "somber", "depressing", "gloomy"],
+    calm: ["calm", "peaceful", "relaxing", "chill", "soothing"],
+    energetic: ["energetic", "lively", "dynamic", "excited", "pumped"],
+    romantic: ["romantic", "love", "sensual", "intimate"],
+    angry: ["angry", "aggressive", "intense", "rage", "furious"]
+  };
+  
+  const promptLower = prompt.toLowerCase();
+  for (const [mood, keywords] of Object.entries(moodMap)) {
+    for (const keyword of keywords) {
+      if (promptLower.includes(keyword)) {
+        return mood;
+      }
+    }
+  }
+  return "neutral";
+}
 
 async function processWithGPT(prompt: string, advancedParams: any) {
   try {
@@ -71,6 +156,14 @@ async function processWithGPT(prompt: string, advancedParams: any) {
     // Check if the response is ok
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Check if this is a quota error
+      if (errorText.includes("insufficient_quota")) {
+        const error = new Error("OpenAI API quota exceeded");
+        error.name = "InsufficientQuotaError";
+        throw error;
+      }
+      
       throw new Error(`GPT API error: ${response.status} - ${errorText}`);
     }
 
@@ -91,7 +184,7 @@ async function processWithGPT(prompt: string, advancedParams: any) {
     };
   } catch (error) {
     console.error("GPT processing error:", error);
-    throw new Error("Failed to process request with GPT");
+    throw error;
   }
 }
 
@@ -116,6 +209,65 @@ async function getSpotifyToken() {
   } catch (error) {
     console.error("Spotify token error:", error);
     throw new Error("Failed to get Spotify access token");
+  }
+}
+
+// Direct Spotify search with query
+async function searchSpotifyDirectly(query: string, advancedParams: any) {
+  try {
+    const token = await getSpotifyToken();
+    const searchParams = new URLSearchParams();
+    
+    let searchQuery = query;
+    if (advancedParams.genre) {
+      searchQuery += ` genre:${advancedParams.genre}`;
+    }
+    if (advancedParams.referenceArtists) {
+      searchQuery += ` ${advancedParams.referenceArtists}`;
+    }
+    
+    searchParams.append('q', searchQuery.trim());
+    searchParams.append('type', 'track');
+    searchParams.append('limit', '30');
+    
+    console.log("Direct Spotify search query:", searchQuery);
+    
+    const response = await fetch(`https://api.spotify.com/v1/search?${searchParams.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Spotify API error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error("Spotify API error:", data.error);
+      return [];
+    }
+    
+    if (!data.tracks || !data.tracks.items) {
+      return [];
+    }
+    
+    return data.tracks.items.map((track: any) => ({
+      id: track.id,
+      name: track.name,
+      artist: track.artists.map((artist: any) => artist.name).join(', '),
+      album: track.album.name,
+      image: track.album.images[0]?.url || '',
+      preview_url: track.preview_url,
+      external_url: track.external_urls.spotify,
+      popularity: track.popularity,
+      platform: 'spotify'
+    }));
+  } catch (error) {
+    console.error("Spotify direct search error:", error);
+    throw new Error("Failed to search Spotify directly");
   }
 }
 
@@ -235,6 +387,13 @@ async function createPlaylistWithGPT(processedIntent: any, tracks: any[]) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Check if this is a quota error
+      if (errorText.includes("insufficient_quota")) {
+        // Instead of throwing, create a simplified playlist without the GPT ranking
+        return createSimplePlaylist(processedIntent, tracks);
+      }
+      
       throw new Error(`GPT API error: ${response.status} - ${errorText}`);
     }
 
@@ -243,7 +402,9 @@ async function createPlaylistWithGPT(processedIntent: any, tracks: any[]) {
     // Check if the expected fields exist before accessing them
     if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       console.error("Unexpected OpenAI API response for playlist creation:", JSON.stringify(data));
-      throw new Error("Invalid response format from OpenAI API");
+      
+      // Use the fallback playlist creation instead
+      return createSimplePlaylist(processedIntent, tracks);
     }
     
     const processedPlaylist = JSON.parse(data.choices[0].message.content);
@@ -278,6 +439,27 @@ async function createPlaylistWithGPT(processedIntent: any, tracks: any[]) {
     };
   } catch (error) {
     console.error("Playlist creation error:", error);
-    throw new Error("Failed to create playlist");
+    
+    // Fallback to simplified playlist creation
+    return createSimplePlaylist(processedIntent, tracks);
   }
+}
+
+// Create a simplified playlist without GPT processing
+function createSimplePlaylist(processedIntent: any, tracks: any[]) {
+  const sortedTracks = [...tracks].sort((a, b) => b.popularity - a.popularity);
+  
+  const finalPlaylist = sortedTracks.slice(0, 20).map((track, index) => ({
+    ...track,
+    score: 100 - index * 3, // Simple decreasing score based on popularity
+    reasoning: `Selected based on popularity and relevance to your ${processedIntent.genre || 'request'}`,
+    position: index + 1
+  }));
+  
+  return {
+    tracks: finalPlaylist,
+    intent: processedIntent,
+    created_at: new Date().toISOString(),
+    name: `Playlist - ${new Date().toLocaleDateString()}`
+  };
 }

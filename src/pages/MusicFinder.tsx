@@ -61,10 +61,26 @@ const MusicFinder = () => {
           body: { 
             prompt,
             advancedParams
+          },
+          // Adding timeout for longer processing time
+          options: {
+            timeout: 60000 // 60 seconds timeout
           }
         });
       
-      if (processingError) throw processingError;
+      if (processingError) {
+        console.error("Processing error details:", processingError);
+        
+        if (processingError.message.includes("quota")) {
+          toast.error("AI processing quota exceeded. Using simplified playlist generation.");
+        } else {
+          throw processingError;
+        }
+      }
+      
+      if (!processedData || (!processedData.tracks && !processingError)) {
+        throw new Error("Failed to generate playlist data");
+      }
       
       // Step 2: Save the playlist to the database
       const { error: insertError } = await supabase
@@ -76,14 +92,17 @@ const MusicFinder = () => {
           results: processedData.tracks || [],
           user_id: user?.id || '',
           is_public: true,
-          genres: [advancedParams.genre],
+          genres: [advancedParams.genre].filter(Boolean),
           settings: {
             ...advancedParams,
             intent: processedData.intent
           }
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Database insertion error:", insertError);
+        toast.error("Playlist was generated but could not be saved.");
+      }
       
       setPlaylistData(processedData);
       
@@ -97,7 +116,7 @@ const MusicFinder = () => {
       
     } catch (error) {
       console.error("Generation error:", error);
-      toast.error("Failed to generate playlist. Please try again.");
+      toast.error("Failed to generate playlist. Please try again with a different prompt.");
     } finally {
       setIsGenerating(false);
     }
