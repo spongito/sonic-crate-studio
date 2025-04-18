@@ -5,10 +5,18 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { SignInDialog } from "@/components/auth/SignInDialog";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const { user, signInWithSpotify } = useAuth();
+
+  const handleOpenSignIn = (signup: boolean = false) => {
+    setIsSignUp(signup);
+    setShowSignIn(true);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-lg bg-background/80 border-b border-border">
@@ -26,8 +34,8 @@ const Navbar = () => {
             {!user ? (
               <>
                 <Button variant="ghost" onClick={signInWithSpotify}>Support</Button>
-                <Button variant="outline" onClick={signInWithSpotify}>Sign In</Button>
-                <Button onClick={signInWithSpotify}>Sign Up</Button>
+                <Button variant="outline" onClick={() => handleOpenSignIn(false)}>Sign In</Button>
+                <Button onClick={() => handleOpenSignIn(true)}>Sign Up</Button>
               </>
             ) : (
               <Link to="/dashboard">
@@ -53,8 +61,8 @@ const Navbar = () => {
             {!user ? (
               <>
                 <Button variant="ghost" onClick={signInWithSpotify}>Support</Button>
-                <Button variant="outline" className="my-2" onClick={signInWithSpotify}>Sign In</Button>
-                <Button className="mb-2" onClick={signInWithSpotify}>Sign Up</Button>
+                <Button variant="outline" className="my-2" onClick={() => handleOpenSignIn(false)}>Sign In</Button>
+                <Button className="mb-2" onClick={() => handleOpenSignIn(true)}>Sign Up</Button>
               </>
             ) : (
               <Link to="/dashboard">
@@ -67,6 +75,12 @@ const Navbar = () => {
           </div>
         </div>
       )}
+
+      <SignInDialog 
+        open={showSignIn} 
+        onOpenChange={setShowSignIn}
+        initialMode={isSignUp}
+      />
     </nav>
   );
 };

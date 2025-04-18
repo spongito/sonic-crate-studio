@@ -10,29 +10,36 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Music, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { icons } from 'lucide-react';
 
 interface SignInDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialMode?: boolean;
 }
 
-export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
+export const SignInDialog = ({ 
+  open, 
+  onOpenChange, 
+  initialMode = false 
+}: SignInDialogProps) => {
   const { signInWithSpotify, signInWithGoogle, signInWithEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(initialMode);
+
+  useEffect(() => {
+    if (open) {
+      setIsSignUp(initialMode);
+    }
+  }, [open, initialMode]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await signInWithEmail(email, password, isSignUp);
   };
-
-  // Use a more reliable icon that definitely exists in the library
-  const GoogleIcon = icons['Globe'] || icons['Globe'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
