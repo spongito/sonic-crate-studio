@@ -66,9 +66,9 @@ const MusicFinder = () => {
       addDebugLog(`Starting generation with prompt: "${prompt}"`);
       addDebugLog(`Using advanced params: ${JSON.stringify(advancedParams)}`);
       
-      // Step 1: Process with GPT and music APIs
+      // Call process-music-request function directly
       addDebugLog("Calling process-music-request function...");
-      const { data: processedData, error: processingError } = await supabase.functions
+      const { data: processedData, error } = await supabase.functions
         .invoke('process-music-request', {
           body: { 
             prompt,
@@ -76,15 +76,27 @@ const MusicFinder = () => {
           }
         });
       
-      if (processingError) {
-        console.error("Processing error details:", processingError);
-        addDebugLog(`Error: ${processingError.message}`);
+      if (error) {
+        console.error("Processing error details:", error);
+        addDebugLog(`Error: ${error.message}`);
         
-        if (processingError.message.includes("quota")) {
-          toast.error("AI processing quota exceeded. Using simplified playlist generation.");
-          addDebugLog("AI quota exceeded, falling back to simplified generation.");
+        // Show a more friendly message for API quota errors
+        if (error.message.includes("non-2xx status code") || 
+            (processedData && processedData.error && processedData.error.includes("quota"))) {
+          toast.error("We're experiencing high demand. Using simplified playlist generation.");
+          addDebugLog("Using simplified playlist generation due to API limitations.");
         } else {
-          throw processingError;
+          throw error;
+        }
+      }
+      
+      // Check if we got a response with error details from the function
+      if (processedData && processedData.error) {
+        addDebugLog(`Function error: ${processedData.error}`);
+        if (processedData.error.includes("quota")) {
+          toast.error("AI processing limited. Using simplified playlist generation.");
+        } else {
+          throw new Error(processedData.error);
         }
       }
       
@@ -93,7 +105,7 @@ const MusicFinder = () => {
         throw new Error("Failed to generate playlist data: No data returned");
       }
       
-      if (!processedData.tracks && !processingError) {
+      if (!processedData.tracks) {
         addDebugLog("Error: No tracks returned in the response");
         throw new Error("Failed to generate playlist data: No tracks found");
       }
@@ -109,7 +121,7 @@ const MusicFinder = () => {
         throw new Error("No tracks found matching your criteria. Please try with different parameters.");
       }
       
-      // Step 2: Save the playlist to the database
+      // Save the playlist to the database
       addDebugLog("Saving playlist to database...");
       const { error: insertError } = await supabase
         .from("playlists")

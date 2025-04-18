@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.increment-playlist-count]
 verify_jwt = true
+
+[functions.process-music-request]
+verify_jwt = true
