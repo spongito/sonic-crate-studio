@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -9,13 +10,9 @@ interface BackgroundCellsProps {
 
 export const BackgroundCells = ({ children, className }: BackgroundCellsProps) => {
   return (
-    <div className={cn("relative h-screen flex justify-center overflow-hidden", className)}>
+    <div className={cn("relative h-screen w-full overflow-hidden", className)}>
       <BackgroundCellCore />
-      {children && (
-        <div className="relative z-50 pointer-events-auto select-none">
-          {children}
-        </div>
-      )}
+      {children}
     </div>
   );
 };
@@ -39,9 +36,9 @@ const BackgroundCellCore = () => {
     <div
       ref={ref}
       onMouseMove={handleMouseMove}
-      className="h-full absolute inset-0 pointer-events-none"
+      className="absolute inset-0 w-full h-full pointer-events-none"
     >
-      <div className="absolute h-[20rem] inset-y-0 overflow-hidden">
+      <div className="absolute inset-0 h-full w-full overflow-hidden">
         <div className="absolute h-full w-full pointer-events-none -bottom-2 z-10 bg-background [mask-image:linear-gradient(to_bottom,transparent,black)]" />
         <div
           className="absolute inset-0 z-10 bg-transparent pointer-events-none"
