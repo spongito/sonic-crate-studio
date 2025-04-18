@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import DashboardCards from "@/components/Dashboard/DashboardCards";
@@ -9,9 +8,13 @@ import { ArrowRight } from "lucide-react";
 import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
 import ProfileCard from "@/components/Dashboard/ProfileCard";
 import UpgradeModal from "@/components/Dashboard/UpgradeModal";
+import { StatCard } from "@/components/Dashboard/StatCard";
+import { CurationStats } from "@/components/Dashboard/CurationStats";
+import { MusicPersonality } from "@/components/Dashboard/MusicPersonality";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const Dashboard = () => {
   const [prompt, setPrompt] = useState("");
@@ -19,10 +22,23 @@ const Dashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchParams] = useSearchParams();
-  const { subscription, checkSubscription } = useAuth();
+  const { subscription, checkSubscription, user } = useAuth();
+
+  const { data: userProfile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id
+  });
 
   useEffect(() => {
-    // Check for payment status from URL params
     const paymentSuccess = searchParams.get("payment_success");
     const paymentCanceled = searchParams.get("payment_canceled");
     
@@ -50,12 +66,9 @@ const Dashboard = () => {
     try {
       setIsGenerating(true);
       
-      // Simulating API call to GPT
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update playlist generation count in database
       if (!subscription?.is_premium) {
-        // Fix: Pass the function name as a string and use an empty object for parameters
         await supabase.functions.invoke('increment-playlist-count');
         await checkSubscription();
       }
@@ -74,15 +87,28 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          <StatCard title="Curation Activity">
+            <CurationStats
+              playlistsCount={userProfile?.playlists_generated || 0}
+              songsDiscovered={userProfile?.songs_discovered || 0}
+              minutesSpent={userProfile?.minutes_spent_digging || 0}
+              exportsCount={userProfile?.exports_count || 0}
+            />
+          </StatCard>
+          
+          <StatCard title="Your Music Personality">
+            <MusicPersonality
+              mostCommonGenre={userProfile?.most_common_genre || "Exploring"}
+              curatorStyle={userProfile?.curator_style || "Underground Head"}
+              averagePlaylistLength={12}
+              mostUsedPrompt={userProfile?.most_used_prompt}
+            />
+          </StatCard>
+        </div>
+
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-6">
-            <h1 className="text-4xl font-bold bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent">
-              Playlist Generator
-            </h1>
-            <p className="text-white/60">
-              Describe the mood, genre, or occasion and let our AI create the perfect playlist for you.
-            </p>
-            
             <div className="glass-morphism p-4 flex flex-col sm:flex-row gap-3 rounded-xl">
               <Input
                 placeholder="curate a soulful afrobeat set for golden hour"

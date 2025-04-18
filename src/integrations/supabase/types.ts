@@ -52,10 +52,16 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          curator_style: string | null
+          exports_count: number | null
           full_name: string | null
           id: string
           is_premium: boolean | null
+          minutes_spent_digging: number | null
+          most_common_genre: string | null
+          most_used_prompt: string | null
           playlists_generated: number
+          songs_discovered: number | null
           stripe_customer_id: string | null
           subscription_status: string
           updated_at: string
@@ -64,10 +70,16 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          curator_style?: string | null
+          exports_count?: number | null
           full_name?: string | null
           id: string
           is_premium?: boolean | null
+          minutes_spent_digging?: number | null
+          most_common_genre?: string | null
+          most_used_prompt?: string | null
           playlists_generated?: number
+          songs_discovered?: number | null
           stripe_customer_id?: string | null
           subscription_status?: string
           updated_at?: string
@@ -76,10 +88,16 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          curator_style?: string | null
+          exports_count?: number | null
           full_name?: string | null
           id?: string
           is_premium?: boolean | null
+          minutes_spent_digging?: number | null
+          most_common_genre?: string | null
+          most_used_prompt?: string | null
           playlists_generated?: number
+          songs_discovered?: number | null
           stripe_customer_id?: string | null
           subscription_status?: string
           updated_at?: string
@@ -119,7 +137,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_most_common_genre: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
