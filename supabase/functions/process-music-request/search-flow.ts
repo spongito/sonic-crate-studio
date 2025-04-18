@@ -1,5 +1,61 @@
 
 import { searchTracks, searchArtists, getArtistTopTracks, getRelatedArtists } from './spotify-client.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') || '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+);
+
+async function saveMasterTrack(track: any, audioFeatures: any) {
+  try {
+    // Check if track already exists
+    const { data: existingTrack } = await supabase
+      .from('tracks_master')
+      .select('id')
+      .eq('spotify_id', track.spotify_id)
+      .maybeSingle();
+
+    if (existingTrack) {
+      return existingTrack.id;
+    }
+
+    // Insert new track with audio features
+    const { data: newTrack, error } = await supabase
+      .from('tracks_master')
+      .insert({
+        spotify_id: track.spotify_id,
+        title: track.title || track.name,
+        artist: Array.isArray(track.artist) ? track.artist : [track.artist],
+        album: track.album,
+        image_url: track.image || track.cover_url,
+        platform: 'spotify',
+        external_url: track.external_url,
+        preview_url: track.preview_url,
+        popularity: track.popularity,
+        bpm: audioFeatures?.tempo ? Math.round(audioFeatures.tempo) : null,
+        key_signature: audioFeatures?.key !== undefined ? 
+          formatKey(audioFeatures.key, audioFeatures.mode) : null,
+        energy: audioFeatures?.energy,
+        danceability: audioFeatures?.danceability,
+        valence: audioFeatures?.valence,
+        instrumentalness: audioFeatures?.instrumentalness,
+        acousticness: audioFeatures?.acousticness
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error saving track to master database:', error);
+      return null;
+    }
+
+    return newTrack.id;
+  } catch (error) {
+    console.error('Error in saveMasterTrack:', error);
+    return null;
+  }
+}
 
 export async function executeSearchFlow(intent: any, token: string) {
   let allTracks = [];
@@ -60,6 +116,14 @@ export async function executeSearchFlow(intent: any, token: string) {
     }
     
     allTracks = combineAndDeduplicateTracks(allTracks);
+    
+    // Save tracks to master database
+    console.log('Saving tracks to master database...');
+    for (const track of allTracks) {
+      if (track.audio_features) {
+        await saveMasterTrack(track, track.audio_features);
+      }
+    }
     
     return { 
       tracks: allTracks,

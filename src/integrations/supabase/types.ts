@@ -9,6 +9,55 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      playlist_tracks: {
+        Row: {
+          created_at: string
+          id: string
+          match_score: number | null
+          playlist_id: string
+          position: number
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_score?: number | null
+          playlist_id: string
+          position: number
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_score?: number | null
+          playlist_id?: string
+          position?: number
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_tracks_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "trending_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlists: {
         Row: {
           created_at: string
@@ -138,18 +187,141 @@ export type Database = {
         }
         Relationships: []
       }
+      tracks_master: {
+        Row: {
+          acousticness: number | null
+          album: string
+          artist: string[]
+          bpm: number | null
+          created_at: string
+          danceability: number | null
+          energy: number | null
+          external_url: string
+          id: string
+          image_url: string | null
+          instrumentalness: number | null
+          key_signature: string | null
+          platform: Database["public"]["Enums"]["platform_type"]
+          popularity: number | null
+          preview_url: string | null
+          spotify_id: string | null
+          title: string
+          updated_at: string
+          valence: number | null
+        }
+        Insert: {
+          acousticness?: number | null
+          album: string
+          artist: string[]
+          bpm?: number | null
+          created_at?: string
+          danceability?: number | null
+          energy?: number | null
+          external_url: string
+          id?: string
+          image_url?: string | null
+          instrumentalness?: number | null
+          key_signature?: string | null
+          platform?: Database["public"]["Enums"]["platform_type"]
+          popularity?: number | null
+          preview_url?: string | null
+          spotify_id?: string | null
+          title: string
+          updated_at?: string
+          valence?: number | null
+        }
+        Update: {
+          acousticness?: number | null
+          album?: string
+          artist?: string[]
+          bpm?: number | null
+          created_at?: string
+          danceability?: number | null
+          energy?: number | null
+          external_url?: string
+          id?: string
+          image_url?: string | null
+          instrumentalness?: number | null
+          key_signature?: string | null
+          platform?: Database["public"]["Enums"]["platform_type"]
+          popularity?: number | null
+          preview_url?: string | null
+          spotify_id?: string | null
+          title?: string
+          updated_at?: string
+          valence?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      trending_tracks: {
+        Row: {
+          acousticness: number | null
+          album: string | null
+          artist: string[] | null
+          avg_match_score: number | null
+          bpm: number | null
+          created_at: string | null
+          danceability: number | null
+          energy: number | null
+          external_url: string | null
+          id: string | null
+          image_url: string | null
+          instrumentalness: number | null
+          key_signature: string | null
+          platform: Database["public"]["Enums"]["platform_type"] | null
+          playlist_count: number | null
+          popularity: number | null
+          preview_url: string | null
+          spotify_id: string | null
+          title: string | null
+          updated_at: string | null
+          valence: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_most_common_genre: {
         Args: { user_uuid: string }
         Returns: string
       }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      platform_type: "spotify" | "apple_music" | "youtube" | "audiomack"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -264,6 +436,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      platform_type: ["spotify", "apple_music", "youtube", "audiomack"],
+    },
   },
 } as const
