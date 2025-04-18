@@ -7,40 +7,53 @@ export async function executeSearchFlow(intent: any, token: string) {
   let seedArtists = [];
   
   try {
+    // Artist-based search
     if (intent.reference_artists && intent.reference_artists.length > 0) {
       const artistIds = await searchArtists(intent.reference_artists, token);
-      seedArtists = artistIds.slice(0, 2);
-      
-      const artistTracks = await getArtistTopTracks(artistIds.slice(0, 3), token);
-      allTracks.push(...artistTracks);
-      seedTracks = getSeedTracks(artistTracks, 3);
-      
-      const relatedArtistIds = await getRelatedArtists(artistIds[0], token);
-      if (relatedArtistIds.length > 0) {
-        const relatedTracks = await getArtistTopTracks(relatedArtistIds.slice(0, 2), token);
-        allTracks.push(...relatedTracks);
+      if (artistIds.length === 0) {
+        console.warn("No artists found for the given references");
+      } else {
+        seedArtists = artistIds.slice(0, 2);
+        
+        const artistTracks = await getArtistTopTracks(artistIds.slice(0, 3), token);
+        allTracks.push(...artistTracks);
+        seedTracks = getSeedTracks(artistTracks, 3);
+        
+        if (artistIds[0]) {
+          const relatedArtistIds = await getRelatedArtists(artistIds[0], token);
+          if (relatedArtistIds.length > 0) {
+            const relatedTracks = await getArtistTopTracks(relatedArtistIds.slice(0, 2), token);
+            allTracks.push(...relatedTracks);
+          }
+        }
       }
     }
     
+    // Text-based search
     let searchQuery = intent.original_prompt;
     if (intent.genre && intent.genre !== "any") {
       searchQuery += ` genre:${intent.genre}`;
     }
     
     const searchResults = await searchTracks(searchQuery, token, 30);
-    allTracks.push(...searchResults);
-    
-    if (seedTracks.length < 5) {
-      const additionalSeeds = getSeedTracks(searchResults, 5 - seedTracks.length);
-      seedTracks = [...seedTracks, ...additionalSeeds];
+    if (searchResults.length > 0) {
+      allTracks.push(...searchResults);
+      
+      if (seedTracks.length < 5) {
+        const additionalSeeds = getSeedTracks(searchResults, 5 - seedTracks.length);
+        seedTracks = [...seedTracks, ...additionalSeeds];
+      }
+    } else {
+      console.warn("No tracks found for main search query");
     }
     
+    // Fallback search if needed
     if (allTracks.length < 10) {
       const broadSearchQuery = intent.mood_tags.join(' ') + ' ' + (intent.genre || '');
       const broadSearchResults = await searchTracks(broadSearchQuery, token, 30);
       allTracks.push(...broadSearchResults);
       
-      if (seedTracks.length < 5) {
+      if (seedTracks.length < 5 && broadSearchResults.length > 0) {
         const additionalSeeds = getSeedTracks(broadSearchResults, 5 - seedTracks.length);
         seedTracks = [...seedTracks, ...additionalSeeds];
       }
@@ -55,7 +68,7 @@ export async function executeSearchFlow(intent: any, token: string) {
     };
   } catch (error) {
     console.error("Error in search flow:", error);
-    throw error;
+    throw new Error("Failed to execute search flow: " + error.message);
   }
 }
 
