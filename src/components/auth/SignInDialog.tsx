@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -30,7 +31,8 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
     await signInWithEmail(email, password, isSignUp);
   };
 
-  const GoogleIcon = icons['brand-google'] || icons['globe'];
+  // Use a more reliable icon that definitely exists in the library
+  const GoogleIcon = icons['Globe'] || icons['Globe'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,7 +61,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
                 className="w-full border-white/10 hover:bg-white/5"
                 onClick={signInWithGoogle}
               >
-                <GoogleIcon className="mr-2 h-4 w-4" />
+                <Mail className="mr-2 h-4 w-4" />
                 Continue with Google
               </Button>
             </div>
