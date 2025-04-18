@@ -89,7 +89,7 @@ export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettings
               <SelectValue placeholder="Select a genre" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              <SelectItem value="">Any Genre</SelectItem>
+              <SelectItem value="any">Any Genre</SelectItem>
               {genres.map((genre) => (
                 <SelectItem key={genre} value={genre.toLowerCase()}>
                   {genre}
