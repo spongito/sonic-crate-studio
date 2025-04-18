@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
@@ -26,6 +25,9 @@ interface Track {
     key?: number;
     mode?: number;
   };
+  platform?: string;
+  platform_url?: string;
+  cover_url?: string;
 }
 
 type SortKey = "number" | "title" | "artist" | "album" | "match" | "bpm" | "key";
@@ -254,18 +256,20 @@ export function PlaylistModal({ playlist, isOpen, onClose, onDelete }: PlaylistM
                   <TableCell className="hidden md:table-cell">{track.album || "—"}</TableCell>
                   <TableCell className="text-center">
                     {track.spotify_id && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 opacity-70 group-hover:opacity-100"
-                        title="Open in Spotify"
-                        as="a"
+                      <a 
                         href={`https://open.spotify.com/track/${track.spotify_id.split(':').pop()}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        title="Open in Spotify"
                       >
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 opacity-70 group-hover:opacity-100"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </a>
                     )}
                   </TableCell>
                   <TableCell>
