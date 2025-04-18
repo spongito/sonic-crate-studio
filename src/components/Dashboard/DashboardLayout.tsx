@@ -7,7 +7,8 @@ import {
   Users, 
   User, 
   Settings, 
-  LogOut 
+  LogOut,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -21,12 +22,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { signOut, subscription } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#0B0B0B]">
       {/* Sidebar navigation */}
-      <aside className="w-full md:w-64 bg-sidebar border-r border-sidebar-border">
-        <div className="p-4 flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gold to-gold-dark"></div>
-          <span className="font-semibold text-lg">Assorted Audio</span>
+      <aside className="w-full md:w-64 bg-[#12121A] border-r border-white/5 shadow-xl">
+        <div className="p-6 flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gold to-gold-dark shadow-gold-glow"></div>
+          <span className="font-semibold text-lg text-white/90">Assorted Audio</span>
         </div>
         
         <nav className="p-4">
@@ -34,29 +35,29 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <li>
               <Link 
                 to="/dashboard" 
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
-                <Music className="h-5 w-5" />
+                <Music className="h-5 w-5 sidebar-item-icon" />
                 <span>Playlist Generator</span>
               </Link>
             </li>
             <li>
               <Link 
                 to="/assistant" 
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
-                <Bot className="h-5 w-5" />
-                <span>Music Assistant</span>
+                <Sparkles className="h-5 w-5 sidebar-item-icon" />
+                <span>New Music Finder</span>
               </Link>
             </li>
             <li>
               <Link 
                 to="/export" 
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
-                <Download className="h-5 w-5" />
+                <Download className="h-5 w-5 sidebar-item-icon" />
                 <span>Export Tools</span>
-                <span className="ml-auto text-xs bg-gold text-black px-2 py-0.5 rounded-full">
+                <span className="ml-auto text-xs bg-gold text-black px-2 py-0.5 rounded-full font-medium">
                   Pro
                 </span>
               </Link>
@@ -64,32 +65,32 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <li>
               <Link 
                 to="/community" 
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
-                <Users className="h-5 w-5" />
+                <Users className="h-5 w-5 sidebar-item-icon" />
                 <span>Community</span>
               </Link>
             </li>
           </ul>
           
-          <div className="border-t border-sidebar-border my-4"></div>
+          <div className="border-t border-white/5 my-5"></div>
           
           <ul className="space-y-2">
             <li>
               <Link 
                 to="/profile" 
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
-                <User className="h-5 w-5" />
+                <User className="h-5 w-5 sidebar-item-icon" />
                 <span>Profile</span>
               </Link>
             </li>
             <li>
               <Link 
                 to="/settings" 
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+                className="group flex items-center gap-3 px-3 py-3 rounded-lg sidebar-item"
               >
-                <Settings className="h-5 w-5" />
+                <Settings className="h-5 w-5 sidebar-item-icon" />
                 <span>Settings</span>
               </Link>
             </li>
@@ -97,23 +98,36 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </nav>
         
         <div className="p-4 mt-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-muted-foreground">
-              {subscription?.is_premium ? (
-                <span className="text-foreground font-medium">Premium</span>
-              ) : (
-                <>
-                  Generations left: <span className="text-foreground font-medium">
-                    {subscription?.remaining_generations || 15}/15
-                  </span>
-                </>
-              )}
+          <div className="glass-morphism p-4 rounded-lg mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm">
+                {subscription?.is_premium ? (
+                  <span className="text-gold font-medium">Premium</span>
+                ) : (
+                  <>
+                    Generations left: <span className="text-white font-medium">
+                      {subscription?.remaining_generations || 15}/15
+                    </span>
+                  </>
+                )}
+              </div>
+              <ThemeToggle />
             </div>
-            <ThemeToggle />
+            
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-gold-dark to-gold"
+                style={{ 
+                  width: `${Math.min(((subscription?.playlists_generated || 0) / 15) * 100, 100)}%`,
+                  boxShadow: '0 0 10px rgba(219, 177, 59, 0.5)' 
+                }}
+              />
+            </div>
           </div>
+          
           <Button 
             variant="outline" 
-            className="w-full justify-start"
+            className="w-full justify-start border-white/10 hover:bg-white/5 hover:border-white/20"
             onClick={signOut}
           >
             <LogOut className="h-4 w-4 mr-2" />

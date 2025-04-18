@@ -20,8 +20,9 @@ export default {
 		},
 		extend: {
 			colors: {
-				gold: "#FFD700",
-				"gold-dark": "#E5C100",
+				gold: "#DBB13B", // Slightly muted gold
+				"gold-dark": "#C19B20",
+				"gold-light": "#F9E396",
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -107,6 +108,33 @@ export default {
 					"50%": {
 						opacity: "0.8"
 					}
+				},
+				"float": {
+					"0%, 100%": {
+						transform: "translateY(0)"
+					},
+					"50%": {
+						transform: "translateY(-5px)"
+					}
+				},
+				"glow": {
+					"0%, 100%": {
+						boxShadow: "0 0 5px rgba(219, 177, 59, 0.5)"
+					},
+					"50%": {
+						boxShadow: "0 0 20px rgba(219, 177, 59, 0.8)"
+					}
+				},
+				"icon-wobble": {
+					"0%, 100%": {
+						transform: "rotate(0deg)"
+					},
+					"25%": {
+						transform: "rotate(-3deg)"
+					},
+					"75%": {
+						transform: "rotate(3deg)"
+					}
 				}
 			},
 			animation: {
@@ -114,7 +142,15 @@ export default {
 				"accordion-up": "accordion-up 0.2s ease-out",
 				"fade-in": "fade-in 0.5s ease-out",
 				"scale-in": "scale-in 0.4s ease-out",
-				"pulse-gold": "pulse-gold 2s infinite"
+				"pulse-gold": "pulse-gold 2s infinite",
+				"float": "float 3s ease-in-out infinite",
+				"glow": "glow 2s ease-in-out infinite",
+				"icon-wobble": "icon-wobble 0.5s ease-in-out"
+			},
+			boxShadow: {
+				'neo': '5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.02)',
+				'neo-inset': 'inset 5px 5px 10px rgba(0, 0, 0, 0.2), inset -5px -5px 10px rgba(255, 255, 255, 0.05)',
+				'gold-glow': '0 0 15px rgba(219, 177, 59, 0.5)'
 			}
 		}
 	},

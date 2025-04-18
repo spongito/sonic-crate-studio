@@ -93,6 +93,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+    background-color: #0B0B0B;
   }
 
   html {
@@ -112,4 +113,28 @@
   .gold-gradient {
     @apply bg-gradient-to-br from-gold via-gold to-gold-dark bg-clip-text text-transparent;
   }
+
+  .neo-card {
+    @apply bg-gradient-to-br from-[#15151a] to-[#1a1a20] border border-white/5 
+           shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md 
+           hover:shadow-[0_8px_30px_rgba(255,215,0,0.1)] 
+           hover:border-gold/20 transition-all duration-300 
+           hover:scale-[1.02] hover:backdrop-blur-lg;
+  }
+
+  .neo-gold-button {
+    @apply bg-gold text-black font-medium shadow-[0_4px_12px_rgba(255,215,0,0.3)] 
+           hover:bg-gold-dark hover:shadow-[0_4px_15px_rgba(255,215,0,0.4)] 
+           active:shadow-[0_2px_8px_rgba(255,215,0,0.3)] active:transform active:translate-y-0.5 
+           transition-all duration-200;
+  }
+
+  .sidebar-item {
+    @apply transition-all duration-200 hover:bg-white/5 hover:scale-[1.02];
+  }
+
+  .sidebar-item-icon {
+    @apply transition-transform duration-200 group-hover:text-gold;
+  }
 }
+

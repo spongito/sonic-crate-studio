@@ -76,22 +76,24 @@ const Dashboard = () => {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-6">
-            <h1 className="text-3xl font-bold">Playlist Generator</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-4xl font-bold bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+              Playlist Generator
+            </h1>
+            <p className="text-white/60">
               Describe the mood, genre, or occasion and let our AI create the perfect playlist for you.
             </p>
             
-            <div className="glass-morphism p-3 flex flex-col sm:flex-row gap-3 rounded-xl">
+            <div className="glass-morphism p-4 flex flex-col sm:flex-row gap-3 rounded-xl">
               <Input
                 placeholder="curate a soulful afrobeat set for golden hour"
-                className="flex-1 bg-background/60 border-white/10"
+                className="flex-1 bg-white/5 border-white/10 focus:border-gold/30 focus:ring-gold/20"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
                 disabled={isGenerating}
               />
               <Button 
-                className="bg-gold hover:bg-gold-dark text-black font-medium"
+                className="neo-gold-button"
                 onClick={handleGenerate}
                 disabled={isGenerating || (!subscription?.is_premium && subscription?.remaining_generations === 0)}
               >
@@ -112,7 +114,7 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <h2 className="text-2xl font-bold mt-12 pt-6 border-t border-border">
+        <h2 className="text-2xl font-bold mt-12 pt-6 border-t border-white/5 text-white/90">
           Explore Features
         </h2>
         <DashboardCards />
