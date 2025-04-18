@@ -1,21 +1,33 @@
+
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, FileType, Music, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import UpgradeModal from "@/components/Dashboard/UpgradeModal";
+import { useNavigate } from "react-router-dom";
 
 const Export = () => {
   const { subscription } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const navigate = useNavigate();
   
   const isPremium = subscription?.is_premium || false;
+  
+  // Check if user has access when component mounts
+  useEffect(() => {
+    if (!isPremium) {
+      setShowUpgradeModal(true);
+      toast.info("This is a Premium feature. Upgrade to continue.");
+    }
+  }, [isPremium]);
 
   const handleExport = (format: string) => {
     if (!isPremium) {
       setShowUpgradeModal(true);
+      toast.info("This is a Premium feature. Upgrade to continue.");
       return;
     }
     
@@ -47,7 +59,12 @@ const Export = () => {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Export Tools</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            Export Tools
+            <span className="text-xs bg-gold text-black px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+              <Crown className="w-3 h-3" /> Premium
+            </span>
+          </h1>
           <p className="text-muted-foreground mt-2">
             Export your playlists to various formats or streaming platforms.
             {!isPremium && " Upgrade to Premium to unlock all export options."}
@@ -206,7 +223,12 @@ const Export = () => {
       
       <UpgradeModal
         open={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
+        onClose={() => {
+          setShowUpgradeModal(false);
+          if (!isPremium) {
+            navigate('/dashboard');
+          }
+        }}
       />
     </DashboardLayout>
   );

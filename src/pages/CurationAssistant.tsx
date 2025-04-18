@@ -3,9 +3,11 @@ import { useState, useRef, useEffect } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SendHorizonal, Bot, User } from "lucide-react";
+import { SendHorizonal, Bot, User, Crown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import UpgradeModal from "@/components/Dashboard/UpgradeModal";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -23,8 +25,19 @@ const Assistant = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { subscription } = useAuth();
+  const navigate = useNavigate();
+  const isPremium = subscription?.is_premium || false;
+
+  // Check if user has access when component mounts
+  useEffect(() => {
+    if (!isPremium) {
+      setShowUpgradeModal(true);
+      toast.info("This is a Premium feature. Upgrade to continue.");
+    }
+  }, [isPremium]);
 
   useEffect(() => {
     scrollToBottom();
@@ -39,9 +52,10 @@ const Assistant = () => {
     
     if (!input.trim()) return;
     
-    // Check if user has reached generation limit
-    if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
-      toast.error("You've reached your monthly limit. Please upgrade to Premium.");
+    // Check premium access again
+    if (!isPremium) {
+      setShowUpgradeModal(true);
+      toast.info("This is a Premium feature. Upgrade to continue.");
       return;
     }
     
@@ -89,7 +103,12 @@ const Assistant = () => {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Music Assistant</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            Music Assistant
+            <span className="text-xs bg-gold text-black px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+              <Crown className="w-3 h-3" /> Premium
+            </span>
+          </h1>
           <p className="text-muted-foreground mt-2">
             Chat with our AI music expert about artists, genres, recommendations, and more.
           </p>
@@ -155,19 +174,29 @@ const Assistant = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="flex-1 bg-background"
-              disabled={isLoading}
+              disabled={isLoading || !isPremium}
             />
             <Button 
               type="submit"
               size="icon" 
               className="bg-gold text-black hover:bg-gold-dark"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !input.trim() || !isPremium}
             >
               <SendHorizonal className="h-5 w-5" />
             </Button>
           </form>
         </div>
       </div>
+      
+      <UpgradeModal 
+        open={showUpgradeModal} 
+        onClose={() => {
+          setShowUpgradeModal(false);
+          if (!isPremium) {
+            navigate('/dashboard');
+          }
+        }} 
+      />
     </DashboardLayout>
   );
 };

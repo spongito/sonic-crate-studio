@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Crown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -15,10 +15,24 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
   const [plan, setPlan] = useState<"monthly" | "annual">("annual");
   const [isLoading, setIsLoading] = useState(false);
   
+  // Handle keyboard events
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && open) {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [open, onClose]);
+  
   const handleSubscribe = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke('create-checkout');
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan }
+      });
       
       if (error) {
         toast.error("Failed to start checkout process");
@@ -39,7 +53,7 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onEscapeKeyDown={onClose}>
         <DialogHeader>
           <div className="mx-auto bg-gold/20 p-3 rounded-full mb-3">
             <Crown className="h-6 w-6 text-gold" />
@@ -57,7 +71,7 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
               plan === "monthly" 
               ? "border-gold bg-gold/10" 
               : "border-border bg-background"
-            } p-4 text-center transition-colors`}
+            } p-4 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-gold/50`}
           >
             <div className="font-semibold">Monthly</div>
             <div className="text-2xl font-bold my-2">$9.99</div>
@@ -70,7 +84,7 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
               plan === "annual" 
               ? "border-gold bg-gold/10" 
               : "border-border bg-background"
-            } p-4 text-center transition-colors relative`}
+            } p-4 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-gold/50 relative`}
           >
             {plan === "annual" && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gold text-black text-xs font-medium px-2 py-0.5 rounded-full">

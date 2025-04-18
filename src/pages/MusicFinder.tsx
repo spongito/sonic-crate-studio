@@ -27,8 +27,10 @@ const MusicFinder = () => {
       return;
     }
     
+    // Check if user has reached generation limit and is not premium
     if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
       setShowUpgradeModal(true);
+      toast.info("This is a Premium feature. Upgrade to continue.");
       return;
     }
     
