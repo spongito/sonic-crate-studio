@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -11,8 +10,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { Music, Mail, Google } from "lucide-react";
+import { Music, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { icons } from 'lucide-react';
 
 interface SignInDialogProps {
   open: boolean;
@@ -29,6 +29,8 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
     e.preventDefault();
     await signInWithEmail(email, password, isSignUp);
   };
+
+  const GoogleIcon = icons['brand-google'] || icons['globe'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,7 +59,7 @@ export const SignInDialog = ({ open, onOpenChange }: SignInDialogProps) => {
                 className="w-full border-white/10 hover:bg-white/5"
                 onClick={signInWithGoogle}
               >
-                <Google className="mr-2 h-4 w-4" />
+                <GoogleIcon className="mr-2 h-4 w-4" />
                 Continue with Google
               </Button>
             </div>
