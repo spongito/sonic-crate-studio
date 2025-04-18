@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +16,7 @@ const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [playlistData, setPlaylistData] = useState<any>(null);
   const [searchParams] = useSearchParams();
   const { subscription, checkSubscription, user } = useAuth();
   
@@ -54,22 +55,37 @@ const MusicFinder = () => {
     try {
       setIsGenerating(true);
       
+      // Step 1: Process with GPT and music APIs
+      const { data: processedData, error: processingError } = await supabase.functions
+        .invoke('process-music-request', {
+          body: { 
+            prompt,
+            advancedParams
+          }
+        });
+      
+      if (processingError) throw processingError;
+      
+      // Step 2: Save the playlist to the database
       const { error: insertError } = await supabase
         .from("playlists")
         .insert({
           name: format(new Date(), "MMM d - h:mm a"),
           prompt: prompt,
           description: advancedParams.description,
-          results: [],
+          results: processedData.tracks || [],
           user_id: user?.id || '',
           is_public: true,
           genres: [advancedParams.genre],
-          settings: advancedParams
+          settings: {
+            ...advancedParams,
+            intent: processedData.intent
+          }
         });
 
       if (insertError) throw insertError;
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      setPlaylistData(processedData);
       
       if (!subscription?.is_premium) {
         await supabase.functions.invoke('increment-playlist-count');
@@ -80,8 +96,8 @@ const MusicFinder = () => {
       toast.success("Playlist generated successfully!");
       
     } catch (error) {
-      toast.error("Failed to generate playlist");
       console.error("Generation error:", error);
+      toast.error("Failed to generate playlist. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -114,8 +130,17 @@ const MusicFinder = () => {
                   onClick={handleGenerate}
                   disabled={isGenerating || (!subscription?.is_premium && subscription?.remaining_generations === 0)}
                 >
-                  {isGenerating ? "Generating..." : "Find Songs"}
-                  {!isGenerating && <ArrowRight className="ml-2 h-4 w-4" />}
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      Find Songs
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </div>
               
@@ -128,7 +153,7 @@ const MusicFinder = () => {
             
             {showPlaylist && (
               <div className="mt-8 animate-fade-in">
-                <PlaylistViewer />
+                <PlaylistViewer playlistData={playlistData} />
               </div>
             )}
           </div>
