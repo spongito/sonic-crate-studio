@@ -19,7 +19,7 @@ const MusicFinder = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchParams] = useSearchParams();
-  const { subscription, checkSubscription } = useAuth();
+  const { subscription, checkSubscription, user } = useAuth();
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -43,7 +43,7 @@ const MusicFinder = () => {
           prompt: prompt,
           description: "", // Optional description
           results: [], // Placeholder for now
-          user_id: subscription?.user_id || '', // Add user_id
+          user_id: user?.id || '', // Use user.id instead of subscription.user_id
           is_public: true,
           genres: [] // Add empty genres array
         });
