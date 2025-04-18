@@ -286,6 +286,11 @@ export async function enrichTracksWithAudioFeatures(tracks: any[], token: string
 }
 
 export function formatSpotifyTrack(track: any) {
+  if (!track || !track.id) {
+    console.error("Invalid track data received:", track);
+    return null;
+  }
+  
   return {
     id: track.id,
     spotify_id: track.id,

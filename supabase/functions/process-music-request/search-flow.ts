@@ -9,39 +9,56 @@ const supabase = createClient(
 
 async function saveMasterTrack(track: any, audioFeatures: any) {
   try {
+    // Debug log to see what we're trying to insert
+    console.log('Attempting to save track:', {
+      id: track.id,
+      spotify_id: track.spotify_id,
+      title: track.title || track.name,
+      artist: Array.isArray(track.artist) ? track.artist : [track.artist]
+    });
+    
     // Check if track already exists
-    const { data: existingTrack } = await supabase
+    const { data: existingTrack, error: checkError } = await supabase
       .from('tracks_master')
       .select('id')
       .eq('spotify_id', track.spotify_id)
       .maybeSingle();
+      
+    if (checkError) {
+      console.error('Error checking for existing track:', checkError);
+      return null;
+    }
 
     if (existingTrack) {
+      console.log(`Track ${track.title} already exists with ID ${existingTrack.id}`);
       return existingTrack.id;
     }
+    
+    // Prepare data for insertion
+    const trackData = {
+      spotify_id: track.spotify_id,
+      title: track.title || track.name,
+      artist: Array.isArray(track.artist) ? track.artist : [track.artist],
+      album: track.album,
+      image_url: track.image || track.cover_url,
+      platform: 'spotify',
+      external_url: track.external_url,
+      preview_url: track.preview_url,
+      popularity: track.popularity,
+      bpm: audioFeatures?.tempo ? Math.round(audioFeatures.tempo) : null,
+      key_signature: audioFeatures?.key !== undefined ? 
+        formatKey(audioFeatures.key, audioFeatures.mode) : null,
+      energy: audioFeatures?.energy,
+      danceability: audioFeatures?.danceability,
+      valence: audioFeatures?.valence,
+      instrumentalness: audioFeatures?.instrumentalness,
+      acousticness: audioFeatures?.acousticness
+    };
 
     // Insert new track with audio features
     const { data: newTrack, error } = await supabase
       .from('tracks_master')
-      .insert({
-        spotify_id: track.spotify_id,
-        title: track.title || track.name,
-        artist: Array.isArray(track.artist) ? track.artist : [track.artist],
-        album: track.album,
-        image_url: track.image || track.cover_url,
-        platform: 'spotify',
-        external_url: track.external_url,
-        preview_url: track.preview_url,
-        popularity: track.popularity,
-        bpm: audioFeatures?.tempo ? Math.round(audioFeatures.tempo) : null,
-        key_signature: audioFeatures?.key !== undefined ? 
-          formatKey(audioFeatures.key, audioFeatures.mode) : null,
-        energy: audioFeatures?.energy,
-        danceability: audioFeatures?.danceability,
-        valence: audioFeatures?.valence,
-        instrumentalness: audioFeatures?.instrumentalness,
-        acousticness: audioFeatures?.acousticness
-      })
+      .insert(trackData)
       .select('id')
       .single();
 
@@ -50,11 +67,20 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       return null;
     }
 
+    console.log(`Successfully saved track ${track.title} with ID ${newTrack.id}`);
     return newTrack.id;
   } catch (error) {
     console.error('Error in saveMasterTrack:', error);
     return null;
   }
+}
+
+function formatKey(key: number, mode: number) {
+  const notes = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+  if (key === undefined || mode === undefined || key < 0 || key >= notes.length) {
+    return "Unknown";
+  }
+  return `${notes[key]} ${mode === 1 ? "Major" : "Minor"}`;
 }
 
 export async function executeSearchFlow(intent: any, token: string) {
@@ -118,10 +144,13 @@ export async function executeSearchFlow(intent: any, token: string) {
     allTracks = combineAndDeduplicateTracks(allTracks);
     
     // Save tracks to master database
-    console.log('Saving tracks to master database...');
+    console.log(`Saving ${allTracks.length} tracks to master database...`);
     for (const track of allTracks) {
       if (track.audio_features) {
         await saveMasterTrack(track, track.audio_features);
+      } else {
+        console.log(`Track ${track.title || track.name} has no audio features, saving with limited data`);
+        await saveMasterTrack(track, null);
       }
     }
     
