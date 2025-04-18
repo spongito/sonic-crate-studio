@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -25,7 +26,6 @@ const MusicFinder = () => {
     
     // Check if user has reached generation limit and is not premium
     if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
-      setShowUpgradeModal(true);
       toast.info("This is a Premium feature. Upgrade to continue.");
       return;
     }
