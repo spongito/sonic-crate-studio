@@ -1,9 +1,8 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from './cors.ts';
 import { createStructuredIntent } from './intent-analyzer.ts';
-import { getSpotifyToken, getRecommendations, enrichTracksWithAudioFeatures } from './spotify-client.ts';
+import { getSpotifyToken } from './spotify-client.ts';
 import { executeSearchFlow } from './search-flow.ts';
 import { scoreTracksBasedOnIntent, generatePlaylistName } from './track-scorer.ts';
 
@@ -30,6 +29,11 @@ serve(async (req) => {
     
     console.log("Request received:", { prompt, advancedParams, platforms });
     
+    // Validate API keys for selected platforms
+    if (platforms.includes('youtube') && !Deno.env.get('YOUTUBE_API_KEY')) {
+      throw new Error("YouTube API key is not configured. Please add it to your environment variables.");
+    }
+    
     // Intent Analysis
     const intent = await createStructuredIntent(prompt, advancedParams).catch(error => {
       console.error("Intent analysis failed:", error);
@@ -45,7 +49,12 @@ serve(async (req) => {
         console.log("Obtained Spotify token successfully");
       } catch (error) {
         console.error("Spotify auth failed:", error);
-        throw new Error("Failed to authenticate with Spotify");
+        // Only throw if Spotify is the only selected platform
+        if (platforms.length === 1) {
+          throw new Error("Failed to authenticate with Spotify. Please check your Spotify API credentials.");
+        } else {
+          console.log("Continuing with other platforms due to Spotify auth failure");
+        }
       }
     } else {
       console.log("Spotify not selected, skipping authentication");

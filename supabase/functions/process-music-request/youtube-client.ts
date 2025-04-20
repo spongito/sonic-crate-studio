@@ -1,11 +1,10 @@
-
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
 
 // Function to search for videos on YouTube
 export async function searchYouTubeVideos(query: string, limit = 30) {
   if (!YOUTUBE_API_KEY) {
     console.warn("YouTube API key not configured");
-    return [];
+    throw new Error("YouTube API key not configured or invalid. Please check your API key in the environment variables.");
   }
 
   try {
@@ -24,10 +23,21 @@ export async function searchYouTubeVideos(query: string, limit = 30) {
     );
 
     if (!response.ok) {
-      console.error(`YouTube API error: ${response.status}`);
+      const status = response.status;
       const errorText = await response.text();
+      console.error(`YouTube API error: ${status}`);
       console.error('Error response:', errorText);
-      return [];
+      
+      // Enhanced error messages based on status codes
+      if (status === 403) {
+        if (errorText.includes("API has not been used") || errorText.includes("API key not valid")) {
+          throw new Error("YouTube API key is not properly configured or the API is not enabled for your project. Please visit the Google Cloud Console to enable the YouTube Data API v3.");
+        } else if (errorText.includes("quota")) {
+          throw new Error("YouTube API quota exceeded. Please try again later or use a different API key.");
+        }
+      }
+      
+      throw new Error(`YouTube API error (${status}): ${errorText}`);
     }
 
     const data = await response.json();
@@ -74,7 +84,7 @@ export async function searchYouTubeVideos(query: string, limit = 30) {
     return formattedVideos;
   } catch (error) {
     console.error("YouTube search error:", error);
-    return [];
+    throw error; // Re-throw to be handled by the parent function
   }
 }
 

@@ -1,3 +1,4 @@
+
 import { searchTracks, searchArtists, getArtistTopTracks, getRelatedArtists } from './spotify-client.ts';
 import { searchYouTubeVideos } from './youtube-client.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
@@ -250,20 +251,30 @@ export async function executeSearchFlow(intent: any, token: string | null, platf
       
       console.log(`Using YouTube query: ${youtubeQuery}`);
       
-      const youtubeResults = await searchYouTubeVideos(youtubeQuery, 30);
-      console.log(`Found ${youtubeResults.length} YouTube tracks`);
-      
-      if (youtubeResults.length > 0) {
-        allTracks.push(...youtubeResults);
-      } else {
-        // Try a simpler query as fallback if first search returned nothing
-        const simplifiedQuery = intent.original_prompt;
-        console.log(`Trying simplified YouTube query: ${simplifiedQuery}`);
-        const fallbackResults = await searchYouTubeVideos(simplifiedQuery, 30);
-        console.log(`Found ${fallbackResults.length} YouTube tracks from fallback query`);
+      try {
+        const youtubeResults = await searchYouTubeVideos(youtubeQuery, 30);
+        console.log(`Found ${youtubeResults.length} YouTube tracks`);
         
-        if (fallbackResults.length > 0) {
-          allTracks.push(...fallbackResults);
+        if (youtubeResults.length > 0) {
+          allTracks.push(...youtubeResults);
+        } else {
+          // Try a simpler query as fallback if first search returned nothing
+          const simplifiedQuery = intent.original_prompt;
+          console.log(`Trying simplified YouTube query: ${simplifiedQuery}`);
+          const fallbackResults = await searchYouTubeVideos(simplifiedQuery, 30);
+          console.log(`Found ${fallbackResults.length} YouTube tracks from fallback query`);
+          
+          if (fallbackResults.length > 0) {
+            allTracks.push(...fallbackResults);
+          }
+        }
+      } catch (error) {
+        console.error("YouTube API error:", error);
+        
+        // Only rethrow if YouTube is the only platform and we have no tracks
+        if (enabledPlatforms.size === 1 && allTracks.length === 0) {
+          // Provide a user-friendly error message
+          throw new Error(`YouTube search failed: ${error.message}`);
         }
       }
     }
