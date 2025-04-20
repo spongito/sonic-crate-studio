@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { PlatformSelector, type Platform } from "./PlatformSelector";
 
 const genres = [
   "Afrobeat",
@@ -47,10 +48,12 @@ export interface AdvancedSettingsParams {
 interface AdvancedSettingsProps {
   params: AdvancedSettingsParams;
   onChange: (params: AdvancedSettingsParams) => void;
+  platforms: Platform[];
+  onPlatformsChange: (platforms: Platform[]) => void;
   onReset: () => void;
 }
 
-export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettingsProps) {
+export function AdvancedSettings({ params, onChange, platforms, onPlatformsChange, onReset }: AdvancedSettingsProps) {
   const [expanded, setExpanded] = useState(false);
   
   const updateParams = (update: Partial<AdvancedSettingsParams>) => {
@@ -109,6 +112,13 @@ export function AdvancedSettings({ params, onChange, onReset }: AdvancedSettings
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <PlatformSelector 
+                platforms={platforms}
+                onChange={onPlatformsChange}
+              />
             </div>
 
             <div>

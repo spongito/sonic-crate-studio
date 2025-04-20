@@ -10,7 +10,7 @@ import { SignInDialog } from "@/components/auth/SignInDialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { PlatformSelector, getDefaultPlatforms, type Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
+import { getDefaultPlatforms, type Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 
 interface HeroSectionProps {
   onPlaylistGenerated?: (data: any) => void;
@@ -107,7 +107,73 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
       return;
     }
     
-    navigate("/music-finder");
+    if (!params.prompt.trim()) {
+      toast.error("Please enter a prompt");
+      return;
+    }
+    
+    if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
+      toast.info("This is a Premium feature. Upgrade to continue.");
+      navigate("/dashboard");
+      return;
+    }
+    
+    try {
+      setIsGenerating(true);
+      if (setShowPlaylist) setShowPlaylist(false);
+      
+      const enabledPlatforms = params.platforms.filter(p => p.enabled).map(p => p.id);
+      
+      const { data: processedData, error } = await supabase.functions
+        .invoke('process-music-request', {
+          body: { 
+            prompt: params.prompt,
+            advancedParams: {
+              mode: params.mode,
+              description: params.description,
+              genre: params.genre,
+              length: params.length,
+              commercialFactor: params.commercialFactor,
+              referenceArtists: params.referenceArtists
+            },
+            platforms: enabledPlatforms
+          }
+        });
+      
+      if (error) {
+        console.error("Processing error details:", error);
+        throw error;
+      }
+      
+      if (processedData && processedData.error) {
+        throw new Error(processedData.error);
+      }
+      
+      if (!processedData) {
+        throw new Error("Failed to generate playlist data: No data returned");
+      }
+      
+      if (!processedData.tracks) {
+        throw new Error("Failed to generate playlist data: No tracks found");
+      }
+      
+      if (!subscription?.is_premium) {
+        await supabase.functions.invoke('increment-playlist-count');
+        await checkSubscription();
+      }
+      
+      if (onPlaylistGenerated) {
+        onPlaylistGenerated(processedData);
+      }
+      
+      toast.success("Playlist generated successfully!");
+      
+    } catch (error: any) {
+      console.error("Generation error:", error);
+      toast.error(error.message || "Failed to generate playlist. Please try again with a different prompt.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -137,12 +203,7 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
                 disabled={isGenerating}
               />
               
-              <div className="flex justify-between items-center">
-                <PlatformSelector 
-                  platforms={platforms}
-                  onChange={setPlatforms}
-                />
-                
+              <div className="flex justify-end items-center">
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -182,6 +243,7 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
       <SearchDialog
         open={showAdvancedSearch}
         onOpenChange={setShowAdvancedSearch}
+        initialPrompt={prompt}
         onSubmit={handleAdvancedSearchSubmit}
       />
 

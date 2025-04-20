@@ -1,3 +1,4 @@
+
 import { searchTracks, searchArtists, getArtistTopTracks, getRelatedArtists } from './spotify-client.ts';
 import { searchYouTubeVideos } from './youtube-client.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
@@ -161,6 +162,8 @@ export async function executeSearchFlow(intent: any, token: string, platforms: s
   let seedArtists = [];
   const enabledPlatforms = new Set(platforms);
   
+  console.log(`Executing search flow with platforms: ${Array.from(enabledPlatforms).join(', ')}`);
+  
   try {
     if (enabledPlatforms.has('spotify')) {
       console.log("Performing Spotify search...");
@@ -218,34 +221,76 @@ export async function executeSearchFlow(intent: any, token: string, platforms: s
     if (enabledPlatforms.has('youtube')) {
       console.log("Performing YouTube search...");
       
-      const youtubeGenre = intent.genre && intent.genre !== "any" ? intent.genre : "";
-      const youtubeMoods = intent.mood_tags.slice(0, 2).join(' ');
-      const youtubeQuery = `${youtubeGenre} ${youtubeMoods} ${intent.tempo || ''}`.trim();
+      let youtubeGenre = intent.genre && intent.genre !== "any" ? intent.genre : "";
+      let youtubeMoods = intent.mood_tags.slice(0, 2).join(' ');
+      let youtubeArtists = "";
       
-      const youtubeResults = await searchYouTubeVideos(youtubeQuery, 20);
+      if (intent.reference_artists && intent.reference_artists.length > 0) {
+        youtubeArtists = intent.reference_artists.slice(0, 2).join(' ');
+      }
+      
+      // Create a well-formed YouTube query
+      let youtubeQuery = intent.original_prompt;
+      
+      // Add specific components if they're not already in the original prompt
+      if (youtubeGenre && !youtubeQuery.toLowerCase().includes(youtubeGenre.toLowerCase())) {
+        youtubeQuery += ` ${youtubeGenre}`;
+      }
+      
+      if (youtubeArtists && !youtubeQuery.toLowerCase().includes(youtubeArtists.toLowerCase())) {
+        youtubeQuery += ` ${youtubeArtists}`;
+      }
+      
+      if (youtubeMoods && !youtubeQuery.toLowerCase().includes(youtubeMoods.toLowerCase())) {
+        youtubeQuery += ` ${youtubeMoods}`;
+      }
+      
+      if (intent.tempo && !youtubeQuery.toLowerCase().includes(intent.tempo.toLowerCase())) {
+        youtubeQuery += ` ${intent.tempo}`;
+      }
+      
+      console.log(`Using YouTube query: ${youtubeQuery}`);
+      
+      const youtubeResults = await searchYouTubeVideos(youtubeQuery, 30);
       console.log(`Found ${youtubeResults.length} YouTube tracks`);
       
       if (youtubeResults.length > 0) {
         allTracks.push(...youtubeResults);
+      } else {
+        // Try a simpler query as fallback if first search returned nothing
+        const simplifiedQuery = intent.original_prompt;
+        console.log(`Trying simplified YouTube query: ${simplifiedQuery}`);
+        const fallbackResults = await searchYouTubeVideos(simplifiedQuery, 30);
+        console.log(`Found ${fallbackResults.length} YouTube tracks from fallback query`);
+        
+        if (fallbackResults.length > 0) {
+          allTracks.push(...fallbackResults);
+        }
       }
     }
     
     if (allTracks.length === 0) {
-      console.warn("No tracks found from any platform");
-      return { tracks: [], seedTracks: [], seedArtists: [] };
+      throw new Error("No tracks found from any platform");
     }
     
     allTracks = combineAndDeduplicateTracks(allTracks);
     console.log(`Combined and deduplicated: ${allTracks.length} total tracks`);
     
-    console.log(`Saving ${allTracks.length} tracks to master database...`);
-    for (const track of allTracks) {
-      if (track.audio_features) {
-        await saveMasterTrack(track, track.audio_features);
-      } else {
-        console.log(`Track ${track.title || track.name} has no audio features, saving with limited data`);
-        await saveMasterTrack(track, null);
+    try {
+      console.log(`Saving ${allTracks.length} tracks to master database...`);
+      for (const track of allTracks) {
+        if (track.audio_features && track.spotify_id) {
+          await saveMasterTrack(track, track.audio_features);
+        } else {
+          if (track.spotify_id) {
+            console.log(`Track ${track.title || track.name} has no audio features, saving with limited data`);
+            await saveMasterTrack(track, null);
+          }
+        }
       }
+    } catch (saveError) {
+      console.error("Error saving tracks to database:", saveError);
+      // Continue with the flow even if saving fails
     }
     
     return { 
@@ -260,7 +305,16 @@ export async function executeSearchFlow(intent: any, token: string, platforms: s
 }
 
 function getSeedTracks(tracks: any[], count: number) {
-  const sortedTracks = [...tracks].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+  if (!tracks || tracks.length === 0) {
+    return [];
+  }
+  
+  const filteredTracks = tracks.filter(track => track && track.id);
+  if (filteredTracks.length === 0) {
+    return [];
+  }
+  
+  const sortedTracks = [...filteredTracks].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
   return sortedTracks.slice(0, count).map(track => track.id);
 }
 
@@ -272,6 +326,8 @@ function combineAndDeduplicateTracks(trackArrays: any[]) {
     : trackArrays;
   
   for (const track of flatTracks) {
+    if (!track) continue;
+    
     const trackId = track.id || track.youtube_id || track.spotify_id;
     if (!uniqueTracks.has(trackId)) {
       uniqueTracks.set(trackId, track);

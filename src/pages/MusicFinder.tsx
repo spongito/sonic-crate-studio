@@ -5,7 +5,7 @@ import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
 import { SearchPromptInput } from "@/components/Dashboard/MusicFinder/SearchPromptInput";
 import { DebugPanel } from "@/components/Dashboard/MusicFinder/DebugPanel";
-import { PlatformSelector, getDefaultPlatforms, type Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
+import { getDefaultPlatforms, type Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 import { usePlaylistGeneration } from "@/hooks/use-playlist-generation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -66,14 +66,11 @@ const MusicFinder = () => {
                 onGenerate={() => handleGenerate(prompt, advancedParams, platforms)}
               />
               
-              <PlatformSelector 
-                platforms={platforms}
-                onChange={setPlatforms}
-              />
-              
               <AdvancedSettings
                 params={advancedParams}
                 onChange={setAdvancedParams}
+                platforms={platforms}
+                onPlatformsChange={setPlatforms}
                 onReset={handleReset}
               />
             </div>

@@ -24,6 +24,10 @@ serve(async (req) => {
       throw new Error("A valid text prompt is required");
     }
     
+    if (!Array.isArray(platforms) || platforms.length === 0) {
+      throw new Error("At least one platform must be selected");
+    }
+    
     console.log("Request received:", { prompt, advancedParams, platforms });
     
     // Intent Analysis
@@ -34,8 +38,18 @@ serve(async (req) => {
     console.log("Created structured intent:", JSON.stringify(intent, null, 2));
     
     // Spotify Authentication (needed even if we're only using YouTube)
-    const spotifyToken = await getSpotifyToken();
-    if (!spotifyToken) {
+    const spotifyToken = await getSpotifyToken().catch(error => {
+      console.error("Spotify auth failed:", error);
+      // If we're only using YouTube, we can continue without Spotify token
+      if (platforms.length === 1 && platforms[0] === 'youtube') {
+        console.log("Continuing with YouTube only (no Spotify token)");
+        return null;
+      }
+      throw new Error("Failed to authenticate with Spotify");
+    });
+    
+    // If Spotify is selected but we couldn't get a token, throw an error
+    if (platforms.includes('spotify') && !spotifyToken) {
       throw new Error("Failed to authenticate with Spotify");
     }
     
@@ -46,13 +60,13 @@ serve(async (req) => {
     });
     console.log(`Found ${tracks.length} tracks through search`);
     
-    if (tracks.length === 0 && seedTracks.length === 0) {
+    if (tracks.length === 0) {
       throw new Error("No tracks found matching your criteria. Try different search terms or genres.");
     }
     
-    // Recommendations (only for Spotify)
+    // Recommendations (only for Spotify if we have seedTracks)
     let recommendedTracks = [];
-    if (platforms.includes('spotify') && seedTracks.length > 0) {
+    if (platforms.includes('spotify') && spotifyToken && seedTracks && seedTracks.length > 0) {
       recommendedTracks = await getRecommendations(seedTracks, seedArtists, intent, spotifyToken).catch(error => {
         console.error("Recommendations failed:", error);
         // Don't throw here, we can continue with search results only
@@ -67,7 +81,9 @@ serve(async (req) => {
       throw new Error("No tracks could be found or recommended. Please try different search criteria.");
     }
     
-    const uniqueTracks = Array.from(new Map(combinedTracks.map(track => [track.id || track.spotify_id || track.youtube_id, track])).values());
+    const uniqueTracks = Array.from(new Map(combinedTracks.map(track => 
+      [track.id || track.spotify_id || track.youtube_id, track]
+    )).values());
     console.log(`Combined unique tracks: ${uniqueTracks.length}`);
     
     // Enrich with audio features and score tracks
@@ -75,7 +91,7 @@ serve(async (req) => {
     let tracksWithFeatures = uniqueTracks;
     
     // Only enrich Spotify tracks with audio features
-    if (platforms.includes('spotify')) {
+    if (platforms.includes('spotify') && spotifyToken) {
       const spotifyTracks = uniqueTracks.filter(track => track.platform === 'spotify');
       if (spotifyTracks.length > 0) {
         const enrichedSpotifyTracks = await enrichTracksWithAudioFeatures(spotifyTracks, spotifyToken).catch(error => {

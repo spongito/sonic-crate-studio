@@ -2,7 +2,7 @@
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
 
 // Function to search for videos on YouTube
-export async function searchYouTubeVideos(query: string, limit = 20) {
+export async function searchYouTubeVideos(query: string, limit = 30) {
   if (!YOUTUBE_API_KEY) {
     console.warn("YouTube API key not configured");
     return [];
@@ -11,6 +11,8 @@ export async function searchYouTubeVideos(query: string, limit = 20) {
   try {
     // Add filters to target audio content only
     const enhancedQuery = `${query} official audio OR visualizer -"music video" -"live" -"reaction" -"cover"`;
+    
+    console.log("Searching YouTube with query:", enhancedQuery);
     
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(enhancedQuery)}&maxResults=${limit}&type=video&videoCategoryId=10&videoDuration=medium&videoEmbeddable=true&key=${YOUTUBE_API_KEY}`,
@@ -33,6 +35,8 @@ export async function searchYouTubeVideos(query: string, limit = 20) {
       console.error("Unexpected YouTube response structure:", data);
       return [];
     }
+    
+    console.log(`YouTube returned ${data.items.length} results`);
 
     // Get video details for additional metadata
     const videoIds = data.items.map((item: any) => item.id.videoId).join(',');
@@ -59,12 +63,15 @@ export async function searchYouTubeVideos(query: string, limit = 20) {
       });
     }
 
-    return data.items
+    const formattedVideos = data.items
       .map((item: any) => {
         const details = detailsMap.get(item.id.videoId);
         return formatYouTubeVideo(item, details);
       })
       .filter(Boolean);
+      
+    console.log(`Formatted ${formattedVideos.length} YouTube videos`);
+    return formattedVideos;
   } catch (error) {
     console.error("YouTube search error:", error);
     return [];
