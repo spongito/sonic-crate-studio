@@ -37,20 +37,18 @@ serve(async (req) => {
     });
     console.log("Created structured intent:", JSON.stringify(intent, null, 2));
     
-    // Spotify Authentication (needed even if we're only using YouTube)
-    const spotifyToken = await getSpotifyToken().catch(error => {
-      console.error("Spotify auth failed:", error);
-      // If we're only using YouTube, we can continue without Spotify token
-      if (platforms.length === 1 && platforms[0] === 'youtube') {
-        console.log("Continuing with YouTube only (no Spotify token)");
-        return null;
+    // Spotify Authentication (only needed if Spotify is selected)
+    let spotifyToken = null;
+    if (platforms.includes('spotify')) {
+      try {
+        spotifyToken = await getSpotifyToken();
+        console.log("Obtained Spotify token successfully");
+      } catch (error) {
+        console.error("Spotify auth failed:", error);
+        throw new Error("Failed to authenticate with Spotify");
       }
-      throw new Error("Failed to authenticate with Spotify");
-    });
-    
-    // If Spotify is selected but we couldn't get a token, throw an error
-    if (platforms.includes('spotify') && !spotifyToken) {
-      throw new Error("Failed to authenticate with Spotify");
+    } else {
+      console.log("Spotify not selected, skipping authentication");
     }
     
     // Track Search across selected platforms

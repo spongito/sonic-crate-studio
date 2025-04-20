@@ -1,4 +1,3 @@
-
 import { searchTracks, searchArtists, getArtistTopTracks, getRelatedArtists } from './spotify-client.ts';
 import { searchYouTubeVideos } from './youtube-client.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
@@ -156,7 +155,7 @@ function formatKey(key: number, mode: number) {
   return `${notes[key]} ${mode === 1 ? "Major" : "Minor"}`;
 }
 
-export async function executeSearchFlow(intent: any, token: string, platforms: string[] = ['spotify', 'youtube']) {
+export async function executeSearchFlow(intent: any, token: string | null, platforms: string[] = ['spotify', 'youtube']) {
   let allTracks = [];
   let seedTracks = [];
   let seedArtists = [];
@@ -165,7 +164,7 @@ export async function executeSearchFlow(intent: any, token: string, platforms: s
   console.log(`Executing search flow with platforms: ${Array.from(enabledPlatforms).join(', ')}`);
   
   try {
-    if (enabledPlatforms.has('spotify')) {
+    if (enabledPlatforms.has('spotify') && token) {
       console.log("Performing Spotify search...");
       
       if (intent.reference_artists && intent.reference_artists.length > 0) {
@@ -270,7 +269,13 @@ export async function executeSearchFlow(intent: any, token: string, platforms: s
     }
     
     if (allTracks.length === 0) {
-      throw new Error("No tracks found from any platform");
+      if (enabledPlatforms.has('youtube') && enabledPlatforms.size === 1) {
+        throw new Error("No YouTube tracks found. The YouTube API may be unavailable or the API key may be invalid. Try enabling Spotify as well or using a different search term.");
+      } else if (enabledPlatforms.has('spotify') && enabledPlatforms.size === 1) {
+        throw new Error("No Spotify tracks found. Try a different search term or enable YouTube as an additional source.");
+      } else {
+        throw new Error("No tracks found from any platform. Try a different search term or check your platform settings.");
+      }
     }
     
     allTracks = combineAndDeduplicateTracks(allTracks);
