@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
+import type { Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 
 export function usePlaylistGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -16,7 +17,7 @@ export function usePlaylistGeneration() {
     setDebugLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
   };
 
-  const handleGenerate = async (prompt: string, advancedParams: any) => {
+  const handleGenerate = async (prompt: string, advancedParams: any, platforms: Platform[]) => {
     if (!prompt.trim()) {
       toast.error("Please enter a prompt");
       return;
@@ -38,12 +39,16 @@ export function usePlaylistGeneration() {
       addDebugLog(`Starting generation with prompt: "${prompt}"`);
       addDebugLog(`Using advanced params: ${JSON.stringify(advancedParams)}`);
       
+      const enabledPlatforms = platforms.filter(p => p.enabled).map(p => p.id);
+      addDebugLog(`Enabled platforms: ${enabledPlatforms.join(', ')}`);
+      
       addDebugLog("Calling process-music-request function...");
       const { data: processedData, error } = await supabase.functions
         .invoke('process-music-request', {
           body: { 
             prompt,
-            advancedParams
+            advancedParams,
+            platforms: enabledPlatforms
           }
         });
       
@@ -91,6 +96,7 @@ export function usePlaylistGeneration() {
           genres: [advancedParams.genre, ...(processedData.intent?.genres || [])].filter(Boolean),
           settings: {
             ...advancedParams,
+            platforms: enabledPlatforms,
             intent: processedData.intent
           }
         });

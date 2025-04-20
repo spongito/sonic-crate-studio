@@ -1,4 +1,5 @@
 import { searchTracks, searchArtists, getArtistTopTracks, getRelatedArtists } from './spotify-client.ts';
+import { searchYouTubeVideos } from './youtube-client.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const supabase = createClient(
@@ -8,7 +9,6 @@ const supabase = createClient(
 
 async function saveMasterTrack(track: any, audioFeatures: any) {
   try {
-    // Debug log to see what we're trying to insert
     console.log('Attempting to save track with audio features:', {
       id: track.id,
       title: track.title || track.name,
@@ -21,7 +21,6 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       return null;
     }
     
-    // Check if track already exists
     const { data: existingTrack, error: checkError } = await supabase
       .from('tracks_master')
       .select('id, bpm, key_signature')
@@ -33,7 +32,6 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       return null;
     }
 
-    // Extract BPM and key from audio features if available
     let bpm = null;
     let keySignature = null;
     let energy = null;
@@ -43,7 +41,6 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
     let acousticness = null;
     
     if (audioFeatures) {
-      // Direct from Spotify API response
       if (audioFeatures.tempo !== undefined) {
         bpm = Math.round(audioFeatures.tempo);
       }
@@ -52,14 +49,12 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
         keySignature = formatKey(audioFeatures.key, audioFeatures.mode);
       }
       
-      // Capture other audio features
       energy = audioFeatures.energy;
       danceability = audioFeatures.danceability;
       valence = audioFeatures.valence;
       instrumentalness = audioFeatures.instrumentalness;
       acousticness = audioFeatures.acousticness;
     } 
-    // From track's audio_features property (already processed tracks)
     else if (track.audio_features) {
       if (track.audio_features.bpm !== undefined) {
         bpm = track.audio_features.bpm;
@@ -83,7 +78,6 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
     if (existingTrack) {
       console.log(`Track ${track.title || track.name} already exists with ID ${existingTrack.id}`);
       
-      // Only update if we have new audio features and they were missing before
       if (audioFeatures && (!existingTrack.bpm || !existingTrack.key_signature)) {
         console.log(`Updating existing track ${existingTrack.id} with audio features`);
         
@@ -109,7 +103,6 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       return existingTrack.id;
     }
     
-    // Prepare data for insertion
     const trackData = {
       spotify_id: track.spotify_id,
       title: track.title || track.name,
@@ -135,7 +128,6 @@ async function saveMasterTrack(track: any, audioFeatures: any) {
       key_present: keySignature !== null
     });
 
-    // Insert new track with audio features
     const { data: newTrack, error } = await supabase
       .from('tracks_master')
       .insert(trackData)
@@ -163,67 +155,89 @@ function formatKey(key: number, mode: number) {
   return `${notes[key]} ${mode === 1 ? "Major" : "Minor"}`;
 }
 
-export async function executeSearchFlow(intent: any, token: string) {
+export async function executeSearchFlow(intent: any, token: string, platforms: string[] = ['spotify', 'youtube']) {
   let allTracks = [];
   let seedTracks = [];
   let seedArtists = [];
+  const enabledPlatforms = new Set(platforms);
   
   try {
-    // Artist-based search
-    if (intent.reference_artists && intent.reference_artists.length > 0) {
-      const artistIds = await searchArtists(intent.reference_artists, token);
-      if (artistIds.length === 0) {
-        console.warn("No artists found for the given references");
-      } else {
-        seedArtists = artistIds.slice(0, 2);
-        
-        const artistTracks = await getArtistTopTracks(artistIds.slice(0, 3), token);
-        allTracks.push(...artistTracks);
-        seedTracks = getSeedTracks(artistTracks, 3);
-        
-        if (artistIds[0]) {
-          const relatedArtistIds = await getRelatedArtists(artistIds[0], token);
-          if (relatedArtistIds.length > 0) {
-            const relatedTracks = await getArtistTopTracks(relatedArtistIds.slice(0, 2), token);
-            allTracks.push(...relatedTracks);
+    if (enabledPlatforms.has('spotify')) {
+      console.log("Performing Spotify search...");
+      
+      if (intent.reference_artists && intent.reference_artists.length > 0) {
+        const artistIds = await searchArtists(intent.reference_artists, token);
+        if (artistIds.length === 0) {
+          console.warn("No artists found for the given references");
+        } else {
+          seedArtists = artistIds.slice(0, 2);
+          
+          const artistTracks = await getArtistTopTracks(artistIds.slice(0, 3), token);
+          allTracks.push(...artistTracks);
+          seedTracks = getSeedTracks(artistTracks, 3);
+          
+          if (artistIds[0]) {
+            const relatedArtistIds = await getRelatedArtists(artistIds[0], token);
+            if (relatedArtistIds.length > 0) {
+              const relatedTracks = await getArtistTopTracks(relatedArtistIds.slice(0, 2), token);
+              allTracks.push(...relatedTracks);
+            }
           }
+        }
+      }
+      
+      let searchQuery = intent.original_prompt;
+      if (intent.genre && intent.genre !== "any") {
+        searchQuery += ` genre:${intent.genre}`;
+      }
+      
+      const searchResults = await searchTracks(searchQuery, token, 30);
+      if (searchResults.length > 0) {
+        allTracks.push(...searchResults);
+        
+        if (seedTracks.length < 5) {
+          const additionalSeeds = getSeedTracks(searchResults, 5 - seedTracks.length);
+          seedTracks = [...seedTracks, ...additionalSeeds];
+        }
+      } else {
+        console.warn("No tracks found for main search query");
+      }
+      
+      if (allTracks.length < 10) {
+        const broadSearchQuery = intent.mood_tags.join(' ') + ' ' + (intent.genre || '');
+        const broadSearchResults = await searchTracks(broadSearchQuery, token, 30);
+        allTracks.push(...broadSearchResults);
+        
+        if (seedTracks.length < 5 && broadSearchResults.length > 0) {
+          const additionalSeeds = getSeedTracks(broadSearchResults, 5 - seedTracks.length);
+          seedTracks = [...seedTracks, ...additionalSeeds];
         }
       }
     }
     
-    // Text-based search
-    let searchQuery = intent.original_prompt;
-    if (intent.genre && intent.genre !== "any") {
-      searchQuery += ` genre:${intent.genre}`;
+    if (enabledPlatforms.has('youtube')) {
+      console.log("Performing YouTube search...");
+      
+      const youtubeGenre = intent.genre && intent.genre !== "any" ? intent.genre : "";
+      const youtubeMoods = intent.mood_tags.slice(0, 2).join(' ');
+      const youtubeQuery = `${youtubeGenre} ${youtubeMoods} ${intent.tempo || ''}`.trim();
+      
+      const youtubeResults = await searchYouTubeVideos(youtubeQuery, 20);
+      console.log(`Found ${youtubeResults.length} YouTube tracks`);
+      
+      if (youtubeResults.length > 0) {
+        allTracks.push(...youtubeResults);
+      }
     }
     
-    const searchResults = await searchTracks(searchQuery, token, 30);
-    if (searchResults.length > 0) {
-      allTracks.push(...searchResults);
-      
-      if (seedTracks.length < 5) {
-        const additionalSeeds = getSeedTracks(searchResults, 5 - seedTracks.length);
-        seedTracks = [...seedTracks, ...additionalSeeds];
-      }
-    } else {
-      console.warn("No tracks found for main search query");
-    }
-    
-    // Fallback search if needed
-    if (allTracks.length < 10) {
-      const broadSearchQuery = intent.mood_tags.join(' ') + ' ' + (intent.genre || '');
-      const broadSearchResults = await searchTracks(broadSearchQuery, token, 30);
-      allTracks.push(...broadSearchResults);
-      
-      if (seedTracks.length < 5 && broadSearchResults.length > 0) {
-        const additionalSeeds = getSeedTracks(broadSearchResults, 5 - seedTracks.length);
-        seedTracks = [...seedTracks, ...additionalSeeds];
-      }
+    if (allTracks.length === 0) {
+      console.warn("No tracks found from any platform");
+      return { tracks: [], seedTracks: [], seedArtists: [] };
     }
     
     allTracks = combineAndDeduplicateTracks(allTracks);
+    console.log(`Combined and deduplicated: ${allTracks.length} total tracks`);
     
-    // Save tracks to master database
     console.log(`Saving ${allTracks.length} tracks to master database...`);
     for (const track of allTracks) {
       if (track.audio_features) {
@@ -258,8 +272,9 @@ function combineAndDeduplicateTracks(trackArrays: any[]) {
     : trackArrays;
   
   for (const track of flatTracks) {
-    if (!uniqueTracks.has(track.id)) {
-      uniqueTracks.set(track.id, track);
+    const trackId = track.id || track.youtube_id || track.spotify_id;
+    if (!uniqueTracks.has(trackId)) {
+      uniqueTracks.set(trackId, track);
     }
   }
   

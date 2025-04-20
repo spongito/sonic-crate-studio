@@ -10,6 +10,7 @@ import { SignInDialog } from "@/components/auth/SignInDialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { PlatformSelector, getDefaultPlatforms, type Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 
 interface HeroSectionProps {
   onPlaylistGenerated?: (data: any) => void;
@@ -18,6 +19,7 @@ interface HeroSectionProps {
 
 const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps) => {
   const [prompt, setPrompt] = useState("");
+  const [platforms, setPlatforms] = useState(getDefaultPlatforms());
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -45,6 +47,8 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
       setIsGenerating(true);
       if (setShowPlaylist) setShowPlaylist(false);
       
+      const enabledPlatforms = platforms.filter(p => p.enabled).map(p => p.id);
+      
       const { data: processedData, error } = await supabase.functions
         .invoke('process-music-request', {
           body: { 
@@ -56,7 +60,8 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
               length: "1.5h",
               commercialFactor: 50,
               referenceArtists: ""
-            }
+            },
+            platforms: enabledPlatforms
           }
         });
       
@@ -122,7 +127,7 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
           </p>
           
           <div className="max-w-2xl mx-auto w-full mt-8">
-            <div className="glass-morphism p-2 sm:p-3 flex flex-col sm:flex-row gap-3">
+            <div className="glass-morphism p-2 sm:p-3 flex flex-col gap-3">
               <Input
                 placeholder="curate a soulful afrobeat set for golden hour"
                 className="flex-1 bg-background/60 border-white/10"
@@ -131,32 +136,40 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
                 onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
                 disabled={isGenerating}
               />
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="border-white/10 hover:bg-white/5"
-                  onClick={() => setShowAdvancedSearch(true)}
-                  disabled={isGenerating}
-                >
-                  <Sliders className="h-4 w-4" />
-                </Button>
-                <Button 
-                  className="bg-gold hover:bg-gold-dark text-black font-medium"
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      Find Songs
-                      {user && <ArrowRight className="ml-2 h-4 w-4" />}
-                    </>
-                  )}
-                </Button>
+              
+              <div className="flex justify-between items-center">
+                <PlatformSelector 
+                  platforms={platforms}
+                  onChange={setPlatforms}
+                />
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="border-white/10 hover:bg-white/5"
+                    onClick={() => setShowAdvancedSearch(true)}
+                    disabled={isGenerating}
+                  >
+                    <Sliders className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    className="bg-gold hover:bg-gold-dark text-black font-medium"
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        Find Songs
+                        {user && <ArrowRight className="ml-2 h-4 w-4" />}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">

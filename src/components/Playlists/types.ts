@@ -4,6 +4,7 @@ export interface Track {
   artist: string;
   album?: string;
   spotify_id?: string;
+  youtube_id?: string;
   duration?: string;
   match_score?: number;
   audio_features?: {
@@ -16,6 +17,7 @@ export interface Track {
   cover_url?: string;
   release_year?: number;
   genre?: string[];
+  audio_confidence_score?: number;
 }
 
 export interface Playlist {

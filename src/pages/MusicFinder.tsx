@@ -5,6 +5,7 @@ import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
 import { SearchPromptInput } from "@/components/Dashboard/MusicFinder/SearchPromptInput";
 import { DebugPanel } from "@/components/Dashboard/MusicFinder/DebugPanel";
+import { PlatformSelector, getDefaultPlatforms, type Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 import { usePlaylistGeneration } from "@/hooks/use-playlist-generation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -12,6 +13,7 @@ const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const { subscription } = useAuth();
+  const [platforms, setPlatforms] = useState(getDefaultPlatforms());
   
   const [advancedParams, setAdvancedParams] = useState<AdvancedSettingsParams>({
     mode: "club-ready",
@@ -39,6 +41,7 @@ const MusicFinder = () => {
       commercialFactor: 50,
       referenceArtists: ""
     });
+    setPlatforms(getDefaultPlatforms());
     setPrompt("");
   };
 
@@ -60,7 +63,12 @@ const MusicFinder = () => {
                 isGenerating={isGenerating}
                 disabled={!subscription?.is_premium && subscription?.remaining_generations === 0}
                 onChange={setPrompt}
-                onGenerate={() => handleGenerate(prompt, advancedParams)}
+                onGenerate={() => handleGenerate(prompt, advancedParams, platforms)}
+              />
+              
+              <PlatformSelector 
+                platforms={platforms}
+                onChange={setPlatforms}
               />
               
               <AdvancedSettings

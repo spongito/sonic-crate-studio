@@ -1,7 +1,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Music, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Track } from "@/components/Playlists/types";
 
@@ -16,6 +16,17 @@ interface TrackTableProps {
 
 export function TrackTable({ tracks, onSortColumn, sortConfig }: TrackTableProps) {
   const isSortable = !!onSortColumn;
+  
+  const getPlatformIcon = (platform?: string) => {
+    switch (platform?.toLowerCase()) {
+      case 'spotify':
+        return <Music className="h-4 w-4 text-green-400" />;
+      case 'youtube':
+        return <Youtube className="h-4 w-4 text-red-400" />;
+      default:
+        return <Music className="h-4 w-4" />;
+    }
+  };
   
   return (
     <Table>
@@ -57,7 +68,7 @@ export function TrackTable({ tracks, onSortColumn, sortConfig }: TrackTableProps
       </TableHeader>
       <TableBody>
         {tracks.map((track, index) => (
-          <TableRow key={`${track.spotify_id}-${index}`}>
+          <TableRow key={`${track.spotify_id || track.youtube_id || index}-${index}`}>
             <TableCell>{index + 1}</TableCell>
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
@@ -74,18 +85,21 @@ export function TrackTable({ tracks, onSortColumn, sortConfig }: TrackTableProps
             <TableCell className="line-clamp-1">{track.artist}</TableCell>
             <TableCell className="hidden md:table-cell line-clamp-1">{track.album}</TableCell>
             <TableCell className="hidden md:table-cell">
-              {track.platform === 'spotify' && track.platform_url && (
-                <a 
-                  href={track.platform_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block"
-                >
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </a>
-              )}
+              <div className="flex items-center gap-2">
+                {getPlatformIcon(track.platform)}
+                {track.platform_url && (
+                  <a 
+                    href={track.platform_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block"
+                  >
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </a>
+                )}
+              </div>
             </TableCell>
             <TableCell className="hidden md:table-cell">
               {track.match_score && (
