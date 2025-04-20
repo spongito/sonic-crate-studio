@@ -1,10 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import DashboardCards from "@/components/Dashboard/DashboardCards";
 import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
-import ProfileCard from "@/components/Dashboard/ProfileCard";
-import UpgradeModal from "@/components/Dashboard/UpgradeModal";
 import { StatCard } from "@/components/Dashboard/StatCard";
 import { CurationStats } from "@/components/Dashboard/CurationStats";
 import { MusicPersonality } from "@/components/Dashboard/MusicPersonality";
@@ -15,7 +13,6 @@ import { useQuery } from "@tanstack/react-query";
 
 const Dashboard = () => {
   const [showPlaylist, setShowPlaylist] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [searchParams] = useSearchParams();
   const { subscription, checkSubscription, user } = useAuth();
 
@@ -50,7 +47,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <StatCard title="Curation Activity">
             <CurationStats
               playlistsCount={userProfile?.playlists_generated || 0}
@@ -68,10 +65,6 @@ const Dashboard = () => {
               mostUsedPrompt={userProfile?.most_used_prompt}
             />
           </StatCard>
-          
-          <div className="h-full">
-            <ProfileCard onUpgrade={() => setShowUpgradeModal(true)} />
-          </div>
         </div>
 
         {showPlaylist && (
@@ -83,13 +76,7 @@ const Dashboard = () => {
         <h2 className="text-2xl font-bold mt-12 pt-6 border-t border-white/5 text-white/90">
           Explore Features
         </h2>
-        <DashboardCards />
       </div>
-      
-      <UpgradeModal 
-        open={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)} 
-      />
     </DashboardLayout>
   );
 };
