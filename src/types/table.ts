@@ -18,6 +18,7 @@ export type Track = {
   platform_url?: string;
   spotify_id?: string;
   created_at?: string; // Add this to fix the type error
+  duration_seconds?: number; // Add this to support duration calculation
 };
 
 export type GeneratedTrack = Track;

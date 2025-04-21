@@ -62,7 +62,8 @@ export function useUserLikedTracks({
         ...track,
         id: track.track_id,
         liked: likedTrackIds.has(track.track_id),
-        duration: track.duration || formatDurationFromSeconds(track.duration_seconds) || "0:00"
+        // Safely handle duration - use a default format if not available
+        duration: formatDuration(track)
       }));
 
       // Apply filters
@@ -85,12 +86,22 @@ export function useUserLikedTracks({
     },
   });
 
-  // Helper function to format duration
-  const formatDurationFromSeconds = (seconds?: number): string | undefined => {
-    if (!seconds) return undefined;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  // Helper function to format duration based on available data
+  const formatDuration = (track: any): string => {
+    // If track already has a duration string, use it
+    if (typeof track.duration === 'string') {
+      return track.duration;
+    }
+    
+    // If we have duration in seconds, format it
+    if (typeof track.duration_seconds === 'number') {
+      const minutes = Math.floor(track.duration_seconds / 60);
+      const seconds = Math.floor(track.duration_seconds % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Default duration if nothing is available
+    return "0:00";
   };
 
   // Mutation for toggling track like status
