@@ -23,14 +23,19 @@ export type GeneratedTrack = {
 
 interface Props {
   tracks: GeneratedTrack[];
-  userLikedTrackIds?: string[]; // pass ids for user liked tracks
+  userLikedTrackIds?: string[];
   onLikeChange?: (trackId: string, liked: boolean) => void;
+  // Save/visibility features coming soon
 }
 
-export function GeneratedPlaylistTable({ tracks, userLikedTrackIds = [], onLikeChange }: Props) {
+export function GeneratedPlaylistTable({
+  tracks,
+  userLikedTrackIds = [],
+  onLikeChange,
+}: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [pending, setPending] = useState<{[trackId: string]: boolean}>({});
+  const [pending, setPending] = useState<{ [trackId: string]: boolean }>({});
 
   // Compute like state for each track (real logic)
   function isTrackLiked(id: string): boolean {
@@ -59,7 +64,8 @@ export function GeneratedPlaylistTable({ tracks, userLikedTrackIds = [], onLikeC
         onLikeChange?.(track.id, true);
       } else {
         // Unlike: delete row
-        await supabase.from("liked_tracks")
+        await supabase
+          .from("liked_tracks")
           .delete()
           .eq("user_id", user.id)
           .eq("track_id", track.id);
@@ -85,6 +91,22 @@ export function GeneratedPlaylistTable({ tracks, userLikedTrackIds = [], onLikeC
 
   return (
     <div className="rounded-lg bg-white/5 p-4 border border-white/10 mt-6 overflow-x-auto">
+      {/* Placeholders for Save Playlist/Public toggle */}
+      <div className="flex justify-end gap-2 mb-4">
+        {/* To be fully implemented: */}
+        <button
+          className="px-3 py-1 rounded bg-gold/80 hover:bg-gold text-black font-semibold text-sm transition disabled:opacity-60"
+          disabled
+        >
+          Save Playlist
+        </button>
+        <button
+          className="px-3 py-1 rounded border border-white/20 bg-white/10 text-white/80 font-semibold text-sm transition disabled:opacity-60"
+          disabled
+        >
+          Public
+        </button>
+      </div>
       <table className="min-w-full">
         <thead>
           <tr className="border-b border-white/10">
@@ -160,3 +182,4 @@ export function GeneratedPlaylistTable({ tracks, userLikedTrackIds = [], onLikeC
     </div>
   );
 }
+
