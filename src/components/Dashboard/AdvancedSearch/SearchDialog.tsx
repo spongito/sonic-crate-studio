@@ -1,19 +1,21 @@
-import { useState, useEffect } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlatformSelectSection } from "../MusicFinder/AdvancedSettings/PlatformSelectSection";
 import { GenreSelect } from "../MusicFinder/AdvancedSettings/GenreSelect";
 import { LocationSelectSection } from "../MusicFinder/AdvancedSettings/LocationSelectSection";
-import { LengthSelector } from "../MusicFinder/AdvancedSettings/LengthSelector";
-import { CommercialSlider } from "../MusicFinder/AdvancedSettings/CommercialSlider";
-import { ReleaseYearRangeSlider } from "../MusicFinder/AdvancedSettings/ReleaseYearRangeSlider";
-import { BpmFilter } from "../MusicFinder/AdvancedSettings/BpmFilter";
-import { ReferenceMultiSearch } from "../MusicFinder/ReferenceMultiSearch";
+import { LengthSelector } from "../MusicFinder/AdvancedSettings/LengthSettings";
+import { CommercialSlider } from "../MusicFinder/AdvancedSettings/CommercialSettings";
+import { ReleaseYearRangeSlider } from "../MusicFinder/AdvancedSettings/ReleaseYearSettings";
+import { BpmFilter } from "../MusicFinder/AdvancedSettings/BpmSettings";
+import { ReferenceMultiSearch, SpotifySearchResult } from "../MusicFinder/ReferenceMultiSearch";
 import { getDefaultPlatforms, type Platform } from "../MusicFinder/PlatformSelector";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
 
 const genres = [
   "Afrobeat", "Ambient", "Blues", "Classical", "Deep House", 
@@ -77,6 +79,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
   
   const [selectedReferences, setSelectedReferences] = useState<SpotifySearchResult[]>([]);
   const [locationSearchInput, setLocationSearchInput] = useState("");
+  const { subscription } = useAuth();
 
   useEffect(() => {
     if (initialPrompt) {
@@ -113,6 +116,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
       }));
     }
   };
+  
   const removeLocation = (locationValue: string) => {
     setParams(prev => ({
       ...prev,
@@ -196,3 +200,5 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
     </Dialog>
   );
 }
+
+export default SearchDialog;
