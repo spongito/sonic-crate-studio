@@ -1,4 +1,3 @@
-
 // --- Imports ---
 import * as React from "react";
 import { useTableColumns } from "@/hooks/use-table-columns";
@@ -92,9 +91,6 @@ export function GeneratedPlaylistTable({
 
   return (
     <div className={`w-full space-y-4 ${className}`}>
-      {playlistName && (
-        <h3 className="font-medium text-lg pl-6">{playlistName}</h3>
-      )}
       <PlaylistTableControls 
         table={table} 
         showControls={showControls} 
