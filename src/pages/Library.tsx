@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +9,7 @@ import { useMemo } from "react";
 import { LibrarySearch } from "@/components/Library/LibrarySearch";
 import { LibraryContent } from "@/components/Library/LibraryContent";
 import { LibraryFilters } from "@/components/Library/LibraryFilters";
+import { toast } from "sonner";
 
 const Library = () => {
   const { user } = useAuth();
@@ -34,31 +36,38 @@ const Library = () => {
     camelotMode
   };
 
-  const { tracks: likedTracks, isLoading: isLoadingLiked } = useUserLikedTracks({
+  const { tracks: allTracks, isLoading, toggleLike } = useUserLikedTracks({
     filters,
     userId: user?.id || ""
   });
 
-  const trackIds = (Array.isArray(likedTracks) ? likedTracks : []).map(t => t.id);
+  const handleLikeToggle = async (trackId: string, currentlyLiked: boolean) => {
+    try {
+      await toggleLike({ trackId, liked: currentlyLiked });
+      toast.success(currentlyLiked ? "Track removed from likes" : "Track added to likes");
+    } catch (error) {
+      toast.error("Failed to update track like status");
+      console.error("Error toggling track like:", error);
+    }
+  };
 
-  const memoTracks = useMemo(() => (
-    (Array.isArray(likedTracks) ? likedTracks : []).map((t) => ({
-      ...t,
-      platform: "spotify",
-      id: t.id,
-      title: t.title,
-      artist: t.artist,
-      album: t.album,
-      image_url: t.image_url,
-      bpm: t.bpm,
-      key_signature: t.key_signature,
-      genre: t.genre,
-      release_year: t.release_year,
-      duration: t.duration,
-    }))
-  ), [likedTracks]);
+  const memoTracks = useMemo(() => allTracks.map((t) => ({
+    ...t,
+    platform: t.platform || "spotify",
+    id: t.id,
+    title: t.title,
+    artist: t.artist,
+    album: t.album,
+    image_url: t.image_url,
+    bpm: t.bpm,
+    key_signature: t.key_signature,
+    genre: t.genre,
+    release_year: t.release_year,
+    duration: t.duration,
+    liked: t.liked
+  })), [allTracks]);
 
-  if (isLoadingLiked) {
+  if (isLoading) {
     return (
       <DashboardLayout>
         <div className="container mx-auto px-4 py-8">
@@ -72,7 +81,7 @@ const Library = () => {
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col gap-8">
-          <RecentlyFoundTracks />
+          <RecentlyFoundTracks tracks={memoTracks.slice(0, 10)} onLikeToggle={handleLikeToggle} />
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="flex flex-col gap-4">
@@ -108,7 +117,7 @@ const Library = () => {
             <LibraryContent
               activeTab={activeTab}
               tracks={memoTracks}
-              trackIds={trackIds}
+              onLikeToggle={handleLikeToggle}
             />
           </Tabs>
         </div>

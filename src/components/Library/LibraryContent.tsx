@@ -1,31 +1,32 @@
 
 import { GeneratedPlaylistTable } from "@/components/GeneratedPlaylistTable";
 import { TabsContent } from "@/components/ui/tabs";
+import type { Track } from "@/types/table";
 
 interface LibraryContentProps {
   activeTab: string;
-  tracks: any[];
-  trackIds: string[];
+  tracks: Track[];
+  onLikeToggle: (trackId: string, liked: boolean) => void;
 }
 
-export function LibraryContent({ activeTab, tracks, trackIds }: LibraryContentProps) {
+export function LibraryContent({ activeTab, tracks, onLikeToggle }: LibraryContentProps) {
   return (
     <>
       <TabsContent value="all" className="space-y-4">
         <GeneratedPlaylistTable
           tracks={tracks}
-          userLikedTrackIds={trackIds}
           showControls={false}
           fullWidth={true}
+          onLikeChange={(trackId, liked) => onLikeToggle(trackId, liked)}
         />
       </TabsContent>
 
       <TabsContent value="liked" className="space-y-4">
         <GeneratedPlaylistTable
-          tracks={tracks.filter(track => trackIds.includes(track.id))}
-          userLikedTrackIds={trackIds}
+          tracks={tracks.filter(track => track.liked)}
           showControls={false}
           fullWidth={true}
+          onLikeChange={(trackId, liked) => onLikeToggle(trackId, liked)}
         />
       </TabsContent>
     </>
