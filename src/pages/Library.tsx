@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Heart, Search, ChevronDown } from "lucide-react";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { GeneratedPlaylistTable } from "@/components/GeneratedPlaylistTable";
+import { useTrackLikes } from "@/hooks/useTrackLikes";
+import { toast } from "sonner";
 
 const Library = () => {
   const { user } = useAuth();
@@ -28,10 +29,21 @@ const Library = () => {
     search, bpmMin, bpmMax, yearMin, yearMax, genre, key, energy, mood, camelotMode
   };
 
-  const { tracks, isLoading, error } = useUserLikedTracks({ 
+  const { tracks, isLoading, error, refetch } = useUserLikedTracks({ 
     filters, 
     userId: user?.id || "" 
   });
+
+  // Track likes hooks
+  const { toggleLike, isProcessing } = useTrackLikes();
+
+  // Handle track like changes
+  const handleLikeChange = useCallback(async (trackId: string, liked: boolean) => {
+    if (!liked) {
+      // If track was unliked, refetch the library tracks
+      await refetch();
+    }
+  }, [refetch]);
 
   // All liked track IDs for like state management in table
   const trackIds = (Array.isArray(tracks) ? tracks : []).map(t => t.id);
@@ -51,6 +63,7 @@ const Library = () => {
       genre: t.genre,
       release_year: t.release_year,
       duration: t.duration,
+      liked: true // All tracks in library are liked by definition
     }))
   ), [tracks]);
 
@@ -75,6 +88,8 @@ const Library = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Search and filters */}
         <div className="flex items-center justify-center mb-4">
           <div className="relative w-full sm:w-2/3">
             <Input
@@ -183,6 +198,7 @@ const Library = () => {
               userLikedTrackIds={trackIds}
               showControls={false}
               fullWidth={true}
+              onLikeChange={handleLikeChange}
             />
           )}
         </div>

@@ -14,6 +14,7 @@ import {
 import PlaylistTableControls from "./PlaylistTableControls";
 import PlaylistTableContainer from "./PlaylistTableContainer";
 import { getPlaylistTableColumns } from "./PlaylistTableColumns";
+import { useTrackLikes } from "@/hooks/useTrackLikes";
 
 // --- Types ---
 export type Track = {
@@ -75,6 +76,54 @@ export function GeneratedPlaylistTable({
     year: false,
   });
   const [rowSelection, setRowSelection] = React.useState({});
+  const [likedTracks, setLikedTracks] = React.useState<Record<string, boolean>>({});
+  
+  // Initialize liked tracks from props
+  React.useEffect(() => {
+    if (userLikedTrackIds && userLikedTrackIds.length > 0) {
+      const newLikedState: Record<string, boolean> = {};
+      userLikedTrackIds.forEach(id => {
+        newLikedState[id] = true;
+      });
+      setLikedTracks(newLikedState);
+    }
+  }, [userLikedTrackIds]);
+
+  // Use our custom hook for track likes
+  const { toggleLike, addToLibrary, isProcessing } = useTrackLikes();
+
+  // Handle like button click
+  const handleLikeToggle = async (trackId: string) => {
+    const currentlyLiked = likedTracks[trackId] || false;
+    
+    // Call API to toggle like
+    const newLikedState = await toggleLike(trackId, currentlyLiked);
+    
+    // Update local state
+    setLikedTracks(prev => ({
+      ...prev,
+      [trackId]: newLikedState
+    }));
+    
+    // Call onLikeChange if provided
+    if (onLikeChange) {
+      onLikeChange(trackId, newLikedState);
+    }
+    
+    // Call onLikeToggle if provided (legacy support)
+    if (onLikeToggle) {
+      onLikeToggle(trackId);
+    }
+  };
+
+  // Handle add to library click
+  const handleAddToLibrary = async (trackId: string) => {
+    await addToLibrary(trackId);
+    
+    if (onAddToLibrary) {
+      onAddToLibrary(trackId);
+    }
+  };
 
   // Memoized columns to avoid unnecessary rerenders
   const columns = React.useMemo(
@@ -83,18 +132,18 @@ export function GeneratedPlaylistTable({
         showSelection,
         showLikeButton,
         showAddToLibrary,
-        onLikeToggle: onLikeToggle || (() => {}),
-        onAddToLibrary,
-        userLikedTrackIds,
+        onLikeToggle: handleLikeToggle,
+        onAddToLibrary: handleAddToLibrary,
+        userLikedTrackIds: Object.keys(likedTracks).filter(id => likedTracks[id]),
         onLikeChange,
       }),
     [
       showSelection,
       showLikeButton,
       showAddToLibrary,
-      onLikeToggle,
-      onAddToLibrary,
-      userLikedTrackIds,
+      handleLikeToggle,
+      handleAddToLibrary,
+      likedTracks,
       onLikeChange,
     ]
   );
