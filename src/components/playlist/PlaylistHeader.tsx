@@ -1,8 +1,7 @@
-
 import { useState, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Spotify, Youtube } from "lucide-react";
+import { Music2, Youtube } from "lucide-react";
 
 interface PlaylistHeaderProps {
   title: string;
@@ -48,7 +47,7 @@ export function PlaylistHeader({
             All Platforms
           </TabsTrigger>
           <TabsTrigger value="spotify" className="relative flex items-center gap-2">
-            <Spotify className="w-4 h-4 text-green-500" />
+            <Music2 className="w-4 h-4 text-green-500" />
             Spotify
             <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full" />
           </TabsTrigger>
