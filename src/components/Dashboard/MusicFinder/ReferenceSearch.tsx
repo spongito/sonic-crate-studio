@@ -32,27 +32,18 @@ export function ReferenceSearch({
   const [results, setResults] = useState<SpotifySearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // Handle debouncing the query to avoid interruptions while typing
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
+    const searchTimer = setTimeout(() => {
+      if (query.trim().length >= 2) {
+        searchSpotify(query);
+      } else {
+        setResults([]);
+      }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(searchTimer);
   }, [query]);
-
-  // Live search: run on debounced query change
-  useEffect(() => {
-    if (!open || !debouncedQuery.trim()) return;
-    
-    if (debouncedQuery.trim().length >= 2) {
-      searchSpotify(debouncedQuery);
-    } else {
-      setResults([]);
-    }
-  }, [debouncedQuery, open]);
 
   const searchSpotify = async (searchQuery: string) => {
     try {
@@ -64,18 +55,14 @@ export function ReferenceSearch({
       
       if (error) {
         console.error('Error searching Spotify:', error);
-        setResults([]);
         return;
       }
       
       if (data && Array.isArray(data)) {
         setResults(data);
-      } else {
-        setResults([]);
       }
     } catch (error) {
       console.error('Failed to search Spotify:', error);
-      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -88,8 +75,8 @@ export function ReferenceSearch({
       onReferencesChange(updatedReferences);
       setQuery("");
       setResults([]);
-      setOpen(false);
     }
+    setOpen(false);
   };
 
   const handleRemove = (id: string) => {
@@ -112,7 +99,6 @@ export function ReferenceSearch({
                 onFocus={() => setOpen(true)}
                 disabled={disabled}
                 className="bg-background/60"
-                autoComplete="off"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 {loading ? (
@@ -124,19 +110,15 @@ export function ReferenceSearch({
             </div>
           </PopoverTrigger>
           
-          {open && query.trim().length >= 2 && (
-            <PopoverContent className="p-0 w-[300px] max-h-[300px] overflow-y-auto z-50" align="start">
-              {loading ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">Searching...</div>
-              ) : results.length > 0 ? (
+          {query.trim().length >= 2 && (
+            <PopoverContent className="p-0 w-[300px] max-h-[300px] overflow-y-auto" align="start">
+              {results.length > 0 ? (
                 <div className="py-2">
                   {results.map((result) => (
                     <button
                       key={result.id}
                       className="flex items-center gap-3 w-full hover:bg-muted px-3 py-2 text-left"
                       onClick={() => handleSelect(result)}
-                      tabIndex={-1}
-                      type="button"
                     >
                       {result.imageUrl ? (
                         <img
@@ -163,7 +145,7 @@ export function ReferenceSearch({
                 </div>
               ) : (
                 <div className="p-4 text-center text-sm text-muted-foreground">
-                  No results found
+                  {loading ? "Searching..." : "No results found"}
                 </div>
               )}
             </PopoverContent>
