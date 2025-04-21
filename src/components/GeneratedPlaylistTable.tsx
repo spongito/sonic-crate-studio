@@ -1,5 +1,6 @@
 // --- Imports ---
 import * as React from "react";
+import { useTableColumns } from "@/hooks/use-table-columns";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -80,11 +81,8 @@ export function GeneratedPlaylistTable({
 }: GeneratedPlaylistTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
-    platform: false,
-    year: false,
-  });
   const [rowSelection, setRowSelection] = React.useState({});
+  const { visibleColumns, toggleColumn } = useTableColumns();
 
   // Like handler
   const handleLikeToggle = (trackId: string) => {
@@ -104,16 +102,8 @@ export function GeneratedPlaylistTable({
             id: "select",
             header: ({ table }) => (
               <Checkbox
-                checked={
-                  table.getIsAllPageRowsSelected()
-                    ? true
-                    : table.getIsSomePageRowsSelected()
-                    ? "indeterminate"
-                    : false
-                }
-                onCheckedChange={(value) =>
-                  table.toggleAllPageRowsSelected(!!value)
-                }
+                checked={table.getIsAllPageRowsSelected()}
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                 aria-label="Select all"
                 className="translate-y-[2px]"
               />
@@ -126,7 +116,6 @@ export function GeneratedPlaylistTable({
                 className="translate-y-[2px]"
               />
             ),
-            enableSorting: false,
             enableHiding: false,
           } as ColumnDef<Track>,
         ]
@@ -135,10 +124,9 @@ export function GeneratedPlaylistTable({
       accessorKey: "title",
       header: "Track",
       cell: ({ row }) => (
-        <TrackCell
-          track={row.original}
-        />
+        <TrackCell track={row.original} />
       ),
+      enableHiding: false,
     },
     {
       accessorKey: "album",
@@ -222,12 +210,11 @@ export function GeneratedPlaylistTable({
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
+      columnVisibility: visibleColumns,
       rowSelection,
     },
   });
@@ -238,7 +225,12 @@ export function GeneratedPlaylistTable({
       {playlistName && (
         <h3 className="font-medium text-lg pl-6">{playlistName}</h3>
       )}
-      <PlaylistTableControls table={table} showControls={showControls} columns={columns} />
+      <PlaylistTableControls 
+        table={table} 
+        showControls={showControls} 
+        columns={columns}
+        onToggleColumn={toggleColumn}
+      />
       <div className="overflow-hidden rounded-lg border border-muted">
         <div className="relative w-full overflow-auto">
           <Table>

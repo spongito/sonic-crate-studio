@@ -11,9 +11,15 @@ interface PlaylistTableControlsProps {
   table: any;
   columns: ColumnDef<Track>[];
   showControls?: boolean;
+  onToggleColumn?: (columnId: string) => void;
 }
 
-export default function PlaylistTableControls({ table, showControls = true, columns }: PlaylistTableControlsProps) {
+export default function PlaylistTableControls({ 
+  table, 
+  showControls = true, 
+  columns,
+  onToggleColumn 
+}: PlaylistTableControlsProps) {
   if (!showControls) return null;
 
   return (
@@ -41,9 +47,12 @@ export default function PlaylistTableControls({ table, showControls = true, colu
                 key={column.id}
                 className="capitalize"
                 checked={column.getIsVisible()}
-                onCheckedChange={(value) =>
-                  column.toggleVisibility(!!value)
-                }
+                onCheckedChange={(value) => {
+                  column.toggleVisibility(!!value);
+                  if (onToggleColumn) {
+                    onToggleColumn(column.id);
+                  }
+                }}
               >
                 {column.id}
               </DropdownMenuCheckboxItem>
