@@ -11,18 +11,82 @@ const moodMap = {
 };
 
 const commonGenres = [
+  // Western genres
   "rock", "pop", "hip hop", "rap", "jazz", "blues", "country", "r&b", "soul",
   "electronic", "dance", "techno", "house", "ambient", "classical", "folk",
-  "reggae", "metal", "punk", "indie", "alternative", "disco", "funk", "afrobeat"
+  "reggae", "metal", "punk", "indie", "alternative", "disco", "funk",
+  
+  // Diaspora-specific genres
+  "afrobeat", "afrobeats", "amapiano", "dancehall", "soca", "reggaeton", 
+  "dembow", "bachata", "kompa", "zouk", "kizomba", "highlife", "jùjú",
+  "fuji", "soukous", "coupé-décalé", "gqom", "drill", "grime", "trap"
 ];
 
+// Activity-based mapping for diaspora-aware music selection
+const activityMappings = {
+  "workout": {
+    genres: ["drill", "trap", "afrobeat", "dancehall", "gqom"],
+    bpm_range: { min: 120, max: 150 },
+    energy: 0.8,
+    valence: 0.7
+  },
+  "study": {
+    genres: ["lo-fi", "chill hip hop", "jazz", "boom bap", "soul"],
+    bpm_range: { min: 60, max: 90 },
+    energy: 0.3,
+    valence: 0.5
+  },
+  "wedding": {
+    genres: ["afro-pop", "soca", "r&b", "soul", "reggae"],
+    bpm_range: { min: 85, max: 115 },
+    energy: 0.6,
+    valence: 0.8
+  },
+  "party": {
+    genres: ["dancehall", "amapiano", "afrobeats", "dembow", "trap", "soca"],
+    bpm_range: { min: 105, max: 130 },
+    energy: 0.8,
+    valence: 0.8
+  },
+  "meditation": {
+    genres: ["spiritual jazz", "ambient", "traditional", "soul"],
+    bpm_range: { min: 50, max: 70 },
+    energy: 0.2,
+    valence: 0.4
+  },
+  "driving": {
+    genres: ["r&b", "hip hop", "afro", "grime"],
+    bpm_range: { min: 75, max: 105 },
+    energy: 0.5,
+    valence: 0.4
+  },
+  "nighttime": {
+    genres: ["r&b", "chill trap", "afrobeats", "alternative r&b"],
+    bpm_range: { min: 75, max: 105 },
+    energy: 0.4,
+    valence: 0.4
+  }
+};
+
+// Keywords that suggest activity-based search
+const activityKeywords = {
+  "workout": ["workout", "gym", "exercise", "fitness", "training"],
+  "study": ["study", "focus", "concentration", "reading", "work"],
+  "wedding": ["wedding", "celebration", "ceremony", "reception", "love"],
+  "party": ["party", "club", "dance", "festival", "celebration"],
+  "meditation": ["meditation", "relax", "calm", "peace", "mindfulness"],
+  "driving": ["driving", "road", "trip", "car", "journey"],
+  "nighttime": ["night", "evening", "late", "sleep", "bedtime"]
+};
+
 export async function createStructuredIntent(prompt: string, advancedParams: any) {
+  // Base intent structure with improved categorization
   const baseIntent = {
     original_prompt: prompt,
     advanced_params: advancedParams,
     description: advancedParams.description || prompt,
     mood_tags: extractMoodWords(prompt),
-    genre: advancedParams.genre || extractGenre(prompt) || prompt,
+    genre: advancedParams.genre || extractGenre(prompt) || "",
     style: advancedParams.mode || "club-ready",
     set_length_minutes: parseSetLength(advancedParams.length),
     obscurity: calculateObscurityLevel(advancedParams.commercialFactor),
@@ -30,14 +94,33 @@ export async function createStructuredIntent(prompt: string, advancedParams: any
     keywords: extractKeywords(prompt),
     energy: calculateEnergyFromMoods(extractMoodWords(prompt)),
     danceability: calculateDanceabilityFromStyle(advancedParams.mode || "club-ready"),
-    valence: calculateValenceFromMoods(extractMoodWords(prompt))
+    valence: calculateValenceFromMoods(extractMoodWords(prompt)),
+    
+    // New fields for intent classification and enhanced search
+    intent_type: classifyIntent(prompt),
+    possible_artists: extractPossibleArtists(prompt),
+    possible_tracks: extractPossibleTracks(prompt),
+    activity_context: detectActivity(prompt)
   };
+
+  // Apply activity-based settings if detected
+  if (baseIntent.activity_context && activityMappings[baseIntent.activity_context]) {
+    const activityMap = activityMappings[baseIntent.activity_context];
+    baseIntent.bpm_range = activityMap.bpm_range;
+    baseIntent.energy = activityMap.energy;
+    baseIntent.valence = activityMap.valence;
+    
+    // Only set genre if not already specified in advanced params
+    if (!advancedParams.genre || advancedParams.genre === "any") {
+      baseIntent.suggested_genres = activityMap.genres;
+    }
+  }
 
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   
   if (openAIApiKey) {
     try {
-      const enhancedIntent = await analyzePromptWithGPT(prompt, advancedParams);
+      const enhancedIntent = await analyzePromptWithGPT(prompt, advancedParams, baseIntent);
       return { ...baseIntent, ...enhancedIntent };
     } catch (error) {
       console.error("Error analyzing prompt with GPT:", error);
@@ -49,7 +132,76 @@ export async function createStructuredIntent(prompt: string, advancedParams: any
   return baseIntent;
 }
 
-async function analyzePromptWithGPT(prompt: string, advancedParams: any) {
+function classifyIntent(prompt: string): string {
+  const promptLower = prompt.toLowerCase();
+  const words = promptLower.split(/\s+/).filter(w => w.length > 1);
+  
+  // Check for track search intent (explicit mention of song or track)
+  if (promptLower.includes(" song") || 
+      promptLower.includes(" track") || 
+      promptLower.includes("play ") || 
+      promptLower.match(/.*by\s+[a-z]/i)) {
+    return "track_search";
+  }
+  
+  // Check for activity search
+  for (const [activity, keywords] of Object.entries(activityKeywords)) {
+    for (const keyword of keywords) {
+      if (promptLower.includes(keyword)) {
+        return "activity_search";
+      }
+    }
+  }
+  
+  // Check if it's likely an artist search (2+ words that don't match common descriptors)
+  if (words.length >= 2 && !words.some(word => 
+    commonGenres.some(genre => genre.includes(word)) || 
+    Object.values(moodMap).flat().includes(word))) {
+    return "artist_search";
+  }
+  
+  // Default to theme search
+  return "theme_search";
+}
+
+function extractPossibleArtists(prompt: string): string[] {
+  // Simple extraction - will be enhanced by GPT analysis
+  const words = prompt.split(/\s+/);
+  return words
+    .filter(word => word.length > 3 && !commonGenres.some(g => g.includes(word.toLowerCase())));
+}
+
+function extractPossibleTracks(prompt: string): string[] {
+  // Extract potential track titles
+  const trackMatches = prompt.match(/["']([^"']+)["']/g);
+  if (trackMatches) {
+    return trackMatches.map(m => m.replace(/["']/g, ''));
+  }
+  
+  // Look for "by" pattern: "X by Y" where X is track and Y is artist
+  const byMatch = prompt.match(/(.+?)\s+by\s+(.+)/i);
+  if (byMatch) {
+    return [byMatch[1].trim()];
+  }
+  
+  return [];
+}
+
+function detectActivity(prompt: string): string | null {
+  const promptLower = prompt.toLowerCase();
+  
+  for (const [activity, keywords] of Object.entries(activityKeywords)) {
+    for (const keyword of keywords) {
+      if (promptLower.includes(keyword)) {
+        return activity;
+      }
+    }
+  }
+  
+  return null;
+}
+
+async function analyzePromptWithGPT(prompt: string, advancedParams: any, baseIntent: any) {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   
   try {
@@ -64,22 +216,27 @@ async function analyzePromptWithGPT(prompt: string, advancedParams: any) {
         messages: [
           { 
             role: "system", 
-            content: `You are a music curation assistant that analyzes user prompts about playlist desires. 
-            Extract the following information and return it as a JSON object:
-            - mood: array of mood descriptors (e.g. ["energetic", "uplifting", "dark"])
-            - genres: array of likely genres (e.g. ["house", "techno", "ambient"])
-            - energy: number between 0-1 (0 for calm, 1 for high energy)
-            - danceability: number between 0-1 (how danceable the music should be)
-            - valence: number between 0-1 (0 for sad/negative, 1 for happy/positive)
-            - tempo_range: object with min and max BPM if specified
-            - key_preference: music key if specified (e.g. "C Major")
-            - era_preference: decade or era if specified (e.g. "90s" or "modern")
+            content: `You are a music curation AI that specializes in Black American, Afro-Caribbean, 
+            Afro-Latinx, and African diaspora music culture. Analyze the user's playlist request and 
+            provide detailed music recommendations. Your analysis should include:
+            
+            1. intent_type: One of ["artist_search", "track_search", "theme_search", "activity_search"]
+            2. artists: Array of possible artist names mentioned (empty if none)
+            3. tracks: Array of possible track names mentioned (empty if none)
+            4. genres: Array of relevant genres with focus on diaspora music (afrobeat, amapiano, dancehall, soca, etc)
+            5. mood: Array of mood descriptors  
+            6. energy: Number between 0-1 (0 for calm, 1 for high energy)
+            7. danceability: Number between 0-1 (how danceable the music should be)
+            8. valence: Number between 0-1 (0 for sad/negative, 1 for happy/positive)
+            9. bpm_range: Object with min and max BPM if applicable
+            10. activity: Detected activity (workout, party, study, etc) or null
+            11. cultural_context: Brief insight into the cultural significance if applicable
             
             Return ONLY the JSON object with no other text.`
           },
           { 
             role: "user", 
-            content: `Analyze this playlist request: "${prompt}". 
+            content: `Analyze this playlist request with cultural awareness: "${prompt}". 
             Consider these additional parameters: 
             Mode: ${advancedParams.mode || "club-ready"}
             Genre: ${advancedParams.genre || "not specified"}
@@ -110,13 +267,19 @@ async function analyzePromptWithGPT(prompt: string, advancedParams: any) {
       throw new Error("Failed to parse intent from GPT response");
     }
     
+    // Map GPT output to our intent structure
     return {
-      mood_tags: intentObject.mood || [],
+      intent_type: intentObject.intent_type || baseIntent.intent_type,
+      possible_artists: intentObject.artists || baseIntent.possible_artists,
+      possible_tracks: intentObject.tracks || baseIntent.possible_tracks,
       genres: intentObject.genres || [],
-      energy: intentObject.energy !== undefined ? intentObject.energy : 0.5,
-      danceability: intentObject.danceability !== undefined ? intentObject.danceability : 0.5,
-      valence: intentObject.valence !== undefined ? intentObject.valence : 0.5,
-      tempo_range: intentObject.tempo_range || { min: 0, max: 300 },
+      mood_tags: intentObject.mood || baseIntent.mood_tags,
+      energy: intentObject.energy !== undefined ? intentObject.energy : baseIntent.energy,
+      danceability: intentObject.danceability !== undefined ? intentObject.danceability : baseIntent.danceability,
+      valence: intentObject.valence !== undefined ? intentObject.valence : baseIntent.valence,
+      bpm_range: intentObject.bpm_range || baseIntent.bpm_range,
+      activity_context: intentObject.activity || baseIntent.activity_context,
+      cultural_context: intentObject.cultural_context || null,
       key_preference: intentObject.key_preference || null,
       era_preference: intentObject.era_preference || null
     };

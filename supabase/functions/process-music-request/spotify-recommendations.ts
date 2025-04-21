@@ -8,45 +8,89 @@ export async function getRecommendations(seedTracks: string[], seedArtists: stri
       return [];
     }
     
-    let url = 'https://api.spotify.com/v1/recommendations?limit=30';
+    const queryParams = new URLSearchParams();
+    queryParams.append('limit', '30');
     
     // Add seed tracks
     if (seedTracks.length > 0) {
-      url += `&seed_tracks=${seedTracks.slice(0, 2).join(',')}`;
+      queryParams.append('seed_tracks', seedTracks.slice(0, Math.min(seedTracks.length, 2)).join(','));
     }
     
     // Add seed artists
     if (seedArtists.length > 0) {
-      const artistCount = seedTracks.length > 0 ? 3 - seedTracks.length : 2;
+      const artistCount = seedTracks.length > 0 ? Math.min(5 - seedTracks.length, seedArtists.length) : Math.min(2, seedArtists.length);
       if (artistCount > 0) {
-        url += `&seed_artists=${seedArtists.slice(0, artistCount).join(',')}`;
+        queryParams.append('seed_artists', seedArtists.slice(0, artistCount).join(','));
       }
     }
     
-    // Add target attributes from intent
+    // Add seed genres if space allows and we have diaspora or detected genres
+    const seedGenreSlots = 5 - (seedTracks.length + Math.min(seedArtists.length, 5 - seedTracks.length));
+    if (seedGenreSlots > 0) {
+      // Prioritize genres from GPT analysis or activity mapping
+      let genresToUse = [];
+      
+      if (intent.genres && intent.genres.length > 0) {
+        genresToUse = intent.genres;
+      } else if (intent.suggested_genres && intent.suggested_genres.length > 0) {
+        genresToUse = intent.suggested_genres;
+      } else if (intent.genre && intent.genre !== "any") {
+        genresToUse = [intent.genre];
+      }
+      
+      // Spotify requires lowercase genres with no spaces
+      const formattedGenres = genresToUse
+        .slice(0, seedGenreSlots)
+        .map(g => g.toLowerCase().replace(/\s+/g, '-'))
+        .join(',');
+        
+      if (formattedGenres) {
+        queryParams.append('seed_genres', formattedGenres);
+      }
+    }
+    
+    // Add target audio features based on intent
     if (intent.energy !== undefined) {
-      url += `&target_energy=${intent.energy}`;
+      queryParams.append('target_energy', intent.energy.toString());
     }
     
     if (intent.danceability !== undefined) {
-      url += `&target_danceability=${intent.danceability}`;
+      queryParams.append('target_danceability', intent.danceability.toString());
     }
     
     if (intent.valence !== undefined) {
-      url += `&target_valence=${intent.valence}`;
+      queryParams.append('target_valence', intent.valence.toString());
     }
     
-    if (intent.tempo_range && intent.tempo_range.min && intent.tempo_range.max) {
+    // Add BPM/tempo target if available
+    if (intent.bpm_range) {
+      const avgTempo = (intent.bpm_range.min + intent.bpm_range.max) / 2;
+      queryParams.append('target_tempo', avgTempo.toString());
+      
+      // For more precise BPM matching, set min_tempo and max_tempo
+      queryParams.append('min_tempo', intent.bpm_range.min.toString());
+      queryParams.append('max_tempo', intent.bpm_range.max.toString());
+    } else if (intent.tempo_range && intent.tempo_range.min && intent.tempo_range.max) {
       const avgTempo = (intent.tempo_range.min + intent.tempo_range.max) / 2;
-      url += `&target_tempo=${avgTempo}`;
+      queryParams.append('target_tempo', avgTempo.toString());
     }
     
+    // Apply style-specific settings
     if (intent.style === 'club-ready') {
-      url += '&min_energy=0.6&min_danceability=0.6';
+      queryParams.append('min_energy', '0.6');
+      queryParams.append('min_danceability', '0.6');
     } else if (intent.style === 'crate-dig') {
-      url += '&max_popularity=50';
+      queryParams.append('max_popularity', '50');
     }
     
+    // Add popularity target based on commercial factor
+    if (intent.commercialFactor !== undefined) {
+      const targetPopularity = intent.commercialFactor;
+      queryParams.append('target_popularity', targetPopularity.toString());
+    }
+    
+    // Construct the full URL
+    const url = `https://api.spotify.com/v1/recommendations?${queryParams.toString()}`;
     console.log("Recommendations URL:", url);
     
     const response = await fetch(url, {
