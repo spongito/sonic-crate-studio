@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
@@ -7,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
+import { DebugPanel } from "@/components/Dashboard/MusicFinder/DebugPanel";
 
 const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
