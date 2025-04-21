@@ -20,8 +20,8 @@ const PlaylistPromptPanel = ({
   onAdvanced,
 }: PlaylistPromptPanelProps) => {
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="glass-morphism p-2 sm:p-3 flex flex-col gap-3">
+    <div className="w-full max-w-2xl mx-auto px-6 sm:px-8">
+      <div className="glass-morphism p-3 sm:p-4 flex flex-col gap-4 rounded-lg">
         <PromptBar
           prompt={prompt}
           setPrompt={setPrompt}
@@ -31,7 +31,7 @@ const PlaylistPromptPanel = ({
           onAdvanced={onAdvanced}
         />
       </div>
-      <p className="text-xs text-muted-foreground mt-3 text-center">
+      <p className="text-xs text-muted-foreground mt-4 sm:mt-5 text-center">
         Free tier: 15 generations per month
       </p>
     </div>
@@ -39,3 +39,4 @@ const PlaylistPromptPanel = ({
 };
 
 export default PlaylistPromptPanel;
+
