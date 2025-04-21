@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -149,7 +148,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
   
   const spotifyEnabled = params.platforms.find(p => p.id === 'spotify')?.enabled;
 
-  // Helper: Section header with "Enable X" toggle, vertical stack, consistent style
+  // Helper: Section header with title and toggle
   const FilterSectionHeader = ({
     label,
     filterKey,
@@ -178,16 +177,13 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
         <DialogHeader>
           <DialogTitle>Advanced Search Options</DialogTitle>
         </DialogHeader>
-
         <div className="space-y-4 my-4">
-
           <Input
             placeholder="What kind of music are you looking for?"
             value={params.prompt}
             onChange={(e) => setParams({ ...params, prompt: e.target.value })}
             className="w-full"
           />
-          
           <div className="space-y-6 mt-2">
 
             {/* Platform selection always shown */}
@@ -197,7 +193,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             />
 
             {/* Reference Artists & Tracks */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <FilterSectionHeader
                 label="Reference Artists & Tracks"
                 filterKey="references"
@@ -214,15 +210,15 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
                       ? "Search for artists or tracks..."
                       : "Enable Spotify to use references"
                   }
-                  hideLabel={true} /* Add this prop to hide the duplicate label */
+                  hideLabel={true}
                 />
               )}
             </div>
 
-            {/* Commercial Factor */}
-            <div className="space-y-1">
+            {/* Commercial Factor => Commercial Balance */}
+            <div className="space-y-2">
               <FilterSectionHeader
-                label="Enable Commercial Factor"
+                label="Commercial Balance"
                 filterKey="commercial"
                 checked={params.activeFilters.commercial}
                 onCheckedChange={val => updateActiveFilters('commercial', val)}
@@ -236,9 +232,9 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             </div>
 
             {/* Release Date Range */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <FilterSectionHeader
-                label="Enable Release Date Range"
+                label="Release Date Range"
                 filterKey="releaseYear"
                 checked={params.activeFilters.releaseYear}
                 onCheckedChange={val => updateActiveFilters('releaseYear', val)}
@@ -253,10 +249,10 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               )}
             </div>
 
-            {/* Genre */}
-            <div className="space-y-1">
+            {/* Genre => Genres */}
+            <div className="space-y-2">
               <FilterSectionHeader
-                label="Enable Genre"
+                label="Genres"
                 filterKey="genre"
                 checked={params.activeFilters.genre}
                 onCheckedChange={val => updateActiveFilters('genre', val)}
@@ -270,10 +266,10 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               )}
             </div>
 
-            {/* Location */}
-            <div className="space-y-1">
+            {/* Location => Locations */}
+            <div className="space-y-2">
               <FilterSectionHeader
-                label="Enable Location"
+                label="Locations"
                 filterKey="location"
                 checked={params.activeFilters.location}
                 onCheckedChange={val => updateActiveFilters('location', val)}
@@ -289,9 +285,9 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             </div>
 
             {/* BPM Range */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <FilterSectionHeader
-                label="Enable BPM Range"
+                label="BPM Range"
                 filterKey="bpm"
                 checked={params.activeFilters.bpm}
                 onCheckedChange={val => updateActiveFilters('bpm', val)}
@@ -312,10 +308,8 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               )}
             </div>
 
-
           </div>
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit}>Find Music</Button>

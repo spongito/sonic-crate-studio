@@ -1,6 +1,5 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
 interface BpmFilterProps {
@@ -22,9 +21,7 @@ export function BpmFilter({ bpmRange, useBpmFilter, onChange, disabled }: BpmFil
           }
           disabled={disabled}
         />
-        <Label htmlFor="use-bpm-filter" className="text-sm font-medium">
-          Enable BPM Range {disabled && "(requires Spotify)"}
-        </Label>
+        {/* Title is handled by parent now; no sub-label */}
       </div>
       {useBpmFilter && !disabled && (
         <div className="px-2">
