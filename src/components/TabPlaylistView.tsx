@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import type { Track } from "@/types/table";
+import { PlaylistTitle } from "./playlist/PlaylistTitle";
+import { PlaylistMenu } from "./playlist/PlaylistMenu";
 
 interface TabPlaylistViewProps {
   tracks: Track[];
@@ -38,7 +40,8 @@ export default function TabPlaylistView({
     release_year: true,
     duration: true
   });
-  
+  const [isRenaming, setIsRenaming] = React.useState(false);
+
   const filteredTracks = React.useMemo(() => {
     let filtered = tracks;
     
@@ -76,20 +79,27 @@ export default function TabPlaylistView({
     }));
   };
 
+  const handleShare = () => {
+    console.log("Sharing playlist");
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
-      <h2 className="text-2xl font-bold px-6">{playlistName}</h2>
+      <div className="flex items-center justify-between px-6">
+        <PlaylistTitle 
+          title={playlistName} 
+          onTitleChange={handleTitleChange}
+        />
+      </div>
       
       <Tabs value={activePlatform} onValueChange={setActivePlatform} className="w-full">
         <div className="flex items-center justify-between gap-4 px-6">
-          <div className="flex items-center gap-4">
-            <Input
-              placeholder="Search tracks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-[200px]"
-            />
-          </div>
+          <Input
+            placeholder="Search tracks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-[200px]"
+          />
 
           <div className="flex items-center gap-4">
             <TabsList>
@@ -98,25 +108,33 @@ export default function TabPlaylistView({
               <TabsTrigger value="youtube">YouTube</TabsTrigger>
             </TabsList>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Columns <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover">
-                {Object.keys(columnVisibility).map((columnId) => (
-                  <DropdownMenuCheckboxItem
-                    key={columnId}
-                    className="capitalize"
-                    checked={columnVisibility[columnId]}
-                    onCheckedChange={() => handleToggleColumn(columnId)}
-                  >
-                    {columnId.replace('_', ' ')}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <PlaylistMenu 
+                onSave={() => onSavePlaylist?.("all")}
+                onRename={() => setIsRenaming(true)}
+                onShare={handleShare}
+              />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Columns <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover">
+                  {Object.keys(columnVisibility).map((columnId) => (
+                    <DropdownMenuCheckboxItem
+                      key={columnId}
+                      className="capitalize"
+                      checked={columnVisibility[columnId]}
+                      onCheckedChange={() => handleToggleColumn(columnId)}
+                    >
+                      {columnId.replace('_', ' ')}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
         
