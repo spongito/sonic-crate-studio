@@ -83,12 +83,6 @@ export default function TabPlaylistView({
       
       <Tabs value={activePlatform} onValueChange={setActivePlatform} className="w-full">
         <div className="flex items-center justify-between gap-4 px-6">
-          <TabsList>
-            <TabsTrigger value="all">All Platforms</TabsTrigger>
-            <TabsTrigger value="spotify">Spotify</TabsTrigger>
-            <TabsTrigger value="youtube">YouTube</TabsTrigger>
-          </TabsList>
-
           <div className="flex items-center gap-4">
             <Input
               placeholder="Search tracks..."
@@ -116,6 +110,12 @@ export default function TabPlaylistView({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          <TabsList>
+            <TabsTrigger value="all">All Platforms</TabsTrigger>
+            <TabsTrigger value="spotify">Spotify</TabsTrigger>
+            <TabsTrigger value="youtube">YouTube</TabsTrigger>
+          </TabsList>
         </div>
         
         <TabsContent value="all" className="mt-4">
