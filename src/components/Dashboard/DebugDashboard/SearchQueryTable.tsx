@@ -97,27 +97,24 @@ export function SearchQueryTable() {
 
   const buildSpotifyApiQuery = (row: SearchQuery) => {
     let baseQuery = (row.query_text || "").trim();
-
     if (row.genre && row.genre !== "any" && !baseQuery.toLowerCase().includes(row.genre.toLowerCase())) {
       baseQuery += ` genre:${row.genre}`;
     }
     return `https://api.spotify.com/v1/search?q=${encodeURIComponent(baseQuery)}&type=track&limit=20`;
   };
 
-  const buildYouTubeSearchQuery = (row: SearchQuery) => {
+  const buildYouTubeApiQuery = (row: SearchQuery) => {
     let youtubeGenre = row.genre && row.genre !== "any" ? row.genre : "";
     let youtubeArtists = row.reference_artists && row.reference_artists.length > 0 ? row.reference_artists.slice(0, 2).join(' ') : "";
-    let youtubeMoods = ""; // as mood_tags aren't available on raw query, skip
     let youtubeQuery = row.query_text || "";
-
     if (youtubeGenre && !youtubeQuery.toLowerCase().includes(youtubeGenre.toLowerCase())) {
       youtubeQuery += ` ${youtubeGenre}`;
     }
     if (youtubeArtists && !youtubeQuery.toLowerCase().includes(youtubeArtists.toLowerCase())) {
       youtubeQuery += ` ${youtubeArtists}`;
     }
-    // skip moods and tempo for now: can't get from SearchQuery
-    return youtubeQuery.trim();
+    const enhancedQuery = `${youtubeQuery} official audio OR visualizer -"music video" -"live" -"reaction" -"cover"`;
+    return `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(enhancedQuery)}&maxResults=30&type=video&videoCategoryId=10&videoDuration=medium&videoEmbeddable=true`;
   };
 
   const handleCopy = (id: string, value: string) => {
@@ -176,7 +173,7 @@ export function SearchQueryTable() {
                 <TableHead>Year Range</TableHead>
                 <TableHead>Commercial Factor</TableHead>
                 <TableHead className="min-w-[320px]">Spotify API Query String</TableHead>
-                <TableHead className="min-w-[240px]">YouTube Search Query</TableHead>
+                <TableHead className="min-w-[320px]">YouTube Search Query</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -189,7 +186,7 @@ export function SearchQueryTable() {
               ) : (
                 filteredQueries.map((query) => {
                   const apiQuery = buildSpotifyApiQuery(query);
-                  const ytQuery = buildYouTubeSearchQuery(query);
+                  const ytQuery = buildYouTubeApiQuery(query);
 
                   return (
                     <TableRow key={query.id}>
@@ -244,7 +241,7 @@ export function SearchQueryTable() {
                         </div>
                       </TableCell>
                       <TableCell className="whitespace-nowrap font-mono text-xs">
-                        <div className="flex items-center gap-2 max-w-[300px]">
+                        <div className="flex items-center gap-2 max-w-[400px]">
                           <span className="truncate" title={ytQuery}>{ytQuery}</span>
                           <Button
                             type="button"

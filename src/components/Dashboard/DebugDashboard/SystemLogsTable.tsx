@@ -42,8 +42,7 @@ export function SystemLogsTable() {
     return `https://api.spotify.com/v1/search?q=${encodeURIComponent(baseQuery)}&type=track&limit=20`;
   };
 
-  const buildYouTubeApiQuery = (row: any) => {
-    if ((row as any).youtube_query_string) return (row as any).youtube_query_string;
+  const buildYouTubeApiQuery = (row: SearchQuery) => {
     let youtubeGenre = row.genre && row.genre !== "any" ? row.genre : "";
     let youtubeArtists = row.reference_artists && row.reference_artists.length > 0 ? row.reference_artists.slice(0, 2).join(' ') : "";
     let youtubeQuery = row.query_text || "";
