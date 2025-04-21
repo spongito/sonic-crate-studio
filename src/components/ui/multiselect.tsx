@@ -64,6 +64,16 @@ const MultipleSelector = ({
   
   const debouncedInputValue = useDebounce(inputValue, delay);
 
+  // Ensure value is always an array to prevent "undefined is not iterable" errors
+  const safeValue = React.useMemo(() => {
+    return Array.isArray(value) ? value : [];
+  }, [value]);
+
+  // Ensure options is always an array
+  const safeOptions = React.useMemo(() => {
+    return Array.isArray(options) ? options : [];
+  }, [options]);
+
   React.useEffect(() => {
     const fetchSearchResults = async () => {
       if (!debouncedInputValue || !onSearch) return;
@@ -71,7 +81,8 @@ const MultipleSelector = ({
       setLoading(true);
       try {
         const results = await onSearch(debouncedInputValue);
-        setSearchResults(results || []);
+        // Ensure results is always an array
+        setSearchResults(Array.isArray(results) ? results : []);
       } catch (error) {
         console.error("Error searching:", error);
         setSearchResults([]);
@@ -88,8 +99,8 @@ const MultipleSelector = ({
       const input = inputRef.current;
       if (input) {
         if (e.key === "Delete" || e.key === "Backspace") {
-          if (input.value === "") {
-            const newValue = [...value];
+          if (input.value === "" && safeValue.length > 0) {
+            const newValue = [...safeValue];
             newValue.pop();
             onChange?.(newValue);
           }
@@ -100,42 +111,45 @@ const MultipleSelector = ({
         }
       }
     },
-    [onChange, value]
+    [onChange, safeValue]
   );
 
   const handleSelect = React.useCallback(
     (option: Option) => {
-      const exists = value.some((item) => item.value === option.value);
+      const exists = safeValue.some((item) => item.value === option.value);
       if (exists) return;
       
-      onChange?.([...value, option]);
+      onChange?.([...safeValue, option]);
       setInputValue("");
       setOpen(false);
       inputRef.current?.focus();
     },
-    [onChange, value]
+    [onChange, safeValue]
   );
 
   const handleRemove = React.useCallback(
     (option: Option) => {
-      const newValue = value.filter((item) => item.value !== option.value);
+      const newValue = safeValue.filter((item) => item.value !== option.value);
       onChange?.(newValue);
       inputRef.current?.focus();
     },
-    [onChange, value]
+    [onChange, safeValue]
   );
 
-  // Make sure we have arrays for both options and value
-  const safeOptions = options || [];
-  const safeValue = value || [];
+  // Calculate display options safely
+  const displayOptions = React.useMemo(() => {
+    if (onSearch) {
+      return Array.isArray(searchResults) ? searchResults : [];
+    }
+    return safeOptions;
+  }, [onSearch, searchResults, safeOptions]);
   
-  const displayOptions = onSearch ? (searchResults || []) : safeOptions;
   const showPlaceholder = placeholder && (!safeValue.length || !hidePlaceholderWhenSelected);
 
   return (
     <Command
       onKeyDown={handleKeyDown}
-      className={`overflow-visible ${className}`}
+      className={`overflow-visible ${className || ""}`}
       shouldFilter={false} // We handle filtering ourselves or via the API
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
@@ -158,7 +172,6 @@ const MultipleSelector = ({
               )}
             </Badge>
           ))}
-          {/* Avoid having the "Search" text being read by screen readers */}
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}
