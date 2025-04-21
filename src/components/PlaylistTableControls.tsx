@@ -54,7 +54,7 @@ export default function PlaylistTableControls({
                   }
                 }}
               >
-                {column.id}
+                {column.id.replace('_', ' ')}
               </DropdownMenuCheckboxItem>
             ))}
         </DropdownMenuContent>

@@ -30,7 +30,16 @@ export default function TabPlaylistView({
 }: TabPlaylistViewProps) {
   const [activePlatform, setActivePlatform] = React.useState<string>("all");
   const [searchTerm, setSearchTerm] = React.useState<string>("");
-  const [columnVisibility, setColumnVisibility] = React.useState<Record<string, boolean>>({});
+  const [columnVisibility, setColumnVisibility] = React.useState<Record<string, boolean>>({
+    title: true,
+    album: true,
+    platform: true,
+    bpm: true,
+    key_signature: true,
+    genre: true,
+    release_year: true,
+    duration: true
+  });
   
   // Filter tracks based on active platform and search term
   const filteredTracks = React.useMemo(() => {
@@ -98,30 +107,16 @@ export default function TabPlaylistView({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover">
-              <DropdownMenuCheckboxItem
-                checked={columnVisibility["title"] !== false}
-                onCheckedChange={() => handleToggleColumn("title")}
-              >
-                Title
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={columnVisibility["album"] !== false}
-                onCheckedChange={() => handleToggleColumn("album")}
-              >
-                Album
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={columnVisibility["bpm"] !== false}
-                onCheckedChange={() => handleToggleColumn("bpm")}
-              >
-                BPM
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={columnVisibility["genre"] !== false}
-                onCheckedChange={() => handleToggleColumn("genre")}
-              >
-                Genre
-              </DropdownMenuCheckboxItem>
+              {Object.keys(columnVisibility).map((columnId) => (
+                <DropdownMenuCheckboxItem
+                  key={columnId}
+                  className="capitalize"
+                  checked={columnVisibility[columnId]}
+                  onCheckedChange={() => handleToggleColumn(columnId)}
+                >
+                  {columnId.replace('_', ' ')}
+                </DropdownMenuCheckboxItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -139,6 +134,7 @@ export default function TabPlaylistView({
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false} // Hide the default controls since we're using our custom ones
+            columnVisibility={columnVisibility} // Pass the column visibility state
           />
         </TabsContent>
       </Tabs>

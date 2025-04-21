@@ -31,6 +31,10 @@ import type { Track, TableProps } from "@/types/table";
 export type { Track };
 export type GeneratedTrack = Track;
 
+interface ExtendedTableProps extends TableProps {
+  columnVisibility?: Record<string, boolean>;
+}
+
 export function GeneratedPlaylistTable({
   tracks,
   showSelection = true,
@@ -44,7 +48,8 @@ export function GeneratedPlaylistTable({
   playlistName,
   className = "",
   onLikeChange,
-}: TableProps) {
+  columnVisibility,
+}: ExtendedTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
@@ -59,6 +64,14 @@ export function GeneratedPlaylistTable({
     userLikedTrackIds 
   });
 
+  // Combine default visibility with passed columnVisibility prop
+  const effectiveColumnVisibility = React.useMemo(() => {
+    if (columnVisibility) {
+      return columnVisibility;
+    }
+    return visibleColumns;
+  }, [columnVisibility, visibleColumns]);
+
   const table = useReactTable({
     data: tracks,
     columns,
@@ -72,7 +85,7 @@ export function GeneratedPlaylistTable({
     state: {
       sorting,
       columnFilters,
-      columnVisibility: visibleColumns,
+      columnVisibility: effectiveColumnVisibility,
       rowSelection,
     },
   });

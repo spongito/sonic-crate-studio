@@ -34,4 +34,5 @@ export interface TableProps {
   playlistName?: string;
   className?: string;
   onLikeChange?: (trackId: string, liked: boolean) => void;
+  columnVisibility?: Record<string, boolean>;
 }
