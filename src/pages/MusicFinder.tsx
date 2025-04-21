@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
@@ -7,7 +8,7 @@ import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 import { DebugPanel } from "@/components/Dashboard/MusicFinder/DebugPanel";
-import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
+import TabPlaylistView from "@/components/TabPlaylistView";
 import { Track } from "@/types/table";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
 
@@ -101,6 +102,16 @@ const MusicFinder = () => {
     // Refresh liked tracks if needed - handled by the component itself
   };
 
+  const handleAddToLibrary = (trackId: string) => {
+    // Handle adding track to library
+    console.log(`Adding track ${trackId} to library`);
+  };
+
+  const handleSavePlaylist = (platform: string) => {
+    // Handle saving playlist
+    console.log(`Saving playlist to ${platform}`);
+  };
+
   return (
     <DashboardLayout>
       <div className="min-h-screen flex flex-col">
@@ -125,12 +136,13 @@ const MusicFinder = () => {
 
           {showPlaylist && formattedTracks.length > 0 && (
             <div className="mt-8 animate-fade-in w-full px-4 md:px-8 lg:px-12">
-              <GeneratedPlaylistTable 
+              <TabPlaylistView 
                 tracks={formattedTracks}
                 userLikedTrackIds={likedTrackIds} 
                 onLikeChange={handleLikeChange}
+                onAddToLibrary={handleAddToLibrary}
+                onSavePlaylist={handleSavePlaylist}
                 playlistName={playlistData?.name || "Generated Playlist"}
-                fullWidth={true}
               />
             </div>
           )}

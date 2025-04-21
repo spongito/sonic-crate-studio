@@ -1,9 +1,13 @@
 
 import * as React from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GeneratedPlaylistTable from "./GeneratedPlaylistTable";
 import { PlaylistHeader } from "./playlist/PlaylistHeader";
 import type { Track } from "@/types/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 
 interface TabPlaylistViewProps {
   tracks: Track[];
@@ -25,34 +29,104 @@ export default function TabPlaylistView({
   className = "",
 }: TabPlaylistViewProps) {
   const [activePlatform, setActivePlatform] = React.useState<string>("all");
+  const [searchTerm, setSearchTerm] = React.useState<string>("");
+  const [columnVisibility, setColumnVisibility] = React.useState<Record<string, boolean>>({});
   
-  // Filter tracks based on active platform
+  // Filter tracks based on active platform and search term
   const filteredTracks = React.useMemo(() => {
-    if (activePlatform === "all") return tracks;
+    let filtered = tracks;
     
-    return tracks.filter(track => {
-      if (Array.isArray(track.platform)) {
-        return track.platform.includes(activePlatform);
-      } 
-      return track.platform === activePlatform;
-    });
-  }, [tracks, activePlatform]);
+    // Platform filter
+    if (activePlatform !== "all") {
+      filtered = filtered.filter(track => {
+        if (Array.isArray(track.platform)) {
+          return track.platform.includes(activePlatform);
+        } 
+        return track.platform === activePlatform;
+      });
+    }
+    
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(track => {
+        const title = track.title.toLowerCase();
+        const artist = Array.isArray(track.artist) 
+          ? track.artist.join(' ').toLowerCase() 
+          : track.artist.toLowerCase();
+        return title.includes(term) || artist.includes(term);
+      });
+    }
+    
+    return filtered;
+  }, [tracks, activePlatform, searchTerm]);
 
   const handleTitleChange = (newTitle: string) => {
     // Handle playlist title change (to be implemented)
     console.log("New playlist title:", newTitle);
   };
+  
+  const handleToggleColumn = (columnId: string) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnId]: !prev[columnId]
+    }));
+  };
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <PlaylistHeader
-        title={playlistName}
-        onTitleChange={handleTitleChange}
-        onPlatformChange={setActivePlatform}
-        initialPlatform={activePlatform}
-      />
+      <div className="flex flex-col space-y-4">
+        <PlaylistHeader
+          title={playlistName}
+          onTitleChange={handleTitleChange}
+          onPlatformChange={setActivePlatform}
+          initialPlatform={activePlatform}
+        />
+        
+        {/* Search and Filter Controls */}
+        <div className="flex flex-col sm:flex-row items-center py-2 gap-4 px-6">
+          <Input
+            placeholder="Search tracks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover">
+              <DropdownMenuCheckboxItem
+                checked={columnVisibility["title"] !== false}
+                onCheckedChange={() => handleToggleColumn("title")}
+              >
+                Title
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={columnVisibility["album"] !== false}
+                onCheckedChange={() => handleToggleColumn("album")}
+              >
+                Album
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={columnVisibility["bpm"] !== false}
+                onCheckedChange={() => handleToggleColumn("bpm")}
+              >
+                BPM
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={columnVisibility["genre"] !== false}
+                onCheckedChange={() => handleToggleColumn("genre")}
+              >
+                Genre
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
       
-      {/* Wrap TabsContent within a Tabs component with the correct value */}
       <Tabs value={activePlatform} onValueChange={setActivePlatform}>
         <TabsContent value={activePlatform} className="mt-0">
           <GeneratedPlaylistTable 
@@ -64,6 +138,7 @@ export default function TabPlaylistView({
             showLikeButton={true}
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
+            showControls={false} // Hide the default controls since we're using our custom ones
           />
         </TabsContent>
       </Tabs>
