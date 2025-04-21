@@ -32,6 +32,7 @@ export default function InlinePlaylistGenerator({ playlistData, className }: Inl
     genre: Array.isArray(track.genre) ? track.genre : track.genre ? [track.genre] : null,
     release_year: track.release_year,
     duration: track.duration,
+    platform_url: track.platform_url || track.external_url,
   }));
   
   const handleSavePlaylist = async () => {
@@ -75,7 +76,7 @@ export default function InlinePlaylistGenerator({ playlistData, className }: Inl
         <GeneratedPlaylistTable 
           tracks={formattedTracks} 
           userLikedTrackIds={[]}
-          showControls={false}
+          showControls={true}
           fullWidth={true}
         />
       ) : (

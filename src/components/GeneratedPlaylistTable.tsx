@@ -261,7 +261,10 @@ export function GeneratedPlaylistTable({
                     }`}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell 
+                        key={cell.id} 
+                        className="transition-all duration-300 ease-in-out"
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
