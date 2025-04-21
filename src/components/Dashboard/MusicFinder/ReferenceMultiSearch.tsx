@@ -23,10 +23,18 @@ export interface ReferenceMultiSearchProps {
 }
 
 function formatOption(item: SpotifySearchResult): Option {
+  if (!item || typeof item !== 'object') {
+    console.warn('Invalid item passed to formatOption', item);
+    return {
+      value: 'invalid',
+      label: 'Invalid Item',
+      type: 'unknown',
+    };
+  }
   return {
-    value: item.id,
-    label: item.name,
-    type: item.type,
+    value: item.id || '',
+    label: item.name || '',
+    type: item.type || 'unknown',
     imageUrl: item.imageUrl,
     artistName: item.artistName
   };
@@ -38,17 +46,26 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
   disabled,
   placeholder = "Search for artists or tracks..."
 }) => {
+  // Ensure value is always a valid array
+  const safeValue = React.useMemo(() => {
+    if (!Array.isArray(value)) {
+      console.warn('ReferenceMultiSearch: value is not an array', value);
+      return [];
+    }
+    return value.filter(v => v && typeof v === 'object' && 'id' in v && 'name' in v);
+  }, [value]);
+  
   // Keep local input for display
   // Transform SpotifySearchResult[] <-> Option[]
   const optionMap = React.useMemo(() => {
     // For quick lookup on selection
     let map = new Map<string, SpotifySearchResult>();
     // Safely iterate only if value is defined
-    if (Array.isArray(value)) {
-      value.forEach((v) => map.set(v.id, v));
+    if (Array.isArray(safeValue)) {
+      safeValue.forEach(v => v && v.id && map.set(v.id, v));
     }
     return map;
-  }, [value]);
+  }, [safeValue]);
 
   const [loading, setLoading] = React.useState(false);
 
@@ -61,16 +78,28 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
         const { data, error } = await supabase.functions.invoke("spotify-search", {
           body: { query }
         });
-        if (error) return [];
+        
+        if (error) {
+          console.error("Supabase function error:", error);
+          return [];
+        }
+        
+        if (!data) {
+          console.warn("No data returned from spotify-search");
+          return [];
+        }
+        
         if (Array.isArray(data)) {
-          // convert items to Option[]
-          return data.map((item: any) => ({
-            value: item.id,
-            label: item.name,
-            type: item.type,
-            imageUrl: item.imageUrl,
-            artistName: item.artistName,
-          }));
+          // convert items to Option[] and validate each item
+          return data
+            .filter(item => item && typeof item === 'object' && 'id' in item && 'name' in item)
+            .map((item: any) => ({
+              value: item.id || '',
+              label: item.name || '',
+              type: item.type || 'unknown',
+              imageUrl: item.imageUrl,
+              artistName: item.artistName,
+            }));
         }
         return [];
       } catch (error) {
@@ -90,18 +119,22 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
       newOptions = [];
     }
     
-    const mapped: SpotifySearchResult[] = newOptions.map(opt => ({
-      id: opt.value,
-      name: opt.label,
-      type: opt.type as ReferenceType,
-      imageUrl: opt.imageUrl,
-      artistName: opt.artistName,
-    }));
+    const mapped: SpotifySearchResult[] = newOptions
+      .filter(opt => opt && typeof opt === 'object' && 'value' in opt && 'label' in opt)
+      .map(opt => ({
+        id: opt.value,
+        name: opt.label,
+        type: (opt.type as ReferenceType) || 'track',
+        imageUrl: opt.imageUrl,
+        artistName: opt.artistName,
+      }));
     onChange(mapped);
   }
 
   // Displayed chips/tags: add emoji for artist/track type
   function renderTag(option: Option) {
+    if (!option || typeof option !== 'object') return null;
+    
     return (
       <Badge
         key={option.value}
@@ -116,15 +149,18 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
     );
   }
 
-  // Ensure we always pass an array to MultipleSelector
-  const safeValue = Array.isArray(value) ? value.map(formatOption) : [];
+  // Ensure we always pass a valid array of Options to MultipleSelector
+  const formattedOptions = React.useMemo(() => {
+    if (!Array.isArray(safeValue)) return [];
+    return safeValue.map(formatOption).filter(opt => opt && typeof opt === 'object');
+  }, [safeValue]);
 
   return (
     <div>
       <label className="text-sm font-medium mb-2 block">Reference Artists & Tracks</label>
       <MultipleSelector
         options={[]} // Not needed, async mode
-        value={safeValue}
+        value={formattedOptions}
         onChange={handleChange}
         onSearch={handleSearch}
         delay={300}

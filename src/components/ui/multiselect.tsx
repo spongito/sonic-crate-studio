@@ -64,14 +64,22 @@ const MultipleSelector = ({
   
   const debouncedInputValue = useDebounce(inputValue, delay);
 
-  // Ensure value is always an array to prevent "undefined is not iterable" errors
+  // Ensure value is always a valid array to prevent "undefined is not iterable" errors
   const safeValue = React.useMemo(() => {
-    return Array.isArray(value) ? value : [];
+    if (!Array.isArray(value)) {
+      console.warn("MultipleSelector: value is not an array", value);
+      return [];
+    }
+    return value.filter(item => item && typeof item === 'object');
   }, [value]);
 
-  // Ensure options is always an array
+  // Ensure options is always a valid array
   const safeOptions = React.useMemo(() => {
-    return Array.isArray(options) ? options : [];
+    if (!Array.isArray(options)) {
+      console.warn("MultipleSelector: options is not an array", options);
+      return [];
+    }
+    return options.filter(item => item && typeof item === 'object');
   }, [options]);
 
   React.useEffect(() => {
@@ -81,8 +89,13 @@ const MultipleSelector = ({
       setLoading(true);
       try {
         const results = await onSearch(debouncedInputValue);
-        // Ensure results is always an array
-        setSearchResults(Array.isArray(results) ? results : []);
+        // Ensure results is always an array of valid objects
+        if (!Array.isArray(results)) {
+          console.warn("Search results is not an array", results);
+          setSearchResults([]);
+        } else {
+          setSearchResults(results.filter(item => item && typeof item === 'object'));
+        }
       } catch (error) {
         console.error("Error searching:", error);
         setSearchResults([]);
@@ -116,6 +129,11 @@ const MultipleSelector = ({
 
   const handleSelect = React.useCallback(
     (option: Option) => {
+      if (!option || typeof option !== 'object') {
+        console.warn("Invalid option selected", option);
+        return;
+      }
+      
       const exists = safeValue.some((item) => item.value === option.value);
       if (exists) return;
       
@@ -129,6 +147,11 @@ const MultipleSelector = ({
 
   const handleRemove = React.useCallback(
     (option: Option) => {
+      if (!option || typeof option !== 'object') {
+        console.warn("Invalid option to remove", option);
+        return;
+      }
+      
       const newValue = safeValue.filter((item) => item.value !== option.value);
       onChange?.(newValue);
       inputRef.current?.focus();
@@ -139,18 +162,23 @@ const MultipleSelector = ({
   // Calculate display options safely
   const displayOptions = React.useMemo(() => {
     if (onSearch) {
-      return Array.isArray(searchResults) ? searchResults : [];
+      return searchResults;
     }
     return safeOptions;
   }, [onSearch, searchResults, safeOptions]);
   
   const showPlaceholder = placeholder && (!safeValue.length || !hidePlaceholderWhenSelected);
 
-  // Ensure we're not rendering with undefined values that would cause CMDK to error
+  // Safety check before rendering to prevent CMDK errors
   if (!Array.isArray(safeValue)) {
-    console.error("MultipleSelector: value is not an array", value);
+    console.error("MultipleSelector: safeValue is not an array", safeValue);
     return null;
   }
+
+  // Always ensure we have valid option objects
+  const renderableOptions = displayOptions.filter(option => 
+    option && typeof option === 'object' && 'value' in option && 'label' in option
+  );
 
   return (
     <Command
@@ -160,24 +188,31 @@ const MultipleSelector = ({
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
-          {safeValue.map((option) => (
-            <Badge
-              key={option.value}
-              className={badgeClassName}
-              variant="secondary"
-            >
-              {renderOption ? renderOption(option) : option.label}
-              {!disabled && (
-                <button
-                  type="button"
-                  className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  onClick={() => handleRemove(option)}
-                >
-                  <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                </button>
-              )}
-            </Badge>
-          ))}
+          {safeValue.map((option) => {
+            // Additional safety check for each item
+            if (!option || typeof option !== 'object' || !('value' in option)) {
+              return null;
+            }
+            
+            return (
+              <Badge
+                key={option.value}
+                className={badgeClassName}
+                variant="secondary"
+              >
+                {renderOption ? renderOption(option) : option.label}
+                {!disabled && (
+                  <button
+                    type="button"
+                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    onClick={() => handleRemove(option)}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                  </button>
+                )}
+              </Badge>
+            );
+          })}
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}
@@ -194,8 +229,8 @@ const MultipleSelector = ({
           <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
             <CommandGroup className="h-full overflow-auto">
               {loading && loadingIndicator}
-              {!loading && displayOptions.length === 0 && emptyIndicator}
-              {!loading && displayOptions.map((option) => (
+              {!loading && renderableOptions.length === 0 && emptyIndicator}
+              {!loading && renderableOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   onSelect={() => handleSelect(option)}
