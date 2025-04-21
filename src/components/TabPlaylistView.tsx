@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GeneratedPlaylistTable from "./GeneratedPlaylistTable";
@@ -90,6 +89,15 @@ export default function TabPlaylistView({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-[200px]"
             />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <TabsList>
+              <TabsTrigger value="all">All Platforms</TabsTrigger>
+              <TabsTrigger value="spotify">Spotify</TabsTrigger>
+              <TabsTrigger value="youtube">YouTube</TabsTrigger>
+            </TabsList>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -110,12 +118,6 @@ export default function TabPlaylistView({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          <TabsList>
-            <TabsTrigger value="all">All Platforms</TabsTrigger>
-            <TabsTrigger value="spotify">Spotify</TabsTrigger>
-            <TabsTrigger value="youtube">YouTube</TabsTrigger>
-          </TabsList>
         </div>
         
         <TabsContent value="all" className="mt-4">
