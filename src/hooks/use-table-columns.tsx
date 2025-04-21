@@ -15,13 +15,8 @@ export type ColumnId =
 
 export const DEFAULT_DESKTOP_COLUMNS: ColumnId[] = [
   "title",
-  "album",
   "platform",
   "bpm",
-  "key_signature",
-  "genre",
-  "release_year",
-  "duration",
   "actions",
 ];
 
