@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
+import type { Track } from "@/types/table";
 
 interface TabPlaylistViewProps {
   tracks: Track[];
