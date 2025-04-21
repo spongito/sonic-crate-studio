@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import TrackLikeButton from "@/components/TrackLikeButton";
 import type { Track } from "@/types/table";
+import { useLogger } from "@/hooks/useLogger";
 import { useEffect } from "react";
 
 interface RecentlyFoundTracksProps {
@@ -12,15 +13,17 @@ interface RecentlyFoundTracksProps {
 }
 
 export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTracksProps) {
+  const logger = useLogger("RecentlyFoundTracks");
+  
   // Add debug logging
   useEffect(() => {
     if (!tracks || tracks.length === 0) {
-      console.info("RecentlyFoundTracks: No tracks available to display");
+      logger.info("No tracks available to display");
     } else {
-      console.info(`RecentlyFoundTracks: Displaying ${tracks.length} recently found tracks`);
-      console.debug("RecentlyFoundTracks first track:", tracks[0]?.title, tracks[0]?.artist);
+      logger.info(`Displaying ${tracks.length} recently found tracks`);
+      logger.debug("First track:", tracks[0]?.title, tracks[0]?.artist);
     }
-  }, [tracks]);
+  }, [tracks, logger]);
 
   if (!tracks || tracks.length === 0) {
     return (
@@ -34,7 +37,7 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
   }
 
   const handleTrackLikeToggle = (trackId: string, liked: boolean) => {
-    console.log(`RecentlyFoundTracks: Toggling like for track ${trackId}, currently liked: ${liked}`);
+    logger.debug(`Toggling like for track ${trackId}, currently liked: ${liked}`);
     onLikeToggle(trackId, liked);
   };
 
@@ -51,6 +54,7 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
                     src={track.image_url}
                     alt={track.title}
                     className="aspect-square w-full object-cover rounded-md"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="aspect-square w-full bg-muted rounded-md flex items-center justify-center">

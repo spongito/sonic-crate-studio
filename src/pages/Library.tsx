@@ -1,20 +1,21 @@
 
 import { useState, useEffect } from "react";
-import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { RecentlyFoundTracks } from "@/components/Library/RecentlyFoundTracks";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useMemo } from "react";
 import { LibrarySearch } from "@/components/Library/LibrarySearch";
-import { LibraryContent } from "@/components/Library/LibraryContent";
 import { LibraryFilters } from "@/components/Library/LibraryFilters";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bug } from "lucide-react";
+import { DebugPanel } from "@/components/Library/DebugPanel";
+import { PaginatedTrackList } from "@/components/Library/PaginatedTrackList";
+import { useLogger } from "@/hooks/useLogger";
+import { TracksProvider, useTracks } from "@/context/TracksContext";
 
-const Library = () => {
+const LibraryContent = () => {
   const { user } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState("");
@@ -26,6 +27,8 @@ const Library = () => {
   const [keySignature, setKeySignature] = useState("");
   const [camelotMode, setCamelotMode] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const logger = useLogger("Library");
+  const { allTracks, recentTracks, isLoading, toggleLike, error } = useTracks();
 
   // Create consolidated filters object
   const filters = {
@@ -43,174 +46,197 @@ const Library = () => {
 
   // Debug log on filter changes
   useEffect(() => {
-    console.log("Filters updated:", JSON.stringify(filters));
-  }, [filters]);
-
-  const { tracks: allTracks, isLoading, toggleLike, error } = useUserLikedTracks({
-    filters,
-    userId: user?.id || ""
-  });
+    logger.info("Filters updated:", JSON.stringify(filters));
+  }, [filters, logger]);
 
   // Log any errors
   useEffect(() => {
     if (error) {
-      console.error("Library: Error loading tracks:", error);
+      logger.error("Error loading tracks:", error);
     }
-  }, [error]);
+  }, [error, logger]);
 
   const handleLikeToggle = async (trackId: string, currentlyLiked: boolean) => {
     try {
-      console.log(`Library: Toggling like for track ${trackId}, currently liked: ${currentlyLiked}`);
-      await toggleLike({ trackId, liked: currentlyLiked });
+      logger.info(`Toggling like for track ${trackId}, currently liked: ${currentlyLiked}`);
+      await toggleLike(trackId, currentlyLiked);
       toast.success(currentlyLiked ? "Track removed from likes" : "Track added to likes");
     } catch (error) {
-      console.error("Error toggling track like:", error);
+      logger.error("Error toggling track like:", error);
       toast.error("Failed to update track like status");
     }
   };
 
-  const memoTracks = useMemo(() => {
-    console.log(`Library: Processing ${allTracks.length} tracks`);
-    return allTracks.map((t) => ({
-      ...t,
-      platform: t.platform || "spotify",
-      id: t.id,
-      title: t.title,
-      artist: t.artist,
-      album: t.album,
-      image_url: t.image_url,
-      bpm: t.bpm,
-      key_signature: t.key_signature,
-      genre: t.genre,
-      release_year: t.release_year,
-      duration: t.duration,
-      liked: t.liked,
-      created_at: t.created_at
-    }));
-  }, [allTracks]);
-
-  // Get recently found tracks - sort by created_at and take the most recent 10
-  const recentTracks = useMemo(() => {
-    if (!memoTracks.length) {
-      console.info("RecentlyFoundTracks: No tracks available to display");
-      return [];
+  // Filter tracks based on current search criteria
+  const filteredTracks = useMemo(() => {
+    if (!allTracks.length) return [];
+    
+    logger.info(`Filtering ${allTracks.length} tracks`);
+    let result = [...allTracks];
+    
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      result = result.filter(t => 
+        (t.title?.toLowerCase() || "").includes(searchLower) ||
+        (typeof t.artist === 'string' ? t.artist?.toLowerCase() || "" : 
+          Array.isArray(t.artist) ? t.artist.join(", ").toLowerCase() : ""
+        ).includes(searchLower)
+      );
     }
     
-    const sortedTracks = [...memoTracks].sort((a, b) => {
-      if (!a.created_at) return 1;
-      if (!b.created_at) return -1;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+    // Apply BPM range filter
+    result = result.filter(t => 
+      (!t.bpm || (t.bpm >= bpmRange[0] && t.bpm <= bpmRange[1]))
+    );
     
-    const recentOnes = sortedTracks.slice(0, 10);
-    console.log(`Library: Found ${recentOnes.length} recent tracks`);
-    return recentOnes;
-  }, [memoTracks]);
+    // Apply year range filter
+    result = result.filter(t => 
+      (!t.release_year || (t.release_year >= yearRange[0] && t.release_year <= yearRange[1]))
+    );
+    
+    // Apply key signature filter if selected
+    if (keySignature) {
+      result = result.filter(t => t.key_signature === keySignature);
+    }
+    
+    // Apply genre filter if selected
+    if (genre) {
+      result = result.filter(t => {
+        if (!t.genre) return false;
+        if (Array.isArray(t.genre)) return t.genre.includes(genre);
+        return t.genre === genre;
+      });
+    }
+    
+    // Apply date range filter if selected
+    if (dateRange.from) {
+      const fromDate = dateRange.from.getTime();
+      result = result.filter(t => {
+        if (!t.created_at) return true;
+        return new Date(t.created_at).getTime() >= fromDate;
+      });
+    }
+    
+    if (dateRange.to) {
+      const toDate = dateRange.to.getTime();
+      result = result.filter(t => {
+        if (!t.created_at) return true;
+        return new Date(t.created_at).getTime() <= toDate;
+      });
+    }
+    
+    logger.info(`Found ${result.length} tracks after filtering`);
+    return result;
+  }, [allTracks, search, bpmRange, yearRange, keySignature, genre, dateRange, logger]);
 
-  // Debug component
-  const DebugPanel = () => (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>Debug Info</CardTitle>
-      </CardHeader>
-      <CardContent className="text-xs font-mono overflow-auto max-h-[300px]">
-        <div>
-          <strong>User ID:</strong> {user?.id || 'Not logged in'}
-        </div>
-        <div>
-          <strong>Filter State:</strong>
-          <pre>{JSON.stringify(filters, null, 2)}</pre>
-        </div>
-        <div>
-          <strong>Tracks Loaded:</strong> {memoTracks.length}
-        </div>
-        <div>
-          <strong>Recent Tracks:</strong> {recentTracks.length}
-        </div>
-        <div>
-          <strong>Error:</strong> {error ? JSON.stringify(error) : 'None'}
-        </div>
-        <div>
-          <strong>Active Tab:</strong> {activeTab}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  // Get tracks for the active tab
+  const activeTabTracks = useMemo(() => {
+    if (activeTab === "liked") {
+      return filteredTracks.filter(track => track.liked);
+    }
+    return filteredTracks;
+  }, [filteredTracks, activeTab]);
 
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="container mx-auto px-4 py-8">
-          <div className="w-full flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading your tracks...</p>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="w-full flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading your tracks...</p>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <div className="flex justify-end">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-2"
-            onClick={() => setShowDebug(!showDebug)}
-          >
-            <Bug size={16} />
-            {showDebug ? 'Hide Debug' : 'Show Debug'}
-          </Button>
-        </div>
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={() => setShowDebug(!showDebug)}
+        >
+          <Bug size={16} />
+          {showDebug ? 'Hide Debug' : 'Show Debug'}
+        </Button>
+      </div>
 
-        {showDebug && <DebugPanel />}
+      {showDebug && (
+        <DebugPanel 
+          userId={user?.id} 
+          filters={filters} 
+          activeTab={activeTab}
+        />
+      )}
 
-        <div className="flex flex-col gap-8">
-          <RecentlyFoundTracks tracks={recentTracks} onLikeToggle={handleLikeToggle} />
+      <div className="flex flex-col gap-8">
+        <RecentlyFoundTracks 
+          tracks={recentTracks} 
+          onLikeToggle={handleLikeToggle} 
+        />
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <TabsList>
-                  <TabsTrigger value="all">All Tracks</TabsTrigger>
-                  <TabsTrigger value="liked">Liked</TabsTrigger>
-                </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <TabsList>
+                <TabsTrigger value="all">All Tracks</TabsTrigger>
+                <TabsTrigger value="liked">Liked</TabsTrigger>
+              </TabsList>
 
-                <LibrarySearch
-                  search={search}
-                  setSearch={setSearch}
-                  dateRange={dateRange}
-                  setDateRange={setDateRange}
-                  showFilters={showFilters}
-                  setShowFilters={setShowFilters}
-                />
-              </div>
-
-              <LibraryFilters
+              <LibrarySearch
+                search={search}
+                setSearch={setSearch}
+                dateRange={dateRange}
+                setDateRange={setDateRange}
                 showFilters={showFilters}
-                bpmRange={bpmRange}
-                onBpmChange={setBpmRange}
-                yearRange={yearRange}
-                onYearChange={setYearRange}
-                genre={genre}
-                onGenreChange={setGenre}
-                keySignature={keySignature}
-                onKeyChange={setKeySignature}
+                setShowFilters={setShowFilters}
               />
             </div>
 
-            <LibraryContent
-              activeTab={activeTab}
-              tracks={memoTracks}
-              onLikeToggle={handleLikeToggle}
+            <LibraryFilters
+              showFilters={showFilters}
+              bpmRange={bpmRange}
+              onBpmChange={setBpmRange}
+              yearRange={yearRange}
+              onYearChange={setYearRange}
+              genre={genre}
+              onGenreChange={setGenre}
+              keySignature={keySignature}
+              onKeyChange={setKeySignature}
             />
-          </Tabs>
-        </div>
+          </div>
+
+          <TabsContent value="all" className="space-y-4">
+            <PaginatedTrackList 
+              tracks={activeTabTracks}
+              onLikeToggle={handleLikeToggle}
+              pageSize={15}
+            />
+          </TabsContent>
+
+          <TabsContent value="liked" className="space-y-4">
+            <PaginatedTrackList 
+              tracks={activeTabTracks}
+              onLikeToggle={handleLikeToggle}
+              pageSize={15}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
+    </div>
+  );
+};
+
+const Library = () => {
+  return (
+    <DashboardLayout>
+      <TracksProvider>
+        <LibraryContent />
+      </TracksProvider>
     </DashboardLayout>
   );
 };

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Track } from "@/types/table";
+import { useLogger } from "@/hooks/useLogger";
 
 type FilterState = {
   search: string;
@@ -24,17 +25,18 @@ export function useUserLikedTracks({
   userId: string;
 }) {
   const queryClient = useQueryClient();
+  const logger = useLogger("useUserLikedTracks");
 
   // Debug logging
-  console.log("useUserLikedTracks: Filters updated:", JSON.stringify(filters));
+  logger.info("Filters updated:", JSON.stringify(filters));
 
   // Query to fetch both user track history and liked tracks
   const query = useQuery({
     queryKey: ["userTracks", userId, filters],
     queryFn: async () => {
-      console.log("useUserLikedTracks: Executing query for user:", userId);
+      logger.info("Executing query for user:", userId);
       if (!userId) {
-        console.log("useUserLikedTracks: No userId provided");
+        logger.info("No userId provided");
         return [];
       }
 
@@ -47,11 +49,11 @@ export function useUserLikedTracks({
           .order("created_at", { ascending: false });
 
         if (historyError) {
-          console.error("Error loading track history:", historyError);
+          logger.error("Error loading track history:", historyError);
           return [];
         }
 
-        console.log(`useUserLikedTracks: Found ${historyTracks.length} history tracks`);
+        logger.info(`Found ${historyTracks.length} history tracks`);
 
         // Get user's liked tracks
         const { data: likedTracksData, error: likedError } = await supabase
@@ -60,11 +62,11 @@ export function useUserLikedTracks({
           .eq("user_id", userId);
 
         if (likedError) {
-          console.error("Error loading liked tracks:", likedError);
+          logger.error("Error loading liked tracks:", likedError);
           return [];
         }
 
-        console.log(`useUserLikedTracks: Found ${likedTracksData.length} liked tracks`);
+        logger.info(`Found ${likedTracksData.length} liked tracks`);
 
         // Create a Set of liked track IDs for easy lookup
         const likedTrackIds = new Set(likedTracksData.map(lt => lt.track_id));
@@ -83,14 +85,14 @@ export function useUserLikedTracks({
         // Apply filters
         tracks = applyFilters(tracks, filters);
 
-        console.log(`useUserLikedTracks: Returning ${tracks.length} tracks after filtering`);
+        logger.info(`Returning ${tracks.length} tracks after filtering`);
         return tracks;
       } catch (error) {
-        console.error("Unexpected error in useUserLikedTracks query:", error);
+        logger.error("Unexpected error in useUserLikedTracks query:", error);
         throw error; // Let React Query handle the error
       }
     },
-    // Use meta for additional information instead of direct options
+    // Use meta for additional information
     meta: {
       debugInfo: "User liked tracks query" 
     }
@@ -139,7 +141,7 @@ export function useUserLikedTracks({
   // Mutation for toggling track like status
   const toggleLikeMutation = useMutation({
     mutationFn: async ({ trackId, liked }: { trackId: string; liked: boolean }) => {
-      console.log(`useUserLikedTracks: Toggle like for track ${trackId}, current state: ${liked}`);
+      logger.info(`Toggle like for track ${trackId}, current state: ${liked}`);
       if (liked) {
         // Unlike: Remove from liked_tracks
         const { error } = await supabase
@@ -157,12 +159,14 @@ export function useUserLikedTracks({
       }
     },
     onSuccess: () => {
-      console.log("useUserLikedTracks: Like toggled successfully, invalidating queries");
+      logger.success("Like toggled successfully, invalidating queries");
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["userTracks", userId] });
     },
-    onError: (error) => {
-      console.error("useUserLikedTracks: Error toggling like:", error);
+    onSettled: (_, error) => {
+      if (error) {
+        logger.error("Error toggling like:", error);
+      }
     }
   });
 
