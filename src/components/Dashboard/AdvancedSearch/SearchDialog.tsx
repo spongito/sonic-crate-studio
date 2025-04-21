@@ -2,27 +2,26 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { PlatformSelector, getDefaultPlatforms, type Platform } from "../MusicFinder/PlatformSelector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ReferenceSearch, type SpotifySearchResult } from "../MusicFinder/ReferenceSearch";
+import { Badge } from "@/components/ui/badge";
 
 export interface SearchParams {
   prompt: string;
-  mode: string;
+  mode?: string;
   genre: string;
   length: string;
   commercialFactor: number;
-  description: string;
+  description?: string;
   platforms: Platform[];
   referenceArtistIds?: string[];
   referenceTrackIds?: string[];
-  locations?: string[];
+  locations: string[];
   releaseYearRange: [number, number];
   bpmRange?: [number, number];
   useBpmFilter: boolean;
@@ -42,6 +41,13 @@ const locations = [
   { value: "JM", label: "Jamaica" },
   { value: "TT", label: "Trinidad & Tobago" },
   { value: "global", label: "Global" },
+  { value: "CA", label: "Canada" },
+  { value: "AU", label: "Australia" },
+  { value: "DE", label: "Germany" },
+  { value: "FR", label: "France" },
+  { value: "JP", label: "Japan" },
+  { value: "BR", label: "Brazil" },
+  { value: "ZA", label: "South Africa" },
 ];
 
 const lengths = ["30m", "1h", "1.5h", "2h", "2.5h", "3h"];
@@ -56,11 +62,9 @@ interface SearchDialogProps {
 export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit }: SearchDialogProps) {
   const [params, setParams] = useState<SearchParams>({
     prompt: initialPrompt,
-    mode: "club-ready",
     genre: "",
     length: "1.5h",
     commercialFactor: 50,
-    description: "",
     platforms: getDefaultPlatforms(),
     releaseYearRange: [1990, 2025],
     useBpmFilter: false,
@@ -68,6 +72,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
   });
   
   const [selectedReferences, setSelectedReferences] = useState<SpotifySearchResult[]>([]);
+  const [locationSearchInput, setLocationSearchInput] = useState("");
   
   useEffect(() => {
     if (initialPrompt) {
@@ -98,6 +103,31 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
     }));
   };
 
+  // Handle selecting a location
+  const addLocation = (locationValue: string) => {
+    if (!params.locations.includes(locationValue)) {
+      setParams(prev => ({ 
+        ...prev,
+        locations: [...prev.locations, locationValue] 
+      }));
+    }
+    setLocationSearchInput("");
+  };
+
+  // Handle removing a location
+  const removeLocation = (locationValue: string) => {
+    setParams(prev => ({
+      ...prev,
+      locations: prev.locations.filter(loc => loc !== locationValue)
+    }));
+  };
+  
+  // Filter locations based on search input
+  const filteredLocations = locations.filter(loc => 
+    loc.label.toLowerCase().includes(locationSearchInput.toLowerCase()) && 
+    !params.locations.includes(loc.value)
+  );
+
   const handleSubmit = () => {
     onSubmit(params);
     onOpenChange(false);
@@ -119,14 +149,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             onChange={(e) => setParams({ ...params, prompt: e.target.value })}
             className="w-full"
           />
-          
-          <Tabs value={params.mode} onValueChange={(value) => setParams({ ...params, mode: value })}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="club-ready">Club Ready</TabsTrigger>
-              <TabsTrigger value="crate-dig">Crate Dig & Mix</TabsTrigger>
-              <TabsTrigger value="classic">Classic</TabsTrigger>
-            </TabsList>
-          </Tabs>
 
           <div>
             <label className="text-sm font-medium mb-2 block">Genre</label>
@@ -152,21 +174,56 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
 
           <div>
             <label className="text-sm font-medium mb-2 block">Location</label>
-            <Select 
-              value={params.locations?.[0] || "global"} 
-              onValueChange={(value) => setParams({ ...params, locations: [value] })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select location" />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.map(location => (
-                  <SelectItem key={location.value} value={location.value}>
-                    {location.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col space-y-2">
+              {/* Selected locations */}
+              {params.locations.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {params.locations.map(locationValue => {
+                    const location = locations.find(loc => loc.value === locationValue);
+                    return (
+                      <Badge key={locationValue} variant="secondary" className="flex items-center gap-1 py-1.5">
+                        {location?.label || locationValue}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0"
+                          onClick={() => removeLocation(locationValue)}
+                        >
+                          <span className="sr-only">Remove</span>
+                          ×
+                        </Button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* Location search input */}
+              <div className="relative">
+                <input
+                  type="text"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Search locations..."
+                  value={locationSearchInput}
+                  onChange={e => setLocationSearchInput(e.target.value)}
+                />
+                
+                {/* Location dropdown */}
+                {locationSearchInput && filteredLocations.length > 0 && (
+                  <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md">
+                    {filteredLocations.map(location => (
+                      <div
+                        key={location.value}
+                        className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                        onClick={() => addLocation(location.value)}
+                      >
+                        {location.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div>
@@ -266,16 +323,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               : "Enable Spotify to use references"
             }
           />
-          
-          <div>
-            <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
-            <Textarea
-              placeholder="Add more details about the mood, context, or specific instructions..."
-              value={params.description}
-              onChange={(e) => setParams({ ...params, description: e.target.value })}
-              className="resize-none"
-            />
-          </div>
         </div>
 
         <DialogFooter>

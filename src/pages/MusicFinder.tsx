@@ -16,8 +16,6 @@ const MusicFinder = () => {
   const [platforms, setPlatforms] = useState(getDefaultPlatforms());
   
   const [advancedParams, setAdvancedParams] = useState<AdvancedSettingsParams>({
-    mode: "club-ready",
-    description: "",
     genre: "",
     length: "1.5h",
     commercialFactor: 50,
@@ -36,8 +34,6 @@ const MusicFinder = () => {
 
   const handleReset = () => {
     setAdvancedParams({
-      mode: "club-ready",
-      description: "",
       genre: "",
       length: "1.5h",
       commercialFactor: 50,

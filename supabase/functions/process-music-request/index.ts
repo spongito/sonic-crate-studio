@@ -32,7 +32,8 @@ serve(async (req) => {
     
     // Validate API keys for selected platforms
     if (platforms.includes('youtube') && !Deno.env.get('YOUTUBE_API_KEY')) {
-      throw new Error("YouTube API key is not configured. Please add it to your environment variables.");
+      console.warn("YouTube API key is not configured");
+      // Don't throw here, we'll handle it later based on other platforms
     }
     
     // Intent Analysis
@@ -71,54 +72,99 @@ serve(async (req) => {
       intent.reference_artist_ids = advancedParams.referenceArtistIds;
     }
     
-    // Spotify Authentication (only needed if Spotify is selected)
+    // Initialize empty arrays for tracks
+    let allTracks = [];
+    let seedTracks = null;
+    let seedArtists = null;
     let spotifyToken = null;
+    
+    // Spotify functionality - only try if selected
     if (platforms.includes('spotify')) {
       try {
+        // Attempt to get Spotify token
         spotifyToken = await getSpotifyToken();
         console.log("Obtained Spotify token successfully");
-      } catch (error) {
-        console.error("Spotify auth failed:", error);
-        // Only throw if Spotify is the only selected platform
-        if (platforms.length === 1) {
-          throw new Error("Failed to authenticate with Spotify. Please check your Spotify API credentials.");
+        
+        // Attempt Spotify search
+        const spotifyResults = await executeSearchFlow(intent, spotifyToken, ['spotify']).catch(error => {
+          console.error("Spotify search failed:", error);
+          return { tracks: [], seedTracks: [], seedArtists: [] };
+        });
+        
+        if (spotifyResults?.tracks?.length > 0) {
+          allTracks = [...allTracks, ...spotifyResults.tracks];
+          seedTracks = spotifyResults.seedTracks;
+          seedArtists = spotifyResults.seedArtists;
+          console.log(`Found ${spotifyResults.tracks.length} tracks through Spotify search`);
         } else {
-          console.log("Continuing with other platforms due to Spotify auth failure");
+          console.log("No Spotify tracks found");
         }
+      } catch (error) {
+        console.error("Spotify processing error:", error);
+        console.log("Continuing with other platforms due to Spotify failure");
+        // Don't throw, we'll continue with other platforms
       }
-    } else {
-      console.log("Spotify not selected, skipping authentication");
     }
     
-    // Track Search across selected platforms
-    const { tracks, seedTracks, seedArtists } = await executeSearchFlow(intent, spotifyToken, platforms).catch(error => {
-      console.error("Search flow failed:", error);
-      throw new Error("Failed to search for tracks: " + error.message);
-    });
-    console.log(`Found ${tracks.length} tracks through search`);
+    // YouTube functionality - only try if selected
+    if (platforms.includes('youtube')) {
+      try {
+        // Validate YouTube API key
+        if (!Deno.env.get('YOUTUBE_API_KEY')) {
+          throw new Error("YouTube API key is not configured");
+        }
+        
+        // Attempt YouTube search
+        const youtubeResults = await executeSearchFlow(intent, null, ['youtube']).catch(error => {
+          console.error("YouTube search failed:", error);
+          return { tracks: [] };
+        });
+        
+        if (youtubeResults?.tracks?.length > 0) {
+          allTracks = [...allTracks, ...youtubeResults.tracks];
+          console.log(`Found ${youtubeResults.tracks.length} tracks through YouTube search`);
+        } else {
+          console.log("No YouTube tracks found");
+        }
+      } catch (error) {
+        console.error("YouTube processing error:", error);
+        console.log("Continuing with other platforms due to YouTube failure");
+        // Don't throw, we'll continue with other platforms
+      }
+    }
     
-    if (tracks.length === 0) {
-      throw new Error("No tracks found matching your criteria. Try different search terms or genres.");
+    // Validate we found at least some tracks
+    if (allTracks.length === 0) {
+      throw new Error("No tracks found matching your criteria. Try different search terms or platforms.");
     }
     
     // Recommendations (only for Spotify if we have seedTracks)
     let recommendedTracks = [];
     if (platforms.includes('spotify') && spotifyToken && seedTracks && seedTracks.length > 0) {
-      recommendedTracks = await getRecommendations(seedTracks, seedArtists, intent, spotifyToken).catch(error => {
-        console.error("Recommendations failed:", error);
-        // Don't throw here, we can continue with search results only
-        return [];
-      });
-      console.log(`Found ${recommendedTracks.length} tracks through recommendations`);
+      try {
+        const { getRecommendations } = await import('./spotify-recommendations.ts');
+        recommendedTracks = await getRecommendations(seedTracks, seedArtists, intent, spotifyToken).catch(error => {
+          console.error("Recommendations failed:", error);
+          // Don't throw here, we can continue with search results only
+          return [];
+        });
+        console.log(`Found ${recommendedTracks.length} tracks through recommendations`);
+      } catch (error) {
+        console.error("Failed to get recommendations:", error);
+        // Continue without recommendations
+      }
     }
     
     // Combine and deduplicate tracks
-    const combinedTracks = [...tracks, ...recommendedTracks];
+    const combinedTracks = [...allTracks, ...recommendedTracks];
     if (combinedTracks.length === 0) {
       throw new Error("No tracks could be found or recommended. Please try different search criteria.");
     }
     
-    const uniqueTracks = Array.from(new Map(combinedTracks.map(track => 
+    // Filter out null tracks and deduplicate
+    const validTracks = combinedTracks.filter(track => track !== null && track !== undefined);
+    
+    const uniqueTracks = Array.from(new Map(validTracks.map(track => 
       [track.id || track.spotify_id || track.youtube_id, track]
     )).values());
     console.log(`Combined unique tracks: ${uniqueTracks.length}`);
@@ -131,15 +177,21 @@ serve(async (req) => {
     if (platforms.includes('spotify') && spotifyToken) {
       const spotifyTracks = uniqueTracks.filter(track => track.platform === 'spotify');
       if (spotifyTracks.length > 0) {
-        const enrichedSpotifyTracks = await enrichTracksWithAudioFeatures(spotifyTracks, spotifyToken).catch(error => {
-          console.error("Audio features enrichment failed:", error);
-          // Continue without audio features if needed
-          return spotifyTracks;
-        });
-        
-        // Replace Spotify tracks with enriched versions
-        const nonSpotifyTracks = uniqueTracks.filter(track => track.platform !== 'spotify');
-        tracksWithFeatures = [...enrichedSpotifyTracks, ...nonSpotifyTracks];
+        try {
+          const { enrichTracksWithAudioFeatures } = await import('./spotify-track-utils.ts');
+          const enrichedSpotifyTracks = await enrichTracksWithAudioFeatures(spotifyTracks, spotifyToken).catch(error => {
+            console.error("Audio features enrichment failed:", error);
+            // Continue without audio features if needed
+            return spotifyTracks;
+          });
+          
+          // Replace Spotify tracks with enriched versions
+          const nonSpotifyTracks = uniqueTracks.filter(track => track.platform !== 'spotify');
+          tracksWithFeatures = [...enrichedSpotifyTracks, ...nonSpotifyTracks];
+        } catch (error) {
+          console.error("Failed to import spotify-track-utils:", error);
+          // Continue with original tracks
+        }
       }
     }
     
