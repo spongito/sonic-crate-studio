@@ -1,19 +1,16 @@
+
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
-import { PlatformSelector, type Platform } from "./PlatformSelector";
-import { ReferenceSearch, type SpotifySearchResult } from "./ReferenceSearch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { GenreSelector } from "./AdvancedSettings/GenreSelector";
-import { LocationSelector } from "./AdvancedSettings/LocationSelector";
+import { PlatformSelectSection } from "./AdvancedSettings/PlatformSelectSection";
+import { GenreSelect } from "./AdvancedSettings/GenreSelect";
+import { LocationSelectSection } from "./AdvancedSettings/LocationSelectSection";
 import { LengthSelector } from "./AdvancedSettings/LengthSelector";
 import { CommercialSlider } from "./AdvancedSettings/CommercialSlider";
 import { ReleaseYearRangeSlider } from "./AdvancedSettings/ReleaseYearRangeSlider";
 import { BpmFilter } from "./AdvancedSettings/BpmFilter";
+import { ReferenceSearch, SpotifySearchResult } from "./ReferenceSearch";
+import { Platform } from "./PlatformSelector";
 
 const genres = [
   "Afrobeat", "Ambient", "Blues", "Classical", "Deep House", 
@@ -71,7 +68,6 @@ export function AdvancedSettings({
 }: AdvancedSettingsProps) {
   const [expanded, setExpanded] = useState(false);
   const [selectedReferences, setSelectedReferences] = useState<SpotifySearchResult[]>([]);
-  const [locationSearchInput, setLocationSearchInput] = useState("");
 
   const updateParams = (update: Partial<AdvancedSettingsParams>) => {
     onChange({ ...params, ...update });
@@ -132,14 +128,14 @@ export function AdvancedSettings({
       {expanded && (
         <div className="space-y-6 animate-fade-in">
           <div className="space-y-4">
-            <GenreSelector value={params.genre} onChange={v => updateParams({ genre: v })} genres={genres} />
+            <GenreSelect value={params.genre} onChange={v => updateParams({ genre: v })} genres={genres} />
 
-            <PlatformSelector
+            <PlatformSelectSection
               platforms={platforms}
               onChange={onPlatformsChange}
             />
 
-            <LocationSelector
+            <LocationSelectSection
               locations={locations}
               selected={params.locations}
               onAdd={addLocation}
