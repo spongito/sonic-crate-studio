@@ -36,7 +36,7 @@ export function LibrarySearch({
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-[140px]">
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateRange.from ? (
+            {dateRange?.from ? (
               format(dateRange.from, "LLL dd, y")
             ) : (
               "Pick a date"
@@ -47,10 +47,11 @@ export function LibrarySearch({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={dateRange.from}
-            selected={{ from: dateRange.from, to: dateRange.to }}
-            onSelect={(range: any) => setDateRange(range)}
+            defaultMonth={dateRange?.from}
+            selected={dateRange}
+            onSelect={(range: any) => setDateRange(range || {})}
             numberOfMonths={2}
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
