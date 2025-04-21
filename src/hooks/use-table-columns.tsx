@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useIsMobile } from "./use-mobile";
 
@@ -36,7 +35,6 @@ export const DEFAULT_DESKTOP_COLUMNS: ColumnId[] = [
 
 export const DEFAULT_MOBILE_COLUMNS: ColumnId[] = [
   "title",
-  "platform",
   "actions",
 ];
 
