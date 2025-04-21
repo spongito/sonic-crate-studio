@@ -16,32 +16,31 @@ import { useAuth } from "@/context/AuthContext";
 const Navigation = () => {
   const { subscription } = useAuth();
   const isPremium = subscription?.is_premium || false;
-  const remainingGenerations = subscription?.remaining_generations || 0;
 
   return (
     <nav>
       <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-xs font-semibold tracking-tight text-white/50">
+        <h2 className="mb-2 px-4 text-[10px] font-semibold tracking-tight text-white/50">
           BROWSE
         </h2>
         <div className="space-y-1">
           <NavLink to="/dashboard" icon={LayoutDashboard}>
-            Dashboard
+            <span className="text-sm">Dashboard</span>
           </NavLink>
           <NavLink to="/playlists" icon={ListMusic}>
-            My Playlists
+            <span className="text-sm">My Playlists</span>
           </NavLink>
           <NavLink to="/music-finder" icon={Music}>
-            Music Finder
+            <span className="text-sm">Music Finder</span>
           </NavLink>
           <NavLink to="/music-finder" icon={PlusCircle}>
-            Create Playlist
+            <span className="text-sm">Create Playlist</span>
           </NavLink>
         </div>
       </div>
 
       <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-xs font-semibold tracking-tight text-white/50">
+        <h2 className="mb-2 px-4 text-[10px] font-semibold tracking-tight text-white/50">
           COMMUNITY
         </h2>
         <div className="space-y-1">
@@ -51,7 +50,7 @@ const Navigation = () => {
             isPremium={true}
             isRestricted={!isPremium}
           >
-            Curation Assistant
+            <span className="text-sm">Curation Assistant</span>
           </NavLink>
           <NavLink 
             to="/export" 
@@ -59,13 +58,13 @@ const Navigation = () => {
             isPremium={true}
             isRestricted={!isPremium}
           >
-            Export Tools
+            <span className="text-sm">Export Tools</span>
           </NavLink>
           <NavLink to="/community" icon={Users}>
-            Community Playlists
+            <span className="text-sm">Community Playlists</span>
           </NavLink>
           <NavLink to="/upload" icon={Upload}>
-            Upload Playlist
+            <span className="text-sm">Upload Playlist</span>
           </NavLink>
         </div>
       </div>
@@ -74,3 +73,4 @@ const Navigation = () => {
 };
 
 export default Navigation;
+
