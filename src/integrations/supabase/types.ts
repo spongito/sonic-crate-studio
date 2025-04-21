@@ -349,6 +349,63 @@ export type Database = {
         }
         Relationships: []
       }
+      user_track_history: {
+        Row: {
+          album: string | null
+          artist: string
+          bpm: number | null
+          created_at: string
+          external_url: string | null
+          genre: string | null
+          id: string
+          image_url: string | null
+          key_signature: string | null
+          match_score: number | null
+          platform: string | null
+          prompt_used: string | null
+          release_year: number | null
+          title: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          album?: string | null
+          artist: string
+          bpm?: number | null
+          created_at?: string
+          external_url?: string | null
+          genre?: string | null
+          id?: string
+          image_url?: string | null
+          key_signature?: string | null
+          match_score?: number | null
+          platform?: string | null
+          prompt_used?: string | null
+          release_year?: number | null
+          title: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          album?: string | null
+          artist?: string
+          bpm?: number | null
+          created_at?: string
+          external_url?: string | null
+          genre?: string | null
+          id?: string
+          image_url?: string | null
+          key_signature?: string | null
+          match_score?: number | null
+          platform?: string | null
+          prompt_used?: string | null
+          release_year?: number | null
+          title?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       trending_tracks: {

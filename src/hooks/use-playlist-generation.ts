@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -121,6 +120,29 @@ export function usePlaylistGeneration() {
       toast.success("Playlist generated successfully!");
       addDebugLog("Generation complete!");
       
+      // Save tracks to history
+      const historyPromises = processedData.tracks.map(track => 
+        supabase.from('user_track_history').upsert({
+          user_id: user?.id,
+          track_id: track.id || track.spotify_id || track.youtube_id,
+          title: track.title || track.name,
+          artist: Array.isArray(track.artist) ? track.artist[0] : track.artist,
+          album: track.album,
+          platform: track.platform,
+          bpm: track.bpm || track.audio_features?.tempo,
+          key_signature: track.key_signature,
+          genre: Array.isArray(track.genre) ? track.genre[0] : track.genre,
+          release_year: track.release_year,
+          image_url: track.image_url || track.cover_url,
+          external_url: track.external_url || track.platform_url,
+          match_score: track.match_score,
+          prompt_used: prompt
+        }, {
+          onConflict: 'user_id,track_id'
+        })
+      );
+
+      await Promise.all(historyPromises);
     } catch (error: any) {
       console.error("Generation error:", error);
       addDebugLog(`Critical error: ${error.message}`);
@@ -130,7 +152,6 @@ export function usePlaylistGeneration() {
     }
   };
 
-  // Helper to filter parameters based on activeFilters
   const getFilteredParams = (params: any) => {
     const filteredParams: any = { ...params };
     
