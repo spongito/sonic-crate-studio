@@ -30,9 +30,7 @@ const Navigation = () => {
           <NavLink to="/playlists" icon={ListMusic}>
             <span className="text-[12px] font-medium text-white">My Playlists</span>
           </NavLink>
-          <NavLink to="/music-finder" icon={Music}>
-            <span className="text-[12px] font-medium text-white">Music Finder</span>
-          </NavLink>
+          {/* Removed the Music Finder <li> here */}
           <NavLink to="/music-finder" icon={PlusCircle}>
             <span className="text-[12px] font-medium text-white">Create Playlist</span>
           </NavLink>
