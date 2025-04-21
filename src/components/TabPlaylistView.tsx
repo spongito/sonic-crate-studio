@@ -78,22 +78,22 @@ export default function TabPlaylistView({
       </div>
       
       <Tabs value={activePlatform} onValueChange={setActivePlatform} className="w-full">
-        <div className="flex items-center justify-between gap-4 px-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6">
           <Input
             placeholder="Search tracks..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-[200px]"
+            className="w-full sm:w-[200px]"
           />
 
-          <div className="flex items-center gap-4">
-            <TabsList>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+            <TabsList className="w-full sm:w-auto">
               <TabsTrigger value="all">All Platforms</TabsTrigger>
               <TabsTrigger value="spotify">Spotify</TabsTrigger>
               <TabsTrigger value="youtube">YouTube</TabsTrigger>
             </TabsList>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <PlaylistMenu 
                 onSave={() => onSavePlaylist?.("all")}
                 onRename={() => setIsRenaming(true)}
@@ -102,7 +102,7 @@ export default function TabPlaylistView({
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
+                  <Button variant="outline" className="w-full sm:w-auto">
                     Columns <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
