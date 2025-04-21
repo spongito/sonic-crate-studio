@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import TrackLikeButton from "@/components/TrackLikeButton";
 import type { Track } from "@/types/table";
+import { useEffect } from "react";
 
 interface RecentlyFoundTracksProps {
   tracks: Track[];
@@ -11,6 +12,16 @@ interface RecentlyFoundTracksProps {
 }
 
 export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTracksProps) {
+  // Add debug logging
+  useEffect(() => {
+    if (!tracks || tracks.length === 0) {
+      console.info("RecentlyFoundTracks: No tracks available to display");
+    } else {
+      console.info(`RecentlyFoundTracks: Displaying ${tracks.length} recently found tracks`);
+      console.debug("RecentlyFoundTracks first track:", tracks[0]?.title, tracks[0]?.artist);
+    }
+  }, [tracks]);
+
   if (!tracks || tracks.length === 0) {
     return (
       <div className="space-y-4">
@@ -21,6 +32,11 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
       </div>
     );
   }
+
+  const handleTrackLikeToggle = (trackId: string, liked: boolean) => {
+    console.log(`RecentlyFoundTracks: Toggling like for track ${trackId}, currently liked: ${liked}`);
+    onLikeToggle(trackId, liked);
+  };
 
   return (
     <div className="space-y-4">
@@ -47,7 +63,7 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
                     <TrackLikeButton
                       trackId={track.id}
                       liked={track.liked || false}
-                      onToggle={() => onLikeToggle(track.id, track.liked || false)}
+                      onToggle={() => handleTrackLikeToggle(track.id, track.liked || false)}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
