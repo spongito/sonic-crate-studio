@@ -52,18 +52,21 @@ export default function TabPlaylistView({
         initialPlatform={activePlatform}
       />
       
-      <TabsContent value={activePlatform} className="mt-0">
-        <GeneratedPlaylistTable 
-          tracks={filteredTracks}
-          userLikedTrackIds={userLikedTrackIds} 
-          onLikeChange={onLikeChange}
-          playlistName={playlistName}
-          fullWidth={true}
-          showLikeButton={true}
-          showAddToLibrary={true}
-          onAddToLibrary={onAddToLibrary}
-        />
-      </TabsContent>
+      {/* Wrap TabsContent within a Tabs component with the correct value */}
+      <Tabs value={activePlatform} onValueChange={setActivePlatform}>
+        <TabsContent value={activePlatform} className="mt-0">
+          <GeneratedPlaylistTable 
+            tracks={filteredTracks}
+            userLikedTrackIds={userLikedTrackIds} 
+            onLikeChange={onLikeChange}
+            playlistName={playlistName}
+            fullWidth={true}
+            showLikeButton={true}
+            showAddToLibrary={true}
+            onAddToLibrary={onAddToLibrary}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
