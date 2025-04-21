@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +7,16 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Debug from './pages/Debug';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import MusicFinder from './pages/MusicFinder';
+import CurationAssistant from './pages/CurationAssistant';
+import Playlists from './pages/Playlists';
+import Export from './pages/Export';
+import Community from './pages/Community';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
