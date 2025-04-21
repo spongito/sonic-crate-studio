@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import BackgroundCells from "@/components/ui/background-cells";
-import { SearchDialog, SearchParams } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
+import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { SignInDialog } from "@/components/auth/SignInDialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -61,7 +61,15 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
               commercialFactor: 50,
               releaseYearRange: [1990, 2025],
               useBpmFilter: false,
-              locations: ["global"]
+              locations: ["global"],
+              activeFilters: {
+                genre: true,
+                location: true,
+                releaseYear: true,
+                commercial: true,
+                references: true,
+                bpm: false
+              }
             },
             platforms: enabledPlatforms
           }
@@ -103,7 +111,7 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
     }
   };
   
-  const handleAdvancedSearchSubmit = async (params: SearchParams) => {
+  const handleAdvancedSearchSubmit = async (params: any) => {
     if (!user) {
       setShowSignIn(true);
       return;
@@ -141,7 +149,8 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
               releaseYearRange: params.releaseYearRange,
               bpmRange: params.bpmRange,
               useBpmFilter: params.useBpmFilter,
-              locations: params.locations
+              locations: params.locations,
+              activeFilters: params.activeFilters
             },
             platforms: enabledPlatforms
           }

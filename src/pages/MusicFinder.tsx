@@ -21,7 +21,15 @@ const MusicFinder = () => {
     commercialFactor: 50,
     releaseYearRange: [1990, 2025],
     useBpmFilter: false,
-    locations: ["global"]
+    locations: ["global"],
+    activeFilters: {
+      genre: true,
+      location: true,
+      releaseYear: true,
+      commercial: true,
+      references: true,
+      bpm: false
+    }
   });
 
   const {
@@ -39,7 +47,15 @@ const MusicFinder = () => {
       commercialFactor: 50,
       releaseYearRange: [1990, 2025],
       useBpmFilter: false,
-      locations: ["global"]
+      locations: ["global"],
+      activeFilters: {
+        genre: true,
+        location: true,
+        releaseYear: true,
+        commercial: true,
+        references: true,
+        bpm: false
+      }
     });
     setPlatforms(getDefaultPlatforms());
     setPrompt("");

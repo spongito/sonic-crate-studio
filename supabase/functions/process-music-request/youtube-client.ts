@@ -1,7 +1,8 @@
+
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
 
 // Function to search for videos on YouTube
-export async function searchYouTubeVideos(query: string, limit = 30) {
+export async function searchYouTubeVideos(query: string, limit = 50, regionCode?: string) {
   if (!YOUTUBE_API_KEY) {
     console.warn("YouTube API key not configured");
     throw new Error("YouTube API key not configured or invalid. Please check your API key in the environment variables.");
@@ -13,8 +14,26 @@ export async function searchYouTubeVideos(query: string, limit = 30) {
     
     console.log("Searching YouTube with query:", enhancedQuery);
     
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      part: 'snippet',
+      q: enhancedQuery,
+      maxResults: String(limit),
+      type: 'video',
+      videoCategoryId: '10', // Music category
+      videoDuration: 'medium',
+      videoEmbeddable: 'true',
+      key: YOUTUBE_API_KEY
+    });
+    
+    // Add region code if specified
+    if (regionCode && regionCode !== 'global') {
+      queryParams.append('regionCode', regionCode);
+      console.log(`Using region filter: ${regionCode}`);
+    }
+    
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(enhancedQuery)}&maxResults=${limit}&type=video&videoCategoryId=10&videoDuration=medium&videoEmbeddable=true&key=${YOUTUBE_API_KEY}`,
+      `https://www.googleapis.com/youtube/v3/search?${queryParams.toString()}`,
       {
         headers: {
           'Accept': 'application/json',

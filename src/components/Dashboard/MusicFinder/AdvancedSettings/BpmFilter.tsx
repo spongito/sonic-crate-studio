@@ -23,7 +23,7 @@ export function BpmFilter({ bpmRange, useBpmFilter, onChange, disabled }: BpmFil
           disabled={disabled}
         />
         <Label htmlFor="use-bpm-filter" className="text-sm font-medium">
-          BPM Range {disabled && "(requires Spotify)"}
+          Enable BPM Range {disabled && "(requires Spotify)"}
         </Label>
       </div>
       {useBpmFilter && !disabled && (
@@ -35,6 +35,7 @@ export function BpmFilter({ bpmRange, useBpmFilter, onChange, disabled }: BpmFil
             max={200}
             step={1}
             className="my-4"
+            disabled={disabled}
           />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{bpmRange?.[0] || 60} BPM</span>

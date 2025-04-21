@@ -37,7 +37,7 @@ export function usePlaylistGeneration() {
       setIsGenerating(true);
       setDebugLogs([]);
       addDebugLog(`Starting generation with prompt: "${prompt}"`);
-      addDebugLog(`Using advanced params: ${JSON.stringify(advancedParams)}`);
+      addDebugLog(`Using advanced params: ${JSON.stringify(getFilteredParams(advancedParams))}`);
       
       const enabledPlatforms = platforms.filter(p => p.enabled).map(p => p.id);
       addDebugLog(`Enabled platforms: ${enabledPlatforms.join(', ')}`);
@@ -47,7 +47,7 @@ export function usePlaylistGeneration() {
         .invoke('process-music-request', {
           body: { 
             prompt,
-            advancedParams,
+            advancedParams: getFilteredParams(advancedParams),
             platforms: enabledPlatforms
           }
         });
@@ -95,7 +95,7 @@ export function usePlaylistGeneration() {
           is_public: true,
           genres: [advancedParams.genre, ...(processedData.intent?.genres || [])].filter(Boolean),
           settings: {
-            ...advancedParams,
+            ...getFilteredParams(advancedParams),
             platforms: enabledPlatforms,
             intent: processedData.intent
           }
@@ -128,6 +128,39 @@ export function usePlaylistGeneration() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Helper to filter parameters based on activeFilters
+  const getFilteredParams = (params: any) => {
+    const filteredParams: any = { ...params };
+    
+    if (!params.activeFilters.genre) {
+      filteredParams.genre = "";
+    }
+    
+    if (!params.activeFilters.location) {
+      filteredParams.locations = ["global"];
+    }
+    
+    if (!params.activeFilters.releaseYear) {
+      delete filteredParams.releaseYearRange;
+    }
+    
+    if (!params.activeFilters.commercial) {
+      filteredParams.commercialFactor = 50;
+    }
+    
+    if (!params.activeFilters.references) {
+      delete filteredParams.referenceArtistIds;
+      delete filteredParams.referenceTrackIds;
+    }
+    
+    if (!params.activeFilters.bpm || !params.useBpmFilter) {
+      delete filteredParams.bpmRange;
+      filteredParams.useBpmFilter = false;
+    }
+    
+    return filteredParams;
   };
 
   return {

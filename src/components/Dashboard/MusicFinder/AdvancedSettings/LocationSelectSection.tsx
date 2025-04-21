@@ -11,6 +11,7 @@ interface LocationSelectSectionProps {
   selected: string[];
   onAdd: (val: string) => void;
   onRemove: (val: string) => void;
+  disabled?: boolean;
 }
 
 export function LocationSelectSection({
@@ -18,6 +19,7 @@ export function LocationSelectSection({
   selected,
   onAdd,
   onRemove,
+  disabled = false,
 }: LocationSelectSectionProps) {
   return (
     <LocationSelector
@@ -25,6 +27,7 @@ export function LocationSelectSection({
       selected={selected}
       onAdd={onAdd}
       onRemove={onRemove}
+      disabled={disabled}
     />
   );
 }

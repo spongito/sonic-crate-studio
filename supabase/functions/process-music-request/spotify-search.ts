@@ -1,10 +1,22 @@
 
 import { formatSpotifyTrack } from './spotify-track-utils.ts';
 
-export async function searchTracks(query: string, token: string, limit: number = 20) {
+export async function searchTracks(query: string, token: string, limit: number = 50, marketCode?: string) {
   try {
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      q: query,
+      type: 'track',
+      limit: String(limit),
+    });
+    
+    // Add market parameter if specified
+    if (marketCode && marketCode !== 'global') {
+      queryParams.append('market', marketCode);
+    }
+    
     const response = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
+      `https://api.spotify.com/v1/search?${queryParams.toString()}`,
       {
         headers: {
           'Authorization': `Bearer ${token}`

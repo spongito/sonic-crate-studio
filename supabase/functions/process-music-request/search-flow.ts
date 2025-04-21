@@ -168,6 +168,7 @@ export async function executeSearchFlow(intent: any, token: string | null, platf
     if (enabledPlatforms.has('spotify') && token) {
       console.log("Performing Spotify search...");
       
+      // Modified to handle reference artists with higher priority
       if (intent.reference_artists && intent.reference_artists.length > 0) {
         const artistIds = await searchArtists(intent.reference_artists, token);
         if (artistIds.length === 0) {
@@ -189,12 +190,34 @@ export async function executeSearchFlow(intent: any, token: string | null, platf
         }
       }
       
+      // Build an advanced Spotify query string with structured filters
       let searchQuery = intent.original_prompt;
-      if (intent.genre && intent.genre !== "any") {
-        searchQuery += ` genre:${intent.genre}`;
+      let queryParams = [];
+
+      // Add artist name if available in reference_artists
+      if (intent.reference_artists && intent.reference_artists.length > 0 && intent.activeFilters?.references) {
+        queryParams.push(`artist:${intent.reference_artists[0]}`);
       }
       
-      const searchResults = await searchTracks(searchQuery, token, 30);
+      // Add genre filter if specified
+      if (intent.genre && intent.genre !== "any" && intent.activeFilters?.genre) {
+        queryParams.push(`genre:${intent.genre}`);
+      }
+      
+      // Add year range if specified
+      if (intent.release_year_range && intent.activeFilters?.releaseYear) {
+        queryParams.push(`year:${intent.release_year_range.min}-${intent.release_year_range.max}`);
+      }
+      
+      // Combine all parameters into the search query
+      if (queryParams.length > 0) {
+        searchQuery = `${searchQuery} ${queryParams.join(' ')}`;
+      }
+      
+      console.log(`Using Spotify search query: ${searchQuery}`);
+
+      // Increased limit to 50 tracks per platform as requested
+      const searchResults = await searchTracks(searchQuery, token, 50, intent.locations?.[0]);
       if (searchResults.length > 0) {
         allTracks.push(...searchResults);
         
@@ -204,11 +227,11 @@ export async function executeSearchFlow(intent: any, token: string | null, platf
         }
       } else {
         console.warn("No tracks found for main search query");
-      }
-      
-      if (allTracks.length < 10) {
-        const broadSearchQuery = intent.mood_tags.join(' ') + ' ' + (intent.genre || '');
-        const broadSearchResults = await searchTracks(broadSearchQuery, token, 30);
+        
+        // If no results, try a broader search without structured parameters
+        const broadSearchQuery = intent.original_prompt;
+        console.log(`Trying broader Spotify search: ${broadSearchQuery}`);
+        const broadSearchResults = await searchTracks(broadSearchQuery, token, 50, intent.locations?.[0]);
         allTracks.push(...broadSearchResults);
         
         if (seedTracks.length < 5 && broadSearchResults.length > 0) {
@@ -221,47 +244,73 @@ export async function executeSearchFlow(intent: any, token: string | null, platf
     if (enabledPlatforms.has('youtube')) {
       console.log("Performing YouTube search...");
       
-      let youtubeGenre = intent.genre && intent.genre !== "any" ? intent.genre : "";
-      let youtubeMoods = intent.mood_tags.slice(0, 2).join(' ');
-      let youtubeArtists = "";
-      
-      if (intent.reference_artists && intent.reference_artists.length > 0) {
-        youtubeArtists = intent.reference_artists.slice(0, 2).join(' ');
-      }
-      
-      // Create a well-formed YouTube query
+      // Build a more advanced YouTube query
       let youtubeQuery = intent.original_prompt;
+      let queryComponents = [];
       
-      // Add specific components if they're not already in the original prompt
-      if (youtubeGenre && !youtubeQuery.toLowerCase().includes(youtubeGenre.toLowerCase())) {
-        youtubeQuery += ` ${youtubeGenre}`;
+      // Add artists if references are enabled
+      if (intent.reference_artists && intent.reference_artists.length > 0 && intent.activeFilters?.references) {
+        queryComponents.push(intent.reference_artists[0]);
       }
       
-      if (youtubeArtists && !youtubeQuery.toLowerCase().includes(youtubeArtists.toLowerCase())) {
-        youtubeQuery += ` ${youtubeArtists}`;
+      // Add genre if specified
+      if (intent.genre && intent.genre !== "any" && intent.activeFilters?.genre) {
+        queryComponents.push(intent.genre);
       }
       
-      if (youtubeMoods && !youtubeQuery.toLowerCase().includes(youtubeMoods.toLowerCase())) {
-        youtubeQuery += ` ${youtubeMoods}`;
+      // Add year range if specified (will be filtered post-fetch)
+      if (intent.release_year_range && intent.activeFilters?.releaseYear) {
+        if (intent.release_year_range.min === intent.release_year_range.max) {
+          queryComponents.push(intent.release_year_range.min.toString());
+        } else {
+          queryComponents.push(`${intent.release_year_range.min}-${intent.release_year_range.max}`);
+        }
       }
       
-      if (intent.tempo && !youtubeQuery.toLowerCase().includes(intent.tempo.toLowerCase())) {
-        youtubeQuery += ` ${intent.tempo}`;
+      // Add tempo/bpm indicator if specified (not directly queryable)
+      if (intent.tempo) {
+        queryComponents.push(intent.tempo);
+      }
+      
+      // Add "audio" and "topic" to focus on audio-only content
+      queryComponents.push("audio");
+      
+      // Build the final query
+      if (queryComponents.length > 0) {
+        youtubeQuery = `${youtubeQuery} ${queryComponents.join(' ')}`;
       }
       
       console.log(`Using YouTube query: ${youtubeQuery}`);
       
+      // Set the region code if location is specified
+      const regionCode = intent.locations && intent.locations[0] !== 'global' ? intent.locations[0] : undefined;
+      
       try {
-        const youtubeResults = await searchYouTubeVideos(youtubeQuery, 30);
+        // Increased limit to 50 tracks per platform as requested
+        const youtubeResults = await searchYouTubeVideos(youtubeQuery, 50, regionCode);
         console.log(`Found ${youtubeResults.length} YouTube tracks`);
         
         if (youtubeResults.length > 0) {
-          allTracks.push(...youtubeResults);
+          // If year filter is active, filter YouTube results by year
+          if (intent.release_year_range && intent.activeFilters?.releaseYear) {
+            const filteredResults = youtubeResults.filter(track => {
+              const publishYear = track.release_year;
+              return publishYear ? (
+                publishYear >= intent.release_year_range.min && 
+                publishYear <= intent.release_year_range.max
+              ) : true;
+            });
+            
+            console.log(`After year filtering: ${filteredResults.length} YouTube tracks`);
+            allTracks.push(...filteredResults);
+          } else {
+            allTracks.push(...youtubeResults);
+          }
         } else {
           // Try a simpler query as fallback if first search returned nothing
           const simplifiedQuery = intent.original_prompt;
           console.log(`Trying simplified YouTube query: ${simplifiedQuery}`);
-          const fallbackResults = await searchYouTubeVideos(simplifiedQuery, 30);
+          const fallbackResults = await searchYouTubeVideos(simplifiedQuery, 50);
           console.log(`Found ${fallbackResults.length} YouTube tracks from fallback query`);
           
           if (fallbackResults.length > 0) {
@@ -279,6 +328,7 @@ export async function executeSearchFlow(intent: any, token: string | null, platf
       }
     }
     
+    // Handle case where no tracks are found
     if (allTracks.length === 0) {
       if (enabledPlatforms.has('youtube') && enabledPlatforms.size === 1) {
         throw new Error("No YouTube tracks found. The YouTube API may be unavailable or the API key may be invalid. Try enabling Spotify as well or using a different search term.");
@@ -289,9 +339,11 @@ export async function executeSearchFlow(intent: any, token: string | null, platf
       }
     }
     
+    // Deduplicate and combine tracks
     allTracks = combineAndDeduplicateTracks(allTracks);
     console.log(`Combined and deduplicated: ${allTracks.length} total tracks`);
     
+    // Save tracks to database
     try {
       console.log(`Saving ${allTracks.length} tracks to master database...`);
       for (const track of allTracks) {

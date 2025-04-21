@@ -6,12 +6,12 @@ interface ReleaseYearRangeSliderProps {
   onChange: (val: [number, number]) => void;
   min: number;
   max: number;
+  disabled?: boolean;
 }
 
-export function ReleaseYearRangeSlider({ value, onChange, min, max }: ReleaseYearRangeSliderProps) {
+export function ReleaseYearRangeSlider({ value, onChange, min, max, disabled = false }: ReleaseYearRangeSliderProps) {
   return (
-    <div>
-      <label className="text-sm font-medium mb-2 block">Release Date Range</label>
+    <div className={disabled ? "opacity-50 pointer-events-none" : ""}>
       <div className="px-2">
         <Slider
           value={value}
@@ -20,6 +20,7 @@ export function ReleaseYearRangeSlider({ value, onChange, min, max }: ReleaseYea
           max={max}
           step={1}
           className="my-4"
+          disabled={disabled}
         />
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{value[0]}</span>
