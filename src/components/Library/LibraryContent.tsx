@@ -1,6 +1,6 @@
 
 import { PaginatedTrackList } from "@/components/Library/PaginatedTrackList";
-import { TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import type { Track } from "@/types/table";
 import { useLogger } from "@/hooks/useLogger";
 
@@ -16,7 +16,7 @@ export function LibraryContent({ activeTab, tracks, onLikeToggle }: LibraryConte
   logger.debug(`Rendering ${tracks.length} tracks for tab: ${activeTab}`);
   
   return (
-    <>
+    <Tabs value={activeTab}>
       <TabsContent value="all" className="space-y-4">
         <PaginatedTrackList
           tracks={tracks}
@@ -32,6 +32,6 @@ export function LibraryContent({ activeTab, tracks, onLikeToggle }: LibraryConte
           pageSize={15}
         />
       </TabsContent>
-    </>
+    </Tabs>
   );
 }
