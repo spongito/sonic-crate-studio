@@ -164,6 +164,7 @@ export function GeneratedPlaylistTable({
                     hover:text-gold`}
                   onClick={() => handleLike(track, isTrackLiked(track.id))}
                   disabled={pending[track.id]}
+                  title={isTrackLiked(track.id) ? "Remove from My Library" : "Add to My Library"}
                 >
                   <Heart fill={isTrackLiked(track.id) ? "#FFD700" : "none"} className="w-6 h-6" />
                 </button>
@@ -182,4 +183,3 @@ export function GeneratedPlaylistTable({
     </div>
   );
 }
-
