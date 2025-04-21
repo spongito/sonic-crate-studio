@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useCallback } from "react";
-import MultipleSelector, { Option, useDebounce } from "@/components/ui/multiselect";
+import MultipleSelector, { Option } from "@/components/ui/multiselect";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 
@@ -117,14 +117,14 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
   }
 
   // Ensure we always pass an array to MultipleSelector
-  const safeValue = Array.isArray(value) ? value : [];
+  const safeValue = Array.isArray(value) ? value.map(formatOption) : [];
 
   return (
     <div>
       <label className="text-sm font-medium mb-2 block">Reference Artists & Tracks</label>
       <MultipleSelector
         options={[]} // Not needed, async mode
-        value={safeValue.map(formatOption)}
+        value={safeValue}
         onChange={handleChange}
         onSearch={handleSearch}
         delay={300}

@@ -146,6 +146,12 @@ const MultipleSelector = ({
   
   const showPlaceholder = placeholder && (!safeValue.length || !hidePlaceholderWhenSelected);
 
+  // Ensure we're not rendering with undefined values that would cause CMDK to error
+  if (!Array.isArray(safeValue)) {
+    console.error("MultipleSelector: value is not an array", value);
+    return null;
+  }
+
   return (
     <Command
       onKeyDown={handleKeyDown}
