@@ -13,7 +13,8 @@ export const PlaylistList = () => {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [sort, setSort] = useState<"newest" | "oldest" | "alphabetical">("newest");
+  // Change 'alphabetical' to 'name-asc' to match SortOption type
+  const [sort, setSort] = useState<"newest" | "oldest" | "name-asc">("newest");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -31,12 +32,12 @@ export const PlaylistList = () => {
           .select("*")
           .eq("user_id", user.id); // Only fetch playlists for the logged-in user
         
-        // Apply sorting
+        // Apply sorting based on SortOption
         if (sort === "newest") {
           query = query.order("created_at", { ascending: false });
         } else if (sort === "oldest") {
           query = query.order("created_at", { ascending: true });
-        } else if (sort === "alphabetical") {
+        } else if (sort === "name-asc") {
           query = query.order("name", { ascending: true });
         }
         
@@ -59,6 +60,11 @@ export const PlaylistList = () => {
     
     fetchPlaylists();
   }, [sort, user]);
+
+  const handlePlaylistClick = (playlist: any) => {
+    // Implement playlist click handler (e.g., open playlist viewer)
+    console.log("Playlist clicked:", playlist);
+  };
   
   return (
     <div className="space-y-6">
@@ -76,7 +82,7 @@ export const PlaylistList = () => {
             </div>
             
             <div className="flex gap-2">
-              <SortControl value={sort} onChange={setSort} />
+              <SortControl value={sort} onValueChange={setSort} />
               <ViewToggle view={view} onViewChange={setView} />
             </div>
           </div>
@@ -86,7 +92,7 @@ export const PlaylistList = () => {
               <p className="text-muted-foreground">Generate your first playlist to see it here.</p>
             </div>
           ) : (
-            <ListView playlists={playlists} />
+            <ListView playlists={playlists} onPlaylistClick={handlePlaylistClick} />
           )}
         </>
       )}
