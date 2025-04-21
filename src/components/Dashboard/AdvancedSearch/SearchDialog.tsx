@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +8,9 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { PlatformSelector, getDefaultPlatforms, type Platform } from "../MusicFinder/PlatformSelector";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { ReferenceSearch, type SpotifySearchResult } from "../MusicFinder/ReferenceSearch";
 
 export interface SearchParams {
   prompt: string;
@@ -16,8 +19,13 @@ export interface SearchParams {
   length: string;
   commercialFactor: number;
   description: string;
-  referenceArtists: string;
   platforms: Platform[];
+  referenceArtistIds?: string[];
+  referenceTrackIds?: string[];
+  locations?: string[];
+  releaseYearRange: [number, number];
+  bpmRange?: [number, number];
+  useBpmFilter: boolean;
 }
 
 const genres = [
@@ -25,6 +33,15 @@ const genres = [
   "Disco", "Drum & Bass", "Funk", "Hip-Hop", "House", 
   "Jazz", "Lo-fi", "Minimal", "Pop", "Progressive", 
   "R&B", "Reggae", "Rock", "Soul", "Tech House", "Techno", "Trance"
+];
+
+const locations = [
+  { value: "US", label: "United States" },
+  { value: "UK", label: "United Kingdom" },
+  { value: "NG", label: "Nigeria" },
+  { value: "JM", label: "Jamaica" },
+  { value: "TT", label: "Trinidad & Tobago" },
+  { value: "global", label: "Global" },
 ];
 
 const lengths = ["30m", "1h", "1.5h", "2h", "2.5h", "3h"];
@@ -44,18 +61,49 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
     length: "1.5h",
     commercialFactor: 50,
     description: "",
-    referenceArtists: "",
-    platforms: getDefaultPlatforms()
+    platforms: getDefaultPlatforms(),
+    releaseYearRange: [1990, 2025],
+    useBpmFilter: false,
+    locations: ["global"]
   });
+  
+  const [selectedReferences, setSelectedReferences] = useState<SpotifySearchResult[]>([]);
+  
+  useEffect(() => {
+    if (initialPrompt) {
+      setParams(prev => ({ ...prev, prompt: initialPrompt }));
+    }
+  }, [initialPrompt]);
   
   const handlePlatformsChange = (newPlatforms: Platform[]) => {
     setParams(prev => ({ ...prev, platforms: newPlatforms }));
+  };
+  
+  const handleReferencesChange = (references: SpotifySearchResult[]) => {
+    setSelectedReferences(references);
+    
+    // Extract IDs by type
+    const artistIds = references
+      .filter(ref => ref.type === 'artist')
+      .map(ref => ref.id);
+      
+    const trackIds = references
+      .filter(ref => ref.type === 'track')
+      .map(ref => ref.id);
+      
+    setParams(prev => ({ 
+      ...prev,
+      referenceArtistIds: artistIds.length > 0 ? artistIds : undefined,
+      referenceTrackIds: trackIds.length > 0 ? trackIds : undefined
+    }));
   };
 
   const handleSubmit = () => {
     onSubmit(params);
     onOpenChange(false);
   };
+  
+  const spotifyEnabled = params.platforms.find(p => p.id === 'spotify')?.enabled;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,6 +151,25 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
           </div>
 
           <div>
+            <label className="text-sm font-medium mb-2 block">Location</label>
+            <Select 
+              value={params.locations?.[0] || "global"} 
+              onValueChange={(value) => setParams({ ...params, locations: [value] })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map(location => (
+                  <SelectItem key={location.value} value={location.value}>
+                    {location.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <label className="text-sm font-medium mb-2 block">Set Length</label>
             <div className="flex gap-2 flex-wrap">
               {lengths.map((length) => (
@@ -136,6 +203,71 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
           </div>
           
           <div>
+            <label className="text-sm font-medium mb-2 block">Release Date Range</label>
+            <div className="px-2">
+              <Slider
+                value={params.releaseYearRange}
+                onValueChange={(value) => setParams({ ...params, releaseYearRange: value as [number, number] })}
+                min={1990}
+                max={2025}
+                step={1}
+                className="my-4"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{params.releaseYearRange[0]}</span>
+                <span>{params.releaseYearRange[1]}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className={spotifyEnabled ? "" : "opacity-50 pointer-events-none"}>
+            <div className="flex items-center space-x-2 mb-2">
+              <Checkbox 
+                id="use-bpm-filter-dialog" 
+                checked={params.useBpmFilter}
+                onCheckedChange={(checked) => 
+                  setParams({ 
+                    ...params, 
+                    useBpmFilter: !!checked,
+                    bpmRange: params.bpmRange || [90, 140]
+                  })
+                }
+                disabled={!spotifyEnabled}
+              />
+              <Label htmlFor="use-bpm-filter-dialog" className="text-sm font-medium">
+                BPM Range {!spotifyEnabled && "(requires Spotify)"}
+              </Label>
+            </div>
+            
+            {params.useBpmFilter && spotifyEnabled && (
+              <div className="px-2">
+                <Slider
+                  value={params.bpmRange || [90, 140]}
+                  onValueChange={(value) => setParams({ ...params, bpmRange: value as [number, number] })}
+                  min={60}
+                  max={200}
+                  step={1}
+                  className="my-4"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{params.bpmRange?.[0] || 60} BPM</span>
+                  <span>{params.bpmRange?.[1] || 200} BPM</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <ReferenceSearch
+            selectedReferences={selectedReferences}
+            onReferencesChange={handleReferencesChange}
+            disabled={!spotifyEnabled}
+            placeholder={spotifyEnabled 
+              ? "Search for artists or tracks..." 
+              : "Enable Spotify to use references"
+            }
+          />
+          
+          <div>
             <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
             <Textarea
               placeholder="Add more details about the mood, context, or specific instructions..."
@@ -143,18 +275,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               onChange={(e) => setParams({ ...params, description: e.target.value })}
               className="resize-none"
             />
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-2 block">Reference Artists (Optional)</label>
-            <Input
-              placeholder="Add reference artists separated by commas..."
-              value={params.referenceArtists}
-              onChange={(e) => setParams({ ...params, referenceArtists: e.target.value })}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Example: Bonobo, Four Tet, Floating Points
-            </p>
           </div>
         </div>
 

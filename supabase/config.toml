@@ -1,80 +1,52 @@
 
-project_id = "epitbbwnyikpazjtptnw"
+# project_id is the only required field
+project_id = "lovable"
 
 [api]
+# Enabled by default. Set to 'false' to disable the API.
 enabled = true
+# Port to use for the API URL.
 port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+# Additional environment variables that should be passed to the API.
+preview_env_vars = []
 
 [db]
+# Port to use for the local database URL.
 port = 54322
-shadow_port = 54320
-major_version = 15
 
-[studio]
+[realtime]
 enabled = true
-port = 54323
-api_url = "http://localhost"
 
 [inbucket]
+# Enabled by default for local development.
 enabled = true
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
 
 [storage]
+# Enabled by default. Set to 'false' to disable the storage.
 enabled = true
-file_size_limit = "50MiB"
 
 [auth]
+# Enabled by default. Set to 'false' to disable auth.
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-enable_refresh_token_rotation = true
-refresh_token_reuse_interval = 10
-enable_signup = true
 
 [auth.email]
-enable_signup = true
-double_confirm_changes = true
-enable_confirmations = false
-
-[auth.external.apple]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.github]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[auth.external.google]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-
-[analytics]
-enabled = false
-port = 54327
-vector_port = 54328
-gcp_project_id = ""
-gcp_project_number = ""
-gcp_jwt_path = "supabase/gcloud.json"
-
-[experimental]
-watching = true
-embedded_database = true
+enabled = true
 
 [functions]
+# Enabled by default. Set to 'false' to disable functions.
 enabled = true
-serve_function_local = true
 
 [functions.process-music-request]
+verify_jwt = true
+
+[functions.increment-playlist-count]
+verify_jwt = true
+
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.spotify-search]
 verify_jwt = true

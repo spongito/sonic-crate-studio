@@ -59,7 +59,9 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
               genre: "",
               length: "1.5h",
               commercialFactor: 50,
-              referenceArtists: ""
+              releaseYearRange: [1990, 2025],
+              useBpmFilter: false,
+              locations: ["global"]
             },
             platforms: enabledPlatforms
           }
@@ -134,7 +136,12 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
               genre: params.genre,
               length: params.length,
               commercialFactor: params.commercialFactor,
-              referenceArtists: params.referenceArtists
+              referenceArtistIds: params.referenceArtistIds,
+              referenceTrackIds: params.referenceTrackIds,
+              releaseYearRange: params.releaseYearRange,
+              bpmRange: params.bpmRange,
+              useBpmFilter: params.useBpmFilter,
+              locations: params.locations
             },
             platforms: enabledPlatforms
           }

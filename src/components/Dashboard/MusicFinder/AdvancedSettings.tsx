@@ -5,9 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { PlatformSelector, type Platform } from "./PlatformSelector";
+import { ReferenceSearch, type SpotifySearchResult } from "./ReferenceSearch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const genres = [
   "Afrobeat",
@@ -36,13 +38,27 @@ const genres = [
 
 const lengths = ["30m", "1h", "1.5h", "2h", "2.5h", "3h"];
 
+const locations = [
+  { value: "US", label: "United States" },
+  { value: "UK", label: "United Kingdom" },
+  { value: "NG", label: "Nigeria" },
+  { value: "JM", label: "Jamaica" },
+  { value: "TT", label: "Trinidad & Tobago" },
+  { value: "global", label: "Global" },
+];
+
 export interface AdvancedSettingsParams {
   mode: string;
   description: string;
   genre: string;
   length: string;
   commercialFactor: number;
-  referenceArtists: string;
+  referenceArtistIds?: string[];
+  referenceTrackIds?: string[];
+  locations?: string[];
+  releaseYearRange: [number, number];
+  bpmRange?: [number, number];
+  useBpmFilter: boolean;
 }
 
 interface AdvancedSettingsProps {
@@ -53,12 +69,39 @@ interface AdvancedSettingsProps {
   onReset: () => void;
 }
 
-export function AdvancedSettings({ params, onChange, platforms, onPlatformsChange, onReset }: AdvancedSettingsProps) {
+export function AdvancedSettings({ 
+  params, 
+  onChange, 
+  platforms, 
+  onPlatformsChange, 
+  onReset 
+}: AdvancedSettingsProps) {
   const [expanded, setExpanded] = useState(false);
+  const [selectedReferences, setSelectedReferences] = useState<SpotifySearchResult[]>([]);
   
   const updateParams = (update: Partial<AdvancedSettingsParams>) => {
     onChange({ ...params, ...update });
   };
+  
+  const handleReferencesChange = (references: SpotifySearchResult[]) => {
+    setSelectedReferences(references);
+    
+    // Extract IDs by type
+    const artistIds = references
+      .filter(ref => ref.type === 'artist')
+      .map(ref => ref.id);
+      
+    const trackIds = references
+      .filter(ref => ref.type === 'track')
+      .map(ref => ref.id);
+      
+    updateParams({ 
+      referenceArtistIds: artistIds.length > 0 ? artistIds : undefined,
+      referenceTrackIds: trackIds.length > 0 ? trackIds : undefined 
+    });
+  };
+  
+  const spotifyEnabled = platforms.find(p => p.id === 'spotify')?.enabled;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -120,6 +163,25 @@ export function AdvancedSettings({ params, onChange, platforms, onPlatformsChang
                 onChange={onPlatformsChange}
               />
             </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Location</label>
+              <Select 
+                value={params.locations?.[0] || "global"} 
+                onValueChange={(value) => updateParams({ locations: [value] })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map(location => (
+                    <SelectItem key={location.value} value={location.value}>
+                      {location.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
               <label className="text-sm font-medium mb-2 block">Set Length</label>
@@ -155,6 +217,70 @@ export function AdvancedSettings({ params, onChange, platforms, onPlatformsChang
             </div>
             
             <div>
+              <label className="text-sm font-medium mb-2 block">Release Date Range</label>
+              <div className="px-2">
+                <Slider
+                  value={params.releaseYearRange}
+                  onValueChange={(value) => updateParams({ releaseYearRange: value as [number, number] })}
+                  min={1990}
+                  max={2025}
+                  step={1}
+                  className="my-4"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{params.releaseYearRange[0]}</span>
+                  <span>{params.releaseYearRange[1]}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className={spotifyEnabled ? "" : "opacity-50 pointer-events-none"}>
+              <div className="flex items-center space-x-2 mb-2">
+                <Checkbox 
+                  id="use-bpm-filter" 
+                  checked={params.useBpmFilter}
+                  onCheckedChange={(checked) => 
+                    updateParams({ 
+                      useBpmFilter: !!checked,
+                      bpmRange: params.bpmRange || [90, 140]
+                    })
+                  }
+                  disabled={!spotifyEnabled}
+                />
+                <Label htmlFor="use-bpm-filter" className="text-sm font-medium">
+                  BPM Range {!spotifyEnabled && "(requires Spotify)"}
+                </Label>
+              </div>
+              
+              {params.useBpmFilter && spotifyEnabled && (
+                <div className="px-2">
+                  <Slider
+                    value={params.bpmRange || [90, 140]}
+                    onValueChange={(value) => updateParams({ bpmRange: value as [number, number] })}
+                    min={60}
+                    max={200}
+                    step={1}
+                    className="my-4"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{params.bpmRange?.[0] || 60} BPM</span>
+                    <span>{params.bpmRange?.[1] || 200} BPM</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <ReferenceSearch
+              selectedReferences={selectedReferences}
+              onReferencesChange={handleReferencesChange}
+              disabled={!spotifyEnabled}
+              placeholder={spotifyEnabled 
+                ? "Search for artists or tracks..." 
+                : "Enable Spotify to use references"
+              }
+            />
+            
+            <div>
               <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
               <Textarea
                 placeholder="Add more details about the mood, context, or specific instructions..."
@@ -162,19 +288,6 @@ export function AdvancedSettings({ params, onChange, platforms, onPlatformsChang
                 onChange={(e) => updateParams({ description: e.target.value })}
                 className="resize-none bg-background/60 min-h-[80px]"
               />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Reference Artists (Optional)</label>
-              <Input
-                placeholder="Add reference artists separated by commas..."
-                value={params.referenceArtists}
-                onChange={(e) => updateParams({ referenceArtists: e.target.value })}
-                className="bg-background/60"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Example: Bonobo, Four Tet, Floating Points
-              </p>
             </div>
           </div>
 

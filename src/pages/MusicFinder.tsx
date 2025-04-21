@@ -21,7 +21,9 @@ const MusicFinder = () => {
     genre: "",
     length: "1.5h",
     commercialFactor: 50,
-    referenceArtists: ""
+    releaseYearRange: [1990, 2025],
+    useBpmFilter: false,
+    locations: ["global"]
   });
 
   const {
@@ -39,7 +41,9 @@ const MusicFinder = () => {
       genre: "",
       length: "1.5h",
       commercialFactor: 50,
-      referenceArtists: ""
+      releaseYearRange: [1990, 2025],
+      useBpmFilter: false,
+      locations: ["global"]
     });
     setPlatforms(getDefaultPlatforms());
     setPrompt("");

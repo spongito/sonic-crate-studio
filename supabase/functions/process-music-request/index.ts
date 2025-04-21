@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from './cors.ts';
@@ -40,6 +41,35 @@ serve(async (req) => {
       throw new Error("Failed to analyze music request: " + error.message);
     });
     console.log("Created structured intent:", JSON.stringify(intent, null, 2));
+    
+    // Process additional advanced parameters
+    if (advancedParams?.releaseYearRange && Array.isArray(advancedParams.releaseYearRange) && advancedParams.releaseYearRange.length === 2) {
+      intent.release_year_range = {
+        min: advancedParams.releaseYearRange[0],
+        max: advancedParams.releaseYearRange[1]
+      };
+    }
+    
+    if (advancedParams?.useBpmFilter && advancedParams?.bpmRange && Array.isArray(advancedParams.bpmRange) && advancedParams.bpmRange.length === 2) {
+      intent.bpm_range = {
+        min: advancedParams.bpmRange[0],
+        max: advancedParams.bpmRange[1]
+      };
+    }
+    
+    if (advancedParams?.locations && Array.isArray(advancedParams.locations) && advancedParams.locations.length > 0) {
+      intent.market = advancedParams.locations[0];
+    }
+    
+    // Add reference tracks if provided
+    if (advancedParams?.referenceTrackIds && Array.isArray(advancedParams.referenceTrackIds) && advancedParams.referenceTrackIds.length > 0) {
+      intent.reference_track_ids = advancedParams.referenceTrackIds;
+    }
+    
+    // Add reference artists if provided (either from structured intent or directly)
+    if (advancedParams?.referenceArtistIds && Array.isArray(advancedParams.referenceArtistIds) && advancedParams.referenceArtistIds.length > 0) {
+      intent.reference_artist_ids = advancedParams.referenceArtistIds;
+    }
     
     // Spotify Authentication (only needed if Spotify is selected)
     let spotifyToken = null;
@@ -111,6 +141,24 @@ serve(async (req) => {
         const nonSpotifyTracks = uniqueTracks.filter(track => track.platform !== 'spotify');
         tracksWithFeatures = [...enrichedSpotifyTracks, ...nonSpotifyTracks];
       }
+    }
+    
+    // Filter by release year if specified
+    if (intent.release_year_range) {
+      tracksWithFeatures = tracksWithFeatures.filter(track => {
+        const year = track.release_year || (track.album?.release_date ? parseInt(track.album.release_date.substring(0, 4)) : null);
+        return year ? (year >= intent.release_year_range.min && year <= intent.release_year_range.max) : true;
+      });
+      console.log(`After release year filtering: ${tracksWithFeatures.length} tracks`);
+    }
+    
+    // Filter by BPM if specified and if we have BPM data
+    if (intent.bpm_range) {
+      tracksWithFeatures = tracksWithFeatures.filter(track => {
+        const bpm = track.audio_features?.tempo || track.audio_features?.bpm;
+        return bpm ? (bpm >= intent.bpm_range.min && bpm <= intent.bpm_range.max) : true;
+      });
+      console.log(`After BPM filtering: ${tracksWithFeatures.length} tracks`);
     }
     
     const scoredTracks = scoreTracksBasedOnIntent(tracksWithFeatures, intent);
