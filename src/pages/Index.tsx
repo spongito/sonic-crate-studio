@@ -7,6 +7,25 @@ import CTASection from "@/components/LandingPage/CTASection";
 import Footer from "@/components/Footer";
 import InlinePlaylistGenerator from "@/components/LandingPage/InlinePlaylistGenerator";
 import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
+import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
+import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
+
+const defaultAdvancedParams = {
+  genre: "",
+  length: "1.5h",
+  commercialFactor: 50,
+  releaseYearRange: [1990, 2025],
+  useBpmFilter: false,
+  locations: ["global"],
+  activeFilters: {
+    genre: true,
+    location: true,
+    releaseYear: true,
+    commercial: true,
+    references: true,
+    bpm: false,
+  },
+};
 
 const Index = () => {
   const [showPlaylist, setShowPlaylist] = useState(false);
@@ -14,9 +33,28 @@ const Index = () => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // --- Advanced modal related state ---
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advancedParams, setAdvancedParams] = useState(defaultAdvancedParams);
+  const [platforms, setPlatforms] = useState(getDefaultPlatforms());
+
   const handlePlaylistGenerated = (data: any) => {
     setPlaylistData(data);
     setShowPlaylist(true);
+  };
+
+  const handleAdvancedSubmit = (params: any) => {
+    setShowAdvanced(false);
+    setIsGenerating(true);
+
+    // We'll mock the same way as before but now respecting new params
+    setTimeout(() => {
+      setIsGenerating(false);
+      setAdvancedParams(params);
+      setPrompt(params.prompt);
+      // This should be replaced with actual playlist gen using the proper params/platforms.
+      handlePlaylistGenerated({ tracks: [], params, platforms });
+    }, 1200);
   };
 
   return (
@@ -42,6 +80,7 @@ const Index = () => {
                 handlePlaylistGenerated({ tracks: [] });
               }, 1200);
             }}
+            onAdvanced={() => setShowAdvanced(true)}
           />
 
           {showPlaylist && playlistData && (
@@ -56,8 +95,15 @@ const Index = () => {
       <HowItWorksSection />
       <CTASection />
       <Footer />
+      <SearchDialog
+        open={showAdvanced}
+        onOpenChange={setShowAdvanced}
+        initialPrompt={prompt}
+        onSubmit={handleAdvancedSubmit}
+      />
     </div>
   );
 };
 
 export default Index;
+
