@@ -1,3 +1,4 @@
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,72 +17,112 @@ import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
-import { useUser } from "@clerk/clerk-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, Plus, X } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useSearchParams } from "next/navigation";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
 import { ReferenceSearchSection } from "@/components/Dashboard/MusicFinder/AdvancedSettings/sections/ReferenceSearchSection";
 import { ReferenceItem } from "@/components/Dashboard/MusicFinder/ReferenceSearchField";
 
-interface SearchDialogProps {
-  children: React.ReactNode;
-  onSearch: (
-    query: string,
-    options?: {
-      artistIds?: string[];
-      trackIds?: string[];
-    }
-  ) => void;
+export interface SearchParams {
+  prompt: string;
+  mode?: string;
+  description?: string;
+  genre: string;
+  length: string;
+  commercialFactor: number;
+  referenceArtistIds?: string[];
+  referenceTrackIds?: string[];
+  locations: string[];
+  releaseYearRange: [number, number];
+  bpmRange?: [number, number];
+  useBpmFilter: boolean;
+  platforms: { id: string; enabled: boolean; }[];
 }
 
-const SearchDialog = ({ children, onSearch }: SearchDialogProps) => {
+interface SearchDialogProps {
+  children: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialPrompt?: string;
+  onSubmit: (params: SearchParams) => void;
+}
+
+export function SearchDialog({ 
+  children, 
+  open: controlledOpen, 
+  onOpenChange: setControlledOpen,
+  initialPrompt = "",
+  onSubmit 
+}: SearchDialogProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [selectedReferences, setSelectedReferences] = useState<ReferenceItem[]>([]);
   const { subscription } = useAuth();
-  const { user } = useUser();
 
-  const spotifyEnabled = true; // Assuming Spotify is always enabled for this component
+  // Handle controlled/uncontrolled state
+  const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : open;
+  const setIsOpen = isControlled ? setControlledOpen : setOpen;
+  
+  useEffect(() => {
+    if (initialPrompt) {
+      setPrompt(initialPrompt);
+    }
+  }, [initialPrompt]);
+
+  // Default minimal search params
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    prompt: initialPrompt,
+    genre: "",
+    length: "1.5h",
+    commercialFactor: 50,
+    releaseYearRange: [1990, 2025],
+    useBpmFilter: false,
+    locations: ["global"],
+    platforms: [
+      { id: "spotify", enabled: true },
+      { id: "youtube", enabled: false }
+    ]
+  });
+
+  const handleUpdateParams = (update: Partial<SearchParams>) => {
+    setSearchParams(prev => ({
+      ...prev,
+      ...update
+    }));
+  };
+
+  const handleReferencesChange = (refs: ReferenceItem[]) => {
+    setSelectedReferences(refs);
+    const artistIds = refs.filter(ref => ref.type === 'artist').map(ref => ref.id);
+    const trackIds = refs.filter(ref => ref.type === 'track').map(ref => ref.id);
+    
+    handleUpdateParams({
+      referenceArtistIds: artistIds.length > 0 ? artistIds : undefined,
+      referenceTrackIds: trackIds.length > 0 ? trackIds : undefined
+    });
+  };
 
   const handleSearch = () => {
-    const artistIds = selectedReferences.filter(ref => ref.type === 'artist').map(ref => ref.id);
-    const trackIds = selectedReferences.filter(ref => ref.type === 'track').map(ref => ref.id);
-    onSearch(query, {
-      artistIds: artistIds.length > 0 ? artistIds : undefined,
-      trackIds: trackIds.length > 0 ? trackIds : undefined,
+    if (!prompt.trim()) {
+      toast({
+        title: "Please enter a prompt",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    onSubmit({
+      ...searchParams,
+      prompt
     });
-    setOpen(false);
+    
+    setIsOpen(false);
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Search</AlertDialogTitle>
+          <AlertDialogTitle>Advanced Search</AlertDialogTitle>
           <AlertDialogDescription>
             Enter your search query and refine your search with reference
             artists and tracks.
@@ -89,27 +130,23 @@ const SearchDialog = ({ children, onSearch }: SearchDialogProps) => {
         </AlertDialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="query" className="text-right">
-              Query
+            <Label htmlFor="prompt" className="text-right">
+              Prompt
             </Label>
             <Input
               type="text"
-              id="query"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              id="prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
               className="col-span-3"
             />
           </div>
 
           <ReferenceSearchSection
             value={selectedReferences}
-            onChange={setSelectedReferences /* or onReferencesChange depending on your parent state */}
-            disabled={!spotifyEnabled}
-            placeholder={
-              spotifyEnabled
-                ? "Search for artists or tracks..."
-                : "Enable Spotify to use references"
-            }
+            onChange={handleReferencesChange}
+            disabled={false}
+            placeholder="Search for artists or tracks..."
           />
         </div>
         <AlertDialogFooter>
@@ -119,6 +156,4 @@ const SearchDialog = ({ children, onSearch }: SearchDialogProps) => {
       </AlertDialogContent>
     </AlertDialog>
   );
-};
-
-export default SearchDialog;
+}

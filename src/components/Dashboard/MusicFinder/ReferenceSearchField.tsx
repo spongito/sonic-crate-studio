@@ -1,8 +1,7 @@
 
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import MultipleSelector from "@/components/ui/multiselect";
-import type { Option } from "@/components/ui/multiselect";
+import MultipleSelector, { Option } from "@/components/ui/multiselect";
 
 export interface ReferenceItem {
   id: string;
@@ -33,7 +32,9 @@ export function ReferenceSearchField({
       ? `${item.name} — ${item.artistName}`
       : item.name,
     type: item.type,
-    imageUrl: item.imageUrl
+    imageUrl: item.imageUrl,
+    artistName: item.artistName,
+    name: item.name
   }), []);
 
   const handleChange = useCallback((opts: Option[]) => {
@@ -49,18 +50,25 @@ export function ReferenceSearchField({
   // Debounced async fetch as you type
   const fetchSuggestions = useCallback(async (input: string): Promise<Option[]> => {
     if (!input || input.length < 1) return [];
-    const { data, error } = await supabase.functions.invoke('spotify-search', {
-      body: { query: input }
-    });
-    if (error || !Array.isArray(data)) return [];
-    return data.map((item: ReferenceItem) => ({
-      value: item.id,
-      label: item.type === "track" && item.artistName ? `${item.name} — ${item.artistName}` : item.name,
-      name: item.name,
-      type: item.type,
-      imageUrl: item.imageUrl,
-      artistName: item.artistName
-    }));
+    try {
+      const { data, error } = await supabase.functions.invoke('spotify-search', {
+        body: { query: input }
+      });
+      
+      if (error || !Array.isArray(data)) return [];
+      
+      return data.map((item: ReferenceItem) => ({
+        value: item.id,
+        label: item.type === "track" && item.artistName ? `${item.name} — ${item.artistName}` : item.name,
+        name: item.name,
+        type: item.type,
+        imageUrl: item.imageUrl,
+        artistName: item.artistName
+      }));
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      return [];
+    }
   }, []);
 
   return (
@@ -80,6 +88,7 @@ export function ReferenceSearchField({
           minLength: 1, // only search after 1+ char
         }}
         maxSelected={5}
+        triggerSearchOnFocus={true}
       />
     </div>
   );

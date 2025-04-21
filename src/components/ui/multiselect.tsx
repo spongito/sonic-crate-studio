@@ -4,6 +4,7 @@
 import { Command as CommandPrimitive, useCommandState } from "cmdk"
 import * as React from "react"
 import { forwardRef, useEffect } from "react"
+import { Cross2Icon } from "@radix-ui/react-icons"
 
 import { cn } from "@/lib/utils"
 import {
@@ -12,7 +13,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Cross2Icon } from "@radix-ui/react-icons"
 
 export interface Option {
   value: string

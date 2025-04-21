@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import BackgroundCells from "@/components/ui/background-cells";
-import { SearchDialog, SearchParams } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
+import { SearchDialog, type SearchParams } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { SignInDialog } from "@/components/auth/SignInDialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
