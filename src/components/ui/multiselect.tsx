@@ -169,7 +169,6 @@ const MultipleSelector = ({
   
   const showPlaceholder = placeholder && (!safeValue.length || !hidePlaceholderWhenSelected);
 
-  // Safety check before rendering to prevent CMDK errors
   if (!Array.isArray(safeValue)) {
     console.error("MultipleSelector: safeValue is not an array", safeValue);
     return null;
@@ -185,6 +184,7 @@ const MultipleSelector = ({
       onKeyDown={handleKeyDown}
       className={`overflow-visible ${className || ""}`}
       shouldFilter={false} // We handle filtering ourselves or via the API
+      children={[]} // Ensure children is initialized as an empty array to prevent "undefined is not iterable" error
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">

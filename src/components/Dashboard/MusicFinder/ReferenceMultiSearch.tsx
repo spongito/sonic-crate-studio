@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { useCallback } from "react";
 import MultipleSelector, { Option } from "@/components/ui/multiselect";
@@ -159,7 +160,7 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
     <div>
       <label className="text-sm font-medium mb-2 block">Reference Artists & Tracks</label>
       <MultipleSelector
-        options={[]} // Not needed, async mode
+        options={[]} // Empty array for async mode
         value={formattedOptions}
         onChange={handleChange}
         onSearch={handleSearch}
