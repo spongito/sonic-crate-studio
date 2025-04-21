@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import PlaylistViewer from "@/components/Dashboard/PlaylistViewer";
@@ -8,6 +7,8 @@ import { DebugPanel } from "@/components/Dashboard/MusicFinder/DebugPanel";
 import { getDefaultPlatforms, type Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 import { usePlaylistGeneration } from "@/hooks/use-playlist-generation";
 import { useAuth } from "@/context/AuthContext";
+import PromptBar from "@/components/PromptBar";
+import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 
 const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
@@ -61,50 +62,58 @@ const MusicFinder = () => {
     setPrompt("");
   };
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <div className="flex flex-col gap-6">
-          <div className="flex-1 space-y-6">
-            <h1 className="text-4xl font-bold bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent">
-              Music Finder
-            </h1>
-            <p className="text-white/60">
-              Describe the mood, genre, or occasion and let our AI create the perfect playlist for you.
-            </p>
-            
-            <div className="glass-morphism p-4 space-y-6 rounded-xl">
-              <SearchPromptInput 
+      <div className="relative min-h-screen flex items-center justify-center">
+        <div className="z-10 flex flex-col w-full max-w-3xl mx-auto items-center pt-24 pb-8">
+          <h1 className="text-gradient text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-center mb-5">
+            Sound Designed by You
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-center mb-8">
+            Describe your playlist idea. Let our AI do the digging.
+          </p>
+          <div className="w-full max-w-2xl">
+            <div className="glass-morphism p-2 sm:p-3 flex flex-col gap-3">
+              <PromptBar
                 prompt={prompt}
+                setPrompt={setPrompt}
                 isGenerating={isGenerating}
                 disabled={!subscription?.is_premium && subscription?.remaining_generations === 0}
-                onChange={setPrompt}
                 onGenerate={() => handleGenerate(prompt, advancedParams, platforms)}
+                onAdvanced={() => setShowAdvanced(true)}
               />
-              
-              <AdvancedSettings
-                params={advancedParams}
-                onChange={setAdvancedParams}
-                platforms={platforms}
-                onPlatformsChange={setPlatforms}
-                onReset={handleReset}
-              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Free tier: 15 generations per month
+              </p>
             </div>
-            
-            {showPlaylist && (
-              <div className="mt-8 animate-fade-in">
-                <PlaylistViewer playlistData={playlistData} />
-              </div>
-            )}
-            
-            <DebugPanel 
-              showDebug={showDebug}
-              onToggleDebug={setShowDebug}
-              debugLogs={debugLogs}
-            />
           </div>
+          {showPlaylist && (
+            <div className="mt-8 animate-fade-in w-full">
+              <PlaylistViewer playlistData={playlistData} />
+            </div>
+          )}
+          <DebugPanel 
+            showDebug={showDebug}
+            onToggleDebug={setShowDebug}
+            debugLogs={debugLogs}
+          />
         </div>
       </div>
+      <SearchDialog
+        open={showAdvanced}
+        onOpenChange={setShowAdvanced}
+        initialPrompt={prompt}
+        onSubmit={(params) => {
+          setShowAdvanced(false);
+          handleGenerate(
+            params.prompt,
+            params,
+            platforms,
+          );
+        }}
+      />
     </DashboardLayout>
   );
 };
