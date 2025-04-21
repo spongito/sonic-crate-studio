@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Bug } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -6,7 +7,6 @@ import { DebugLogsSection } from "./DebugLogsSection";
 import { SearchQuery } from "./types";
 import { buildSpotifyApiQuery, buildYouTubeApiQuery } from "./apiQueryBuilders";
 import { generateDebugLogs } from "./generateDebugLogs";
-import { QueryDebugInformation } from "./QueryDebugInformation";
 
 interface LogItemProps {
   query: SearchQuery;
@@ -52,14 +52,11 @@ export function LogItem({ query }: LogItemProps) {
 
       <Collapsible open={isOpen} onOpenChange={() => setIsOpen((v) => !v)}>
         <CollapsibleContent>
-          <div className="py-2">
-            <QueryDebugInformation
-              query={query}
-              spotifyApiQuery={spotifyApiQuery}
-              youtubeApiQuery={youtubeApiQuery}
-              debugLogs={debugLogs}
-            />
-          </div>
+          <DebugLogsSection
+            spotifyApiQuery={spotifyApiQuery}
+            youtubeApiQuery={youtubeApiQuery}
+            debugLogs={debugLogs}
+          />
         </CollapsibleContent>
       </Collapsible>
     </div>

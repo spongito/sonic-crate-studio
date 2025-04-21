@@ -4,14 +4,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
-import type { Platform } from "@/components/PlaylistGenerator/PlatformSelector";
+import type { Platform } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 
 export function usePlaylistGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [playlistData, setPlaylistData] = useState<any>(null);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [debugQueryContext, setDebugQueryContext] = useState<any>(null);
   const { subscription, checkSubscription, user } = useAuth();
 
   const addDebugLog = (message: string) => {
@@ -37,27 +36,18 @@ export function usePlaylistGeneration() {
     try {
       setIsGenerating(true);
       setDebugLogs([]);
-      const filteredParams = getFilteredParams(advancedParams);
       addDebugLog(`Starting generation with prompt: "${prompt}"`);
-      addDebugLog(`Using advanced params: ${JSON.stringify(filteredParams)}`);
+      addDebugLog(`Using advanced params: ${JSON.stringify(getFilteredParams(advancedParams))}`);
       
       const enabledPlatforms = platforms.filter(p => p.enabled).map(p => p.id);
       addDebugLog(`Enabled platforms: ${enabledPlatforms.join(', ')}`);
-      
-      // Set debug context for the query details
-      setDebugQueryContext({
-        query_text: prompt,
-        timestamp: new Date().toISOString(),
-        platforms: enabledPlatforms,
-        params: filteredParams
-      });
       
       addDebugLog("Calling process-music-request function...");
       const { data: processedData, error } = await supabase.functions
         .invoke('process-music-request', {
           body: { 
             prompt,
-            advancedParams: filteredParams,
+            advancedParams: getFilteredParams(advancedParams),
             platforms: enabledPlatforms
           }
         });
@@ -105,7 +95,7 @@ export function usePlaylistGeneration() {
           is_public: true,
           genres: [advancedParams.genre, ...(processedData.intent?.genres || [])].filter(Boolean),
           settings: {
-            ...filteredParams,
+            ...getFilteredParams(advancedParams),
             platforms: enabledPlatforms,
             intent: processedData.intent
           }
@@ -170,11 +160,6 @@ export function usePlaylistGeneration() {
       filteredParams.useBpmFilter = false;
     }
     
-    // Set default length if not specified
-    if (!filteredParams.length) {
-      filteredParams.length = "1.5h";
-    }
-    
     return filteredParams;
   };
 
@@ -183,7 +168,6 @@ export function usePlaylistGeneration() {
     playlistData,
     showPlaylist,
     debugLogs,
-    debugQueryContext,
     handleGenerate
   };
 }

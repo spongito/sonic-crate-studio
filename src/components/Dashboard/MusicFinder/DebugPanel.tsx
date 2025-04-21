@@ -6,37 +6,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useMemo } from "react";
-import { QueryDebugInformation } from "@/components/Dashboard/DebugDashboard/QueryDebugInformation";
-import { buildSpotifyApiQuery, buildYouTubeApiQuery } from "@/components/Dashboard/DebugDashboard/apiQueryBuilders";
 
 interface DebugPanelProps {
   showDebug: boolean;
   onToggleDebug: (value: boolean) => void;
   debugLogs: string[];
-  // Optionally pass full query context if available for richer debug
-  debugQueryContext?: any;
 }
 
-export function DebugPanel({ showDebug, onToggleDebug, debugLogs, debugQueryContext }: DebugPanelProps) {
-  // Try to infer a "query"-like object from debugLogs if debugQueryContext is not provided
-  const fallbackQueryObj = useMemo(() => {
-    const findPrompt = debugLogs.find(line => line.includes('Starting generation with prompt:'));
-    const promptMatch = findPrompt?.match(/"(.+?)"/);
-    const query_text = promptMatch ? promptMatch[1] : "";
-    return {
-      query_text,
-      platforms: debugLogs.find(line => line.toLowerCase().includes('enabled platforms:'))
-        ?.split(":")[1]
-        ?.split(",")
-        .map(s => s.trim())
-        .filter(Boolean) || [],
-      // You may expand this to extract more info if really needed
-    };
-  }, [debugLogs]);
-
-  const query = debugQueryContext || fallbackQueryObj;
-
+export function DebugPanel({ showDebug, onToggleDebug, debugLogs }: DebugPanelProps) {
   return (
     <Collapsible 
       open={showDebug} 
@@ -54,14 +31,17 @@ export function DebugPanel({ showDebug, onToggleDebug, debugLogs, debugQueryCont
       </div>
       
       <CollapsibleContent className="mt-2">
-        {showDebug ? (
-          <QueryDebugInformation
-            query={query}
-            spotifyApiQuery={buildSpotifyApiQuery(query)}
-            youtubeApiQuery={buildYouTubeApiQuery(query)}
-            debugLogs={debugLogs}
-          />
-        ) : null}
+        <div className="bg-black/50 rounded-lg p-4 max-h-64 overflow-y-auto text-xs font-mono">
+          {debugLogs.length === 0 ? (
+            <p className="text-gray-400">No logs yet. Generate a playlist to see debug information.</p>
+          ) : (
+            <div className="space-y-1">
+              {debugLogs.map((log, index) => (
+                <p key={index} className="text-gray-300">{log}</p>
+              ))}
+            </div>
+          )}
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );

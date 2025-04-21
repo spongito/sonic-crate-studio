@@ -6,6 +6,7 @@ import FeaturesSection from "@/components/LandingPage/FeaturesSection";
 import HowItWorksSection from "@/components/LandingPage/HowItWorksSection";
 import CTASection from "@/components/LandingPage/CTASection";
 import Footer from "@/components/Footer";
+import InlinePlaylistGenerator from "@/components/LandingPage/InlinePlaylistGenerator";
 
 const Index = () => {
   const [showPlaylist, setShowPlaylist] = useState(false);
@@ -23,6 +24,13 @@ const Index = () => {
         onPlaylistGenerated={handlePlaylistGenerated}
         setShowPlaylist={setShowPlaylist}
       />
+      
+      {showPlaylist && playlistData && (
+        <InlinePlaylistGenerator 
+          playlistData={playlistData} 
+          className="max-w-7xl mx-auto px-4 py-12"
+        />
+      )}
       
       <FeaturesSection />
       <HowItWorksSection />
