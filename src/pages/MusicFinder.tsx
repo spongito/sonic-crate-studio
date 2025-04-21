@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
@@ -42,13 +41,22 @@ const MusicFinder = () => {
     handleGenerate,
   } = usePlaylistGeneration();
 
-  // Fetch user's liked tracks
   const { tracks: likedTracks } = useUserLikedTracks({
-    filters: {},
+    filters: {
+      search: "",
+      bpmMin: "",
+      bpmMax: "",
+      yearMin: "",
+      yearMax: "",
+      genre: [],
+      key: "",
+      energy: [],
+      mood: [],
+      camelotMode: false
+    },
     userId: user?.id || ""
   });
-  
-  // Extract IDs of liked tracks for comparison
+
   const likedTrackIds = (Array.isArray(likedTracks) ? likedTracks : []).map(t => t.id);
 
   const handleReset = () => {
@@ -72,7 +80,6 @@ const MusicFinder = () => {
     setPrompt("");
   };
 
-  // Transform playlist data to GeneratedTrack format
   const formattedTracks: GeneratedTrack[] = playlistData?.tracks?.map((track: any) => ({
     id: track.id || track.spotify_id || `track-${Math.random()}`,
     title: track.title || track.name || "Unknown Track",
@@ -89,7 +96,6 @@ const MusicFinder = () => {
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Handle like status changes
   const handleLikeChange = (trackId: string, liked: boolean) => {
     // Refresh liked tracks if needed - handled by the component itself
   };
