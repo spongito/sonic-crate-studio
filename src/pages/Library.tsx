@@ -68,6 +68,16 @@ const Library = () => {
     created_at: t.created_at
   })), [allTracks]);
 
+  // Get recently found tracks - sort by created_at and take the most recent 10
+  const recentTracks = useMemo(() => {
+    const sortedTracks = [...memoTracks].sort((a, b) => {
+      if (!a.created_at) return 1;
+      if (!b.created_at) return -1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return sortedTracks.slice(0, 10);
+  }, [memoTracks]);
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -87,7 +97,7 @@ const Library = () => {
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col gap-8">
-          <RecentlyFoundTracks tracks={memoTracks.slice(0, 10)} onLikeToggle={handleLikeToggle} />
+          <RecentlyFoundTracks tracks={recentTracks} onLikeToggle={handleLikeToggle} />
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="flex flex-col gap-4">

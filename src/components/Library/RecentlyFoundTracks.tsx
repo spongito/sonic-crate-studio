@@ -11,7 +11,16 @@ interface RecentlyFoundTracksProps {
 }
 
 export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTracksProps) {
-  if (!tracks.length) return null;
+  if (!tracks || tracks.length === 0) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Recently Found Tracks</h2>
+        <div className="p-4 bg-muted/40 rounded-lg text-center">
+          <p className="text-muted-foreground">No recently found tracks yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -21,12 +30,16 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
           {tracks.map((track) => (
             <Card key={track.id} className="w-[200px] shrink-0">
               <div className="p-3">
-                {track.image_url && (
+                {track.image_url ? (
                   <img
                     src={track.image_url}
                     alt={track.title}
                     className="aspect-square w-full object-cover rounded-md"
                   />
+                ) : (
+                  <div className="aspect-square w-full bg-muted rounded-md flex items-center justify-center">
+                    <span className="text-muted-foreground">No image</span>
+                  </div>
                 )}
                 <div className="mt-2">
                   <div className="flex items-center justify-between">

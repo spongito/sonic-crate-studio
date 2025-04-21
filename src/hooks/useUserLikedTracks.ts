@@ -62,6 +62,8 @@ export function useUserLikedTracks({
         ...track,
         id: track.track_id,
         liked: likedTrackIds.has(track.track_id),
+        // Make sure all necessary fields are passed along
+        created_at: track.created_at,
         // Safely handle duration - use a default format if not available
         duration: formatDuration(track)
       }));
@@ -70,8 +72,8 @@ export function useUserLikedTracks({
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         tracks = tracks.filter(track =>
-          track.title?.toLowerCase().includes(searchLower) ||
-          track.artist?.toLowerCase().includes(searchLower)
+          (track.title?.toLowerCase() || "").includes(searchLower) ||
+          (track.artist?.toLowerCase() || "").includes(searchLower)
         );
       }
 
@@ -80,7 +82,7 @@ export function useUserLikedTracks({
       if (filters.yearMin) tracks = tracks.filter(t => t.release_year >= Number(filters.yearMin));
       if (filters.yearMax) tracks = tracks.filter(t => t.release_year <= Number(filters.yearMax));
       if (filters.key) tracks = tracks.filter(t => t.key_signature === filters.key);
-      if (filters.genre.length) tracks = tracks.filter(t => t.genre && filters.genre.includes(t.genre));
+      if (filters.genre.length) tracks = tracks.filter(t => t.genre && filters.genre.includes(t.genre.toString()));
 
       return tracks;
     },
