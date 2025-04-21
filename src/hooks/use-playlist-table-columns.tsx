@@ -3,6 +3,7 @@ import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import TrackCell from "@/components/TrackCell";
+import PlatformCell from "@/components/PlatformCell";
 import TrackLikeButton from "@/components/TrackLikeButton";
 import type { Track } from "@/types/table";
 
@@ -73,11 +74,7 @@ export function usePlaylistTableColumns({
     {
       accessorKey: "platform",
       header: "Platform",
-      cell: ({ row }) => {
-        const platform = row.original.platform;
-        const platformText = Array.isArray(platform) ? platform.join(", ") : platform;
-        return <div className="text-sm">{platformText}</div>;
-      },
+      cell: ({ row }) => <PlatformCell track={row.original} />,
     },
     {
       accessorKey: "bpm",
