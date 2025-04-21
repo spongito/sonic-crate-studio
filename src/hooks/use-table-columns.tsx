@@ -13,11 +13,24 @@ export type ColumnId =
   | "duration"
   | "actions";
 
+// All available columns that can be toggled
+export const ALL_COLUMNS: ColumnId[] = [
+  "title",
+  "album",
+  "platform",
+  "bpm",
+  "key_signature",
+  "genre",
+  "release_year",
+  "duration",
+  "actions"
+];
+
 export const DEFAULT_DESKTOP_COLUMNS: ColumnId[] = [
   "title",
   "platform",
   "release_year",
-  "duration",  
+  "duration",
   "actions",
 ];
 
@@ -33,13 +46,16 @@ export function useTableColumns() {
 
   useEffect(() => {
     const defaultColumns = isMobile ? DEFAULT_MOBILE_COLUMNS : DEFAULT_DESKTOP_COLUMNS;
-    const initialVisibility = DEFAULT_DESKTOP_COLUMNS.reduce(
+    
+    // Initialize all columns with their default visibility
+    const initialVisibility = ALL_COLUMNS.reduce(
       (acc, col) => ({
         ...acc,
         [col]: defaultColumns.includes(col),
       }),
       {}
     );
+    
     setVisibleColumns(initialVisibility);
   }, [isMobile]);
 
