@@ -17,6 +17,7 @@ export type Track = {
   liked?: boolean;
   platform_url?: string;
   spotify_id?: string;
+  created_at?: string; // Add this to fix the type error
 };
 
 export type GeneratedTrack = Track;

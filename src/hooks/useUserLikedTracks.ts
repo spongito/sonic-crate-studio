@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Track } from "@/types/table";
 
 type FilterState = {
   search: string;
@@ -60,7 +61,8 @@ export function useUserLikedTracks({
       let tracks = historyTracks.map(track => ({
         ...track,
         id: track.track_id,
-        liked: likedTrackIds.has(track.track_id)
+        liked: likedTrackIds.has(track.track_id),
+        duration: track.duration || formatDurationFromSeconds(track.duration_seconds) || "0:00"
       }));
 
       // Apply filters
@@ -82,6 +84,14 @@ export function useUserLikedTracks({
       return tracks;
     },
   });
+
+  // Helper function to format duration
+  const formatDurationFromSeconds = (seconds?: number): string | undefined => {
+    if (!seconds) return undefined;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   // Mutation for toggling track like status
   const toggleLikeMutation = useMutation({

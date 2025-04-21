@@ -41,7 +41,10 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
                     {Array.isArray(track.artist) ? track.artist.join(", ") : track.artist}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Found {formatDistanceToNow(new Date(track.created_at), { addSuffix: true })}
+                    {/* Use optional chaining to safely access created_at */}
+                    {track.created_at ? 
+                      `Found ${formatDistanceToNow(new Date(track.created_at), { addSuffix: true })}` : 
+                      'Recently found'}
                   </p>
                 </div>
               </div>
