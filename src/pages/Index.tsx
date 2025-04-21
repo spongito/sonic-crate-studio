@@ -9,6 +9,9 @@ import InlinePlaylistGenerator from "@/components/LandingPage/InlinePlaylistGene
 import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const defaultAdvancedParams = {
   genre: "",
@@ -32,6 +35,7 @@ const Index = () => {
   const [playlistData, setPlaylistData] = useState<any>(null);
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const { user, subscription, checkSubscription } = useAuth();
 
   // --- Advanced modal related state ---
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -45,16 +49,74 @@ const Index = () => {
 
   const handleAdvancedSubmit = (params: any) => {
     setShowAdvanced(false);
+    setAdvancedParams(params);
+    setPrompt(params.prompt);
+    handleGenerate(params.prompt, params, platforms);
+  };
+  
+  const handleGenerate = async (promptText: string, params = advancedParams, selectedPlatforms = platforms) => {
+    if (!promptText.trim()) {
+      toast.error("Please enter a prompt");
+      return;
+    }
+    
     setIsGenerating(true);
-
-    // We'll mock the same way as before but now respecting new params
-    setTimeout(() => {
+    setShowPlaylist(false);
+    
+    try {
+      const enabledPlatforms = selectedPlatforms.filter(p => p.enabled).map(p => p.id);
+      
+      const { data: processedData, error } = await supabase.functions.invoke('process-music-request', {
+        body: { 
+          prompt: promptText,
+          advancedParams: {
+            // Basic default params
+            genre: "",
+            length: "1.5h",
+            commercialFactor: 50,
+            releaseYearRange: [1990, 2025],
+            useBpmFilter: false,
+            locations: ["global"],
+            activeFilters: {
+              genre: true,
+              location: true,
+              releaseYear: true,
+              commercial: true,
+              references: true,
+              bpm: false,
+            },
+            // Override with any custom params
+            ...params
+          },
+          platforms: enabledPlatforms
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (processedData && processedData.error) {
+        throw new Error(processedData.error);
+      }
+      
+      if (!processedData || !processedData.tracks) {
+        throw new Error("Failed to generate playlist data");
+      }
+      
+      // If user is logged in and not premium, increment count
+      if (user && subscription && !subscription.is_premium) {
+        await supabase.functions.invoke('increment-playlist-count');
+        await checkSubscription?.();
+      }
+      
+      handlePlaylistGenerated(processedData);
+      toast.success("Playlist generated successfully!");
+      
+    } catch (error: any) {
+      console.error("Generation error:", error);
+      toast.error(error.message || "Failed to generate playlist");
+    } finally {
       setIsGenerating(false);
-      setAdvancedParams(params);
-      setPrompt(params.prompt);
-      // This should be replaced with actual playlist gen using the proper params/platforms.
-      handlePlaylistGenerated({ tracks: [], params, platforms });
-    }, 1200);
+    }
   };
 
   return (
@@ -73,20 +135,14 @@ const Index = () => {
             prompt={prompt}
             setPrompt={setPrompt}
             isGenerating={isGenerating}
-            onGenerate={() => {
-              setIsGenerating(true);
-              setTimeout(() => {
-                setIsGenerating(false);
-                handlePlaylistGenerated({ tracks: [] });
-              }, 1200);
-            }}
+            onGenerate={() => handleGenerate(prompt)}
             onAdvanced={() => setShowAdvanced(true)}
           />
 
           {showPlaylist && playlistData && (
             <InlinePlaylistGenerator
               playlistData={playlistData}
-              className="max-w-7xl mx-auto px-4 py-12"
+              className="max-w-7xl mx-auto px-4 py-12 w-full"
             />
           )}
         </div>
@@ -106,4 +162,3 @@ const Index = () => {
 };
 
 export default Index;
-

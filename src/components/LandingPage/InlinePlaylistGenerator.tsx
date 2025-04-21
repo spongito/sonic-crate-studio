@@ -5,7 +5,8 @@ import { Folder } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePlaylistOperations } from "@/hooks/use-playlist-operations";
 import { toast } from "sonner";
-import { TrackTable } from "@/components/TrackTable";
+import { GeneratedPlaylistTable, type GeneratedTrack } from "@/components/GeneratedPlaylistTable";
+import { useAuth } from "@/context/AuthContext";
 
 interface InlinePlaylistGeneratorProps {
   playlistData: any;
@@ -16,6 +17,22 @@ export default function InlinePlaylistGenerator({ playlistData, className }: Inl
   const navigate = useNavigate();
   const { savePlaylist, isSaving } = usePlaylistOperations();
   const [saved, setSaved] = useState(false);
+  const { user } = useAuth();
+  
+  // Transform tracks data to match GeneratedTrack format
+  const formattedTracks: GeneratedTrack[] = (playlistData?.tracks || []).map((track: any) => ({
+    id: track.id || track.spotify_id || `track-${Math.random()}`,
+    title: track.title || track.name || "Unknown Track",
+    artist: Array.isArray(track.artist) ? track.artist : [track.artist || "Unknown Artist"],
+    album: track.album || "Unknown Album",
+    platform: track.platform || "spotify",
+    image_url: track.image_url || track.cover_url || track.image,
+    bpm: track.bpm || track.audio_features?.bpm,
+    key_signature: track.key_signature || (track.audio_features ? `${track.audio_features.key} ${track.audio_features.mode === 1 ? 'Major' : 'Minor'}` : null),
+    genre: Array.isArray(track.genre) ? track.genre : track.genre ? [track.genre] : null,
+    release_year: track.release_year,
+    duration: track.duration,
+  }));
   
   const handleSavePlaylist = async () => {
     await savePlaylist(playlistData);
@@ -54,9 +71,19 @@ export default function InlinePlaylistGenerator({ playlistData, className }: Inl
         </div>
       </div>
       
-      <div className="overflow-x-auto">
-        <TrackTable tracks={playlistData?.tracks || []} />
-      </div>
+      {formattedTracks.length > 0 ? (
+        <GeneratedPlaylistTable 
+          tracks={formattedTracks} 
+          userLikedTrackIds={[]}
+          onLikeChange={(trackId, liked) => {
+            // Refresh the liked tracks list if needed
+          }}
+        />
+      ) : (
+        <div className="text-center py-8 text-white/70">
+          No tracks found in the generated playlist.
+        </div>
+      )}
     </div>
   );
 }
