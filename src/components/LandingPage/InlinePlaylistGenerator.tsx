@@ -75,9 +75,8 @@ export default function InlinePlaylistGenerator({ playlistData, className }: Inl
         <GeneratedPlaylistTable 
           tracks={formattedTracks} 
           userLikedTrackIds={[]}
-          onLikeChange={(trackId, liked) => {
-            // Refresh the liked tracks list if needed
-          }}
+          showControls={false}
+          fullWidth={true}
         />
       ) : (
         <div className="text-center py-8 text-white/70">

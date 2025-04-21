@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Heart, Search, ChevronDown } from "lucide-react";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
@@ -32,7 +33,7 @@ const Library = () => {
     userId: user?.id || "" 
   });
 
-  // All liked track IDs for like state management in new table
+  // All liked track IDs for like state management in table
   const trackIds = (Array.isArray(tracks) ? tracks : []).map(t => t.id);
 
   // List as required by shared table
@@ -55,7 +56,7 @@ const Library = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4">
           <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-white">
             <Heart className="text-gold w-7 h-7" /> Your Library
@@ -86,7 +87,90 @@ const Library = () => {
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
           </div>
         </div>
-        {/* -- FILTERS omitted for brevity (same as before) -- */}
+        
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 rounded-lg bg-white/5 border border-white/10">
+            {/* BPM Range */}
+            <div>
+              <h3 className="text-sm font-medium text-white/70 mb-2">BPM Range</h3>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={bpmMin}
+                  onChange={e => setBpmMin(e.target.value)}
+                  className="w-full"
+                />
+                <span className="text-white/40">—</span>
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={bpmMax}
+                  onChange={e => setBpmMax(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Year Range */}
+            <div>
+              <h3 className="text-sm font-medium text-white/70 mb-2">Year Range</h3>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="From"
+                  value={yearMin}
+                  onChange={e => setYearMin(e.target.value)}
+                  className="w-full"
+                />
+                <span className="text-white/40">—</span>
+                <Input
+                  type="number"
+                  placeholder="To"
+                  value={yearMax}
+                  onChange={e => setYearMax(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Genre Filter */}
+            <div>
+              <h3 className="text-sm font-medium text-white/70 mb-2">Genre</h3>
+              <MultiSelect
+                options={genreOptions}
+                value={genre}
+                onChange={setGenre}
+              />
+            </div>
+
+            {/* Key Selector */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-white/70">Key</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCamelotMode(!camelotMode)}
+                  className="h-6 text-xs"
+                >
+                  {camelotMode ? "Musical" : "Camelot"}
+                </Button>
+              </div>
+              <select
+                value={key}
+                onChange={e => setKey(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-white/10 border border-white/20 text-white"
+              >
+                <option value="">Any Key</option>
+                {(camelotMode ? camelotKeys : musicalKeys).map(k => (
+                  <option key={k.value} value={k.value}>{k.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+        
         {/* TRACKS */}
         <div className="space-y-2">
           {isLoading ? (
@@ -97,6 +181,8 @@ const Library = () => {
             <GeneratedPlaylistTable
               tracks={memoTracks}
               userLikedTrackIds={trackIds}
+              showControls={false}
+              fullWidth={true}
             />
           )}
         </div>

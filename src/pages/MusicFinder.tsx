@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
@@ -102,8 +103,8 @@ const MusicFinder = () => {
 
   return (
     <DashboardLayout>
-      <div className="relative min-h-screen flex items-center justify-center">
-        <div className="z-10 flex flex-col w-full max-w-3xl mx-auto items-center pt-24 pb-8">
+      <div className="min-h-screen flex flex-col">
+        <div className="flex flex-col w-full items-center pt-16 pb-8">
           <h1 className="text-gradient text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-center mb-5">
             Sound Designed by You
           </h1>
@@ -111,21 +112,25 @@ const MusicFinder = () => {
             Describe your playlist idea. Let our AI do the digging.
           </p>
 
-          <PlaylistPromptPanel
-            prompt={prompt}
-            setPrompt={setPrompt}
-            isGenerating={isGenerating}
-            disabled={!subscription?.is_premium && subscription?.remaining_generations === 0}
-            onGenerate={() => handleGenerate(prompt, advancedParams, platforms)}
-            onAdvanced={() => setShowAdvanced(true)}
-          />
+          <div className="w-full max-w-3xl mx-auto px-4">
+            <PlaylistPromptPanel
+              prompt={prompt}
+              setPrompt={setPrompt}
+              isGenerating={isGenerating}
+              disabled={!subscription?.is_premium && subscription?.remaining_generations === 0}
+              onGenerate={() => handleGenerate(prompt, advancedParams, platforms)}
+              onAdvanced={() => setShowAdvanced(true)}
+            />
+          </div>
 
           {showPlaylist && formattedTracks.length > 0 && (
-            <div className="mt-8 animate-fade-in w-full">
+            <div className="mt-8 animate-fade-in w-full px-4 md:px-8 lg:px-12">
               <GeneratedPlaylistTable 
                 tracks={formattedTracks}
                 userLikedTrackIds={likedTrackIds} 
                 onLikeChange={handleLikeChange}
+                playlistName={playlistData?.name || "Generated Playlist"}
+                fullWidth={true}
               />
             </div>
           )}

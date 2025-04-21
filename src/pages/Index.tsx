@@ -5,7 +5,7 @@ import FeaturesSection from "@/components/LandingPage/FeaturesSection";
 import HowItWorksSection from "@/components/LandingPage/HowItWorksSection";
 import CTASection from "@/components/LandingPage/CTASection";
 import Footer from "@/components/Footer";
-import InlinePlaylistGenerator from "@/components/LandingPage/InlinePlaylistGenerator";
+import { GeneratedPlaylistTable, type GeneratedTrack } from "@/components/GeneratedPlaylistTable";
 import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
@@ -119,6 +119,21 @@ const Index = () => {
     }
   };
 
+  // Transform tracks data to match GeneratedTrack format
+  const formattedTracks: GeneratedTrack[] = (playlistData?.tracks || []).map((track: any) => ({
+    id: track.id || track.spotify_id || `track-${Math.random()}`,
+    title: track.title || track.name || "Unknown Track",
+    artist: Array.isArray(track.artist) ? track.artist : [track.artist || "Unknown Artist"],
+    album: track.album || "Unknown Album",
+    platform: track.platform || "spotify",
+    image_url: track.image_url || track.cover_url || track.image,
+    bpm: track.bpm || track.audio_features?.bpm,
+    key_signature: track.key_signature || (track.audio_features ? `${track.audio_features.key} ${track.audio_features.mode === 1 ? 'Major' : 'Minor'}` : null),
+    genre: Array.isArray(track.genre) ? track.genre : track.genre ? [track.genre] : null,
+    release_year: track.release_year,
+    duration: track.duration,
+  }));
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -131,19 +146,29 @@ const Index = () => {
             Describe your playlist idea. Let our AI do the digging.
           </p>
 
-          <PlaylistPromptPanel
-            prompt={prompt}
-            setPrompt={setPrompt}
-            isGenerating={isGenerating}
-            onGenerate={() => handleGenerate(prompt)}
-            onAdvanced={() => setShowAdvanced(true)}
-          />
+          <div className="w-full px-4">
+            <PlaylistPromptPanel
+              prompt={prompt}
+              setPrompt={setPrompt}
+              isGenerating={isGenerating}
+              onGenerate={() => handleGenerate(prompt)}
+              onAdvanced={() => setShowAdvanced(true)}
+            />
+          </div>
 
           {showPlaylist && playlistData && (
-            <InlinePlaylistGenerator
-              playlistData={playlistData}
-              className="max-w-7xl mx-auto px-4 py-12 w-full"
-            />
+            <div className="w-full px-4 md:px-8 lg:px-12 py-8 mt-6">
+              <GeneratedPlaylistTable
+                tracks={formattedTracks}
+                userLikedTrackIds={[]}
+                onLikeChange={(trackId, liked) => {
+                  // Handle like changes if needed
+                }}
+                playlistName={playlistData.name || "Generated Playlist"}
+                fullWidth={true}
+                className="mt-6"
+              />
+            </div>
           )}
         </div>
       </div>
