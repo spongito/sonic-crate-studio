@@ -94,13 +94,17 @@ export const SidebarMenuButton = React.forwardRef<
       }
     }
 
+    // Return just the button if tooltip is disabled
+    if (state !== "collapsed" || isMobile) {
+      return button;
+    }
+
     return (
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
-          hidden={state !== "collapsed" || isMobile}
           {...tooltip}
         />
       </Tooltip>
@@ -108,4 +112,3 @@ export const SidebarMenuButton = React.forwardRef<
   }
 )
 SidebarMenuButton.displayName = "SidebarMenuButton"
-

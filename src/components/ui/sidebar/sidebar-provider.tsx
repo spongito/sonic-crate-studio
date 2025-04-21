@@ -84,23 +84,22 @@ export const SidebarProvider = React.forwardRef<
 
     return (
       <SidebarContext.Provider value={contextValue}>
-        <TooltipProvider delayDuration={0}>
-          <div
-            ref={ref}
-            className={className}
-            style={{
-              "--sidebar-width": "16rem",
-              "--sidebar-width-icon": "3rem",
-              ...style,
-            } as React.CSSProperties}
-            {...props}
-          >
+        <div
+          ref={ref}
+          className={className}
+          style={{
+            "--sidebar-width": "16rem",
+            "--sidebar-width-icon": "3rem",
+            ...style,
+          } as React.CSSProperties}
+          {...props}
+        >
+          <TooltipProvider>
             {children}
-          </div>
-        </TooltipProvider>
+          </TooltipProvider>
+        </div>
       </SidebarContext.Provider>
     )
   }
 )
 SidebarProvider.displayName = "SidebarProvider"
-
