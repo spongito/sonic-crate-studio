@@ -37,7 +37,7 @@ export function useUserLikedTracks({
   filters: FilterState;
   userId: string;
 }) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["likedTracks", userId, filters],
     queryFn: async () => {
       if (!userId) return [];
@@ -95,4 +95,11 @@ export function useUserLikedTracks({
       return tracks;
     },
   });
+
+  return {
+    tracks: query.data || [], // Ensure tracks is always an array
+    isLoading: query.isLoading,
+    error: query.error,
+    ...query
+  };
 }

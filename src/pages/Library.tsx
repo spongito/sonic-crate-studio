@@ -27,7 +27,13 @@ const Library = () => {
     search, bpmMin, bpmMax, yearMin, yearMax, genre, key, energy, mood, camelotMode
   };
 
-  const { tracks, isLoading } = useUserLikedTracks({ filters, userId: user?.id || "" });
+  const { tracks, isLoading, error } = useUserLikedTracks({ 
+    filters, 
+    userId: user?.id || "" 
+  });
+
+  // Safety check for tracks
+  const tracksList = Array.isArray(tracks) ? tracks : [];
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
@@ -179,10 +185,12 @@ const Library = () => {
       <div className="space-y-2">
         {isLoading ? (
           <div className="py-16 flex items-center justify-center text-white/80">Loading...</div>
-        ) : tracks.length === 0 ? (
-          <div className="py-16 text-center text-white/70">No tracks found.</div>
+        ) : error ? (
+          <div className="py-16 text-center text-red-400">Error loading tracks: {error.message}</div>
+        ) : tracksList.length === 0 ? (
+          <div className="py-16 text-center text-white/70">No tracks found. Like some tracks to see them here!</div>
         ) : (
-          tracks.map(track => (
+          tracksList.map(track => (
             <TrackCard key={track.id} track={track} camelot={camelotMode} />
           ))
         )}
