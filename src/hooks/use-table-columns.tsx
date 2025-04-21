@@ -17,6 +17,8 @@ export const DEFAULT_DESKTOP_COLUMNS: ColumnId[] = [
   "title",
   "platform",
   "bpm",
+  "release_year",
+  "duration",  
   "actions",
 ];
 
@@ -53,3 +55,4 @@ export function useTableColumns() {
     toggleColumn,
   };
 }
+

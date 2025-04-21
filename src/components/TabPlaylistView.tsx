@@ -8,6 +8,7 @@ import { ChevronDown } from "lucide-react";
 import type { Track } from "@/types/table";
 import { PlaylistTitle } from "./playlist/PlaylistTitle";
 import { PlaylistMenu } from "./playlist/PlaylistMenu";
+import { useTableColumns } from "@/hooks/use-table-columns";
 
 interface TabPlaylistViewProps {
   tracks: Track[];
@@ -30,16 +31,7 @@ export default function TabPlaylistView({
 }: TabPlaylistViewProps) {
   const [activePlatform, setActivePlatform] = React.useState<string>("all");
   const [searchTerm, setSearchTerm] = React.useState<string>("");
-  const [columnVisibility, setColumnVisibility] = React.useState<Record<string, boolean>>({
-    title: true,
-    album: true,
-    platform: true,
-    bpm: true,
-    key_signature: true,
-    genre: true,
-    release_year: true,
-    duration: true
-  });
+  const { visibleColumns, toggleColumn } = useTableColumns();
   const [isRenaming, setIsRenaming] = React.useState(false);
 
   const filteredTracks = React.useMemo(() => {
@@ -72,13 +64,6 @@ export default function TabPlaylistView({
     console.log("New playlist title:", newTitle);
   };
   
-  const handleToggleColumn = (columnId: string) => {
-    setColumnVisibility(prev => ({
-      ...prev,
-      [columnId]: !prev[columnId]
-    }));
-  };
-
   const handleShare = () => {
     console.log("Sharing playlist");
   };
@@ -122,12 +107,12 @@ export default function TabPlaylistView({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-popover">
-                  {Object.keys(columnVisibility).map((columnId) => (
+                  {Object.keys(visibleColumns).map((columnId) => (
                     <DropdownMenuCheckboxItem
                       key={columnId}
                       className="capitalize"
-                      checked={columnVisibility[columnId]}
-                      onCheckedChange={() => handleToggleColumn(columnId)}
+                      checked={visibleColumns[columnId]}
+                      onCheckedChange={() => toggleColumn(columnId)}
                     >
                       {columnId.replace('_', ' ')}
                     </DropdownMenuCheckboxItem>
@@ -149,7 +134,7 @@ export default function TabPlaylistView({
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
-            columnVisibility={columnVisibility}
+            columnVisibility={visibleColumns}
           />
         </TabsContent>
         
@@ -164,7 +149,7 @@ export default function TabPlaylistView({
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
-            columnVisibility={columnVisibility}
+            columnVisibility={visibleColumns}
           />
         </TabsContent>
         
@@ -179,7 +164,7 @@ export default function TabPlaylistView({
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
-            columnVisibility={columnVisibility}
+            columnVisibility={visibleColumns}
           />
         </TabsContent>
       </Tabs>
