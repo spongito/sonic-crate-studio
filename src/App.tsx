@@ -70,7 +70,11 @@ function App() {
                   <Settings />
                 </ProtectedRoute>
               } />
-              <Route path="/debug" element={<Debug />} />
+              <Route path="/debug" element={
+                <ProtectedRoute>
+                  <Debug />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
