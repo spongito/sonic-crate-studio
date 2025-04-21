@@ -34,23 +34,36 @@ import { ChevronDown, Heart, HeartOff } from "lucide-react";
 export type Track = {
   id: string;
   title: string;
-  artist: string;
+  artist: string | string[];
   album: string;
-  bpm: number;
-  key: string;
-  genre: string;
-  year: number;
-  duration: string;
-  albumArt: string;
-  platform: string[];
+  bpm: number | null;
+  key_signature?: string;
+  key?: string;
+  genre: string | string[] | null;
+  year?: number;
+  release_year?: number;
+  duration: string | number;
+  albumArt?: string;
+  image_url?: string;
+  platform: string | string[];
   liked?: boolean;
 };
 
-interface GeneratedPlaylistTableProps {
+// Export this type to be used in other components
+export type GeneratedTrack = Track;
+
+export interface GeneratedPlaylistTableProps {
   tracks: Track[];
   showSelection?: boolean;
   showLikeButton?: boolean;
   onLikeToggle?: (trackId: string) => void;
+  // Additional props used in other components
+  userLikedTrackIds?: string[];
+  showControls?: boolean;
+  fullWidth?: boolean;
+  playlistName?: string;
+  className?: string;
+  onLikeChange?: (trackId: string, liked: boolean) => void;
 }
 
 export function GeneratedPlaylistTable({
@@ -58,6 +71,12 @@ export function GeneratedPlaylistTable({
   showSelection = true,
   showLikeButton = true,
   onLikeToggle,
+  userLikedTrackIds = [],
+  showControls = true,
+  fullWidth = false,
+  playlistName,
+  className = "",
+  onLikeChange,
 }: GeneratedPlaylistTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -66,6 +85,18 @@ export function GeneratedPlaylistTable({
     year: false,
   });
   const [rowSelection, setRowSelection] = React.useState({});
+
+  // Handle like toggle from both possible handler props
+  const handleLikeToggle = (trackId: string) => {
+    const trackIndex = tracks.findIndex(t => t.id === trackId);
+    if (trackIndex >= 0) {
+      const isCurrentlyLiked = tracks[trackIndex].liked === true;
+      
+      // Call both handlers if provided
+      if (onLikeToggle) onLikeToggle(trackId);
+      if (onLikeChange) onLikeChange(trackId, !isCurrentlyLiked);
+    }
+  };
 
   const columns: ColumnDef<Track>[] = [
     ...(showSelection
@@ -103,10 +134,15 @@ export function GeneratedPlaylistTable({
       header: "Track",
       cell: ({ row }) => {
         const track = row.original;
+        const imageUrl = track.albumArt || track.image_url;
+        const artistDisplay = Array.isArray(track.artist) 
+          ? track.artist.join(", ") 
+          : track.artist;
+
         return (
           <div className="flex items-center gap-3 py-1">
             <img 
-              src={track.albumArt} 
+              src={imageUrl} 
               alt={`${track.title} cover`} 
               className="w-10 h-10 rounded-md shadow-sm object-cover" 
               onError={(e) => {
@@ -115,7 +151,7 @@ export function GeneratedPlaylistTable({
             />
             <div className="flex flex-col">
               <div className="font-medium text-sm">{track.title}</div>
-              <div className="text-xs text-muted-foreground">{track.artist}</div>
+              <div className="text-xs text-muted-foreground">{artistDisplay}</div>
             </div>
           </div>
         );
@@ -129,9 +165,11 @@ export function GeneratedPlaylistTable({
     { 
       accessorKey: "platform", 
       header: "Platform", 
-      cell: ({ row }) => (
-        <div className="text-sm">{Array.isArray(row.original.platform) ? row.original.platform.join(", ") : row.original.platform}</div>
-      ),
+      cell: ({ row }) => {
+        const platform = row.original.platform;
+        const platformText = Array.isArray(platform) ? platform.join(", ") : platform;
+        return <div className="text-sm">{platformText}</div>;
+      }
     },
     { 
       accessorKey: "bpm", 
@@ -139,19 +177,31 @@ export function GeneratedPlaylistTable({
       cell: ({ row }) => <span className="text-sm">{row.getValue("bpm")}</span>,
     },
     { 
-      accessorKey: "key", 
+      accessorKey: "key_signature", 
       header: "Key",
-      cell: ({ row }) => <span className="text-sm">{row.getValue("key")}</span>,
+      cell: ({ row }) => {
+        const keyValue = row.original.key_signature || row.original.key;
+        return <span className="text-sm">{keyValue}</span>;
+      },
     },
     { 
       accessorKey: "genre", 
       header: "Genre",
-      cell: ({ row }) => <span className="text-sm">{row.getValue("genre")}</span>,
+      cell: ({ row }) => {
+        const genre = row.original.genre;
+        const genreText = Array.isArray(genre) 
+          ? genre.join(", ") 
+          : typeof genre === 'string' ? genre : '';
+        return <span className="text-sm">{genreText}</span>;
+      },
     },
     { 
-      accessorKey: "year", 
+      accessorKey: "release_year", 
       header: "Year",
-      cell: ({ row }) => <span className="text-sm">{row.getValue("year")}</span>,
+      cell: ({ row }) => {
+        const year = row.original.release_year || row.original.year;
+        return <span className="text-sm">{year}</span>;
+      },
     },
     { 
       accessorKey: "duration", 
@@ -165,12 +215,12 @@ export function GeneratedPlaylistTable({
             header: "",
             cell: ({ row }) => {
               const track = row.original;
-              const liked = track.liked ?? false;
+              const liked = track.liked ?? userLikedTrackIds.includes(track.id);
               return (
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => onLikeToggle?.(track.id)}
+                  onClick={() => handleLikeToggle(track.id)}
                   className="h-8 w-8 rounded-full hover:bg-muted/80"
                 >
                   {liked ? (
@@ -205,42 +255,70 @@ export function GeneratedPlaylistTable({
     },
   });
 
-  return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-col sm:flex-row items-center py-4 gap-4 px-6">
-        <Input
-          placeholder="Search tracks..."
-          value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("title")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-popover">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+  if (playlistName) {
+    return (
+      <div className={`w-full space-y-4 ${className}`}>
+        <h3 className="font-medium text-lg pl-6">{playlistName}</h3>
+        <RenderTableContent table={table} columns={columns} showControls={showControls} />
       </div>
+    );
+  }
+
+  return (
+    <div className={`w-full space-y-4 ${className}`}>
+      <RenderTableContent table={table} columns={columns} showControls={showControls} />
+    </div>
+  );
+}
+
+// Helper component to avoid code duplication
+function RenderTableContent({ 
+  table, 
+  columns,
+  showControls = true 
+}: { 
+  table: any, 
+  columns: ColumnDef<Track>[], 
+  showControls?: boolean 
+}) {
+  return (
+    <>
+      {showControls && (
+        <div className="flex flex-col sm:flex-row items-center py-4 gap-4 px-6">
+          <Input
+            placeholder="Search tracks..."
+            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("title")?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
       <div className="overflow-hidden">
         <div className="relative w-full overflow-auto">
           <Table>
@@ -296,7 +374,7 @@ export function GeneratedPlaylistTable({
           </Table>
         </div>
       </div>
-      {table.getFilteredRowModel().rows.length > 0 && (
+      {table.getFilteredRowModel().rows.length > 0 && showControls && (
         <div className="flex items-center justify-end space-x-2 py-4 px-6">
           <div className="text-xs text-muted-foreground">
             Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
@@ -326,6 +404,6 @@ export function GeneratedPlaylistTable({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
