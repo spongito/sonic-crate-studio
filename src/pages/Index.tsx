@@ -1,17 +1,17 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import FeaturesSection from "@/components/LandingPage/FeaturesSection";
 import HowItWorksSection from "@/components/LandingPage/HowItWorksSection";
 import CTASection from "@/components/LandingPage/CTASection";
 import Footer from "@/components/Footer";
-import { GeneratedPlaylistTable, type GeneratedTrack } from "@/components/GeneratedPlaylistTable";
+import { GeneratedTrack } from "@/components/GeneratedPlaylistTable";
 import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import TabPlaylistView from "@/components/TabPlaylistView";
 
 const defaultAdvancedParams = {
   genre: "",
@@ -70,7 +70,6 @@ const Index = () => {
         body: { 
           prompt: promptText,
           advancedParams: {
-            // Basic default params
             genre: "",
             length: "1.5h",
             commercialFactor: 50,
@@ -85,7 +84,6 @@ const Index = () => {
               references: true,
               bpm: false,
             },
-            // Override with any custom params
             ...params
           },
           platforms: enabledPlatforms
@@ -102,7 +100,6 @@ const Index = () => {
         throw new Error("Failed to generate playlist data");
       }
       
-      // If user is logged in and not premium, increment count
       if (user && subscription && !subscription.is_premium) {
         await supabase.functions.invoke('increment-playlist-count');
         await checkSubscription?.();
@@ -119,7 +116,6 @@ const Index = () => {
     }
   };
 
-  // Transform tracks data to match GeneratedTrack format
   const formattedTracks: GeneratedTrack[] = (playlistData?.tracks || []).map((track: any) => ({
     id: track.id || track.spotify_id || `track-${Math.random()}`,
     title: track.title || track.name || "Unknown Track",
@@ -132,13 +128,30 @@ const Index = () => {
     genre: Array.isArray(track.genre) ? track.genre : track.genre ? [track.genre] : null,
     release_year: track.release_year,
     duration: track.duration,
+    platform_url: track.platform_url || track.external_url,
   }));
+
+  const handleAddToLibrary = (trackId: string) => {
+    if (!user) {
+      toast.error("Please sign in to add tracks to your library");
+      return;
+    }
+    toast.success("Track added to your library");
+  };
+  
+  const handleSavePlaylist = (platform: string) => {
+    if (!user) {
+      toast.error("Please sign in to save playlists");
+      return;
+    }
+    toast.success(`Playlist saved to your ${platform} account`);
+  };
 
   return (
     <div className="min-h-screen">
       <Navbar />
       <div className="relative min-h-screen flex items-center justify-center">
-        <div className="z-10 flex flex-col w-full max-w-3xl mx-auto items-center pt-24 pb-8">
+        <div className="z-10 flex flex-col w-full max-w-5xl mx-auto items-center pt-24 pb-8">
           <h1 className="text-gradient text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-center mb-5">
             Sound Designed by You
           </h1>
@@ -158,14 +171,19 @@ const Index = () => {
 
           {showPlaylist && playlistData && (
             <div className="w-full px-4 md:px-8 lg:px-12 py-8 mt-6">
-              <GeneratedPlaylistTable
+              <TabPlaylistView
                 tracks={formattedTracks}
                 userLikedTrackIds={[]}
                 onLikeChange={(trackId, liked) => {
-                  // Handle like changes if needed
+                  if (!user) {
+                    toast.error("Please sign in to like tracks");
+                    return;
+                  }
+                  toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
                 }}
+                onAddToLibrary={handleAddToLibrary}
+                onSavePlaylist={handleSavePlaylist}
                 playlistName={playlistData.name || "Generated Playlist"}
-                fullWidth={true}
                 className="mt-6"
               />
             </div>

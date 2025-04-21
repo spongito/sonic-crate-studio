@@ -1,4 +1,3 @@
-
 // --- Imports ---
 import * as React from "react";
 import {
@@ -44,6 +43,8 @@ export type Track = {
   image_url?: string;
   platform: string | string[];
   liked?: boolean;
+  platform_url?: string; // URL to the platform
+  spotify_id?: string;   // Spotify ID if available
 };
 
 export type GeneratedTrack = Track;
@@ -52,7 +53,9 @@ export interface GeneratedPlaylistTableProps {
   tracks: Track[];
   showSelection?: boolean;
   showLikeButton?: boolean;
+  showAddToLibrary?: boolean;
   onLikeToggle?: (trackId: string) => void;
+  onAddToLibrary?: (trackId: string) => void; // New prop for adding to library
   userLikedTrackIds?: string[];
   showControls?: boolean;
   fullWidth?: boolean;
@@ -65,7 +68,9 @@ export function GeneratedPlaylistTable({
   tracks,
   showSelection = true,
   showLikeButton = true,
+  showAddToLibrary = false,
   onLikeToggle,
+  onAddToLibrary,
   userLikedTrackIds = [],
   showControls = true,
   fullWidth = false,
@@ -188,16 +193,18 @@ export function GeneratedPlaylistTable({
       header: "Duration",
       cell: ({ row }) => <span className="text-sm">{row.getValue("duration")}</span>,
     },
-    ...(showLikeButton
+    ...(showLikeButton || showAddToLibrary
       ? [
           {
-            id: "like",
-            header: "",
+            id: "actions",
+            header: "Actions",
             cell: ({ row }) => (
               <TrackLikeButton
                 trackId={row.original.id}
                 liked={row.original.liked ?? userLikedTrackIds.includes(row.original.id)}
                 onToggle={handleLikeToggle}
+                onAddToLibrary={onAddToLibrary}
+                showAddToLibrary={showAddToLibrary}
               />
             ),
           } as ColumnDef<Track>,
@@ -232,7 +239,7 @@ export function GeneratedPlaylistTable({
         <h3 className="font-medium text-lg pl-6">{playlistName}</h3>
       )}
       <PlaylistTableControls table={table} showControls={showControls} columns={columns} />
-      <div className="overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-muted">
         <div className="relative w-full overflow-auto">
           <Table>
             <TableHeader className="bg-muted/50">
