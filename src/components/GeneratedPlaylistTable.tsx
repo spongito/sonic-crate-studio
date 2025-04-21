@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Heart, Music, Youtube } from "lucide-react";
+import { Heart, Music } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,9 +52,8 @@ export function GeneratedPlaylistTable({
   // Like/Unlike handler
   async function handleLike(track: GeneratedTrack, liked: boolean) {
     if (!user) {
-      toast({
-        title: "Sign up or log in to like tracks!",
-        description: "Create an account to save tracks to your library.",
+      toast("Sign up or log in to like tracks!", {
+        description: "Create an account to save tracks to your library."
       });
       return;
     }
@@ -66,7 +65,7 @@ export function GeneratedPlaylistTable({
           user_id: user.id,
           track_id: track.id,
         });
-        toast({ title: "Track added to My Library" });
+        toast("Track added to My Library");
         onLikeChange?.(track.id, true);
       } else {
         // Unlike: delete row
@@ -75,13 +74,12 @@ export function GeneratedPlaylistTable({
           .delete()
           .eq("user_id", user.id)
           .eq("track_id", track.id);
-        toast({ title: "Track removed from My Library" });
+        toast("Track removed from My Library");
         onLikeChange?.(track.id, false);
       }
     } catch (err) {
-      toast({
-        title: "Something went wrong",
-        description: "Could not update liked tracks.",
+      toast("Something went wrong", {
+        description: "Could not update liked tracks."
       });
     }
     setPending((prev) => ({ ...prev, [track.id]: false }));
