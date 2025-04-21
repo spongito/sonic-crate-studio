@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMemo } from "react";
 import { LibrarySearch } from "@/components/Library/LibrarySearch";
 import { LibraryContent } from "@/components/Library/LibraryContent";
+import { LibraryFilters } from "@/components/Library/LibraryFilters";
 
 const Library = () => {
   const { user } = useAuth();
@@ -15,20 +15,23 @@ const Library = () => {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [bpmRange, setBpmRange] = useState<[number, number]>([90, 140]);
+  const [yearRange, setYearRange] = useState<[number, number]>([1950, new Date().getFullYear()]);
+  const [genre, setGenre] = useState("");
+  const [keySignature, setKeySignature] = useState("");
   const [camelotMode, setCamelotMode] = useState(false);
 
-  // Filters state
-  const [bpmMin, setBpmMin] = useState("");
-  const [bpmMax, setBpmMax] = useState("");
-  const [yearMin, setYearMin] = useState("");
-  const [yearMax, setYearMax] = useState("");
-  const [genre, setGenre] = useState<string[]>([]);
-  const [key, setKey] = useState("");
-  const [energy, setEnergy] = useState<string[]>([]);
-  const [mood, setMood] = useState<string[]>([]);
-
   const filters = {
-    search, bpmMin, bpmMax, yearMin, yearMax, genre, key, energy, mood, camelotMode
+    search,
+    bpmMin: bpmRange[0].toString(),
+    bpmMax: bpmRange[1].toString(),
+    yearMin: yearRange[0].toString(),
+    yearMax: yearRange[1].toString(),
+    genre: genre ? [genre] : [],
+    key: keySignature,
+    energy: [],
+    mood: [],
+    camelotMode
   };
 
   const { tracks: likedTracks, isLoading: isLoadingLiked } = useUserLikedTracks({
@@ -36,10 +39,8 @@ const Library = () => {
     userId: user?.id || ""
   });
 
-  // All liked track IDs for like state management in table
   const trackIds = (Array.isArray(likedTracks) ? likedTracks : []).map(t => t.id);
 
-  // List as required by shared table
   const memoTracks = useMemo(() => (
     (Array.isArray(likedTracks) ? likedTracks : []).map((t) => ({
       ...t,
@@ -74,19 +75,33 @@ const Library = () => {
           <RecentlyFoundTracks />
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-              <TabsList>
-                <TabsTrigger value="all">All Tracks</TabsTrigger>
-                <TabsTrigger value="liked">Liked</TabsTrigger>
-              </TabsList>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <TabsList>
+                  <TabsTrigger value="all">All Tracks</TabsTrigger>
+                  <TabsTrigger value="liked">Liked</TabsTrigger>
+                </TabsList>
 
-              <LibrarySearch
-                search={search}
-                setSearch={setSearch}
-                dateRange={dateRange}
-                setDateRange={setDateRange}
+                <LibrarySearch
+                  search={search}
+                  setSearch={setSearch}
+                  dateRange={dateRange}
+                  setDateRange={setDateRange}
+                  showFilters={showFilters}
+                  setShowFilters={setShowFilters}
+                />
+              </div>
+
+              <LibraryFilters
                 showFilters={showFilters}
-                setShowFilters={setShowFilters}
+                bpmRange={bpmRange}
+                onBpmChange={setBpmRange}
+                yearRange={yearRange}
+                onYearChange={setYearRange}
+                genre={genre}
+                onGenreChange={setGenre}
+                keySignature={keySignature}
+                onKeyChange={setKeySignature}
               />
             </div>
 
