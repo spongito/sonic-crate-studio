@@ -155,11 +155,36 @@ serve(async (req) => {
       }
     }
 
+    let actualYouTubeQueryString = null;
+
     if (platforms.includes('youtube')) {
       try {
         if (!Deno.env.get('YOUTUBE_API_KEY')) {
           throw new Error("YouTube API key is not configured");
         }
+
+        // Create the same enhanced query as in youtube-client.ts
+        let youtubeGenre = intent.genre && intent.genre !== "any" ? intent.genre : "";
+        let youtubeMoods = intent.mood_tags && Array.isArray(intent.mood_tags) ? intent.mood_tags.slice(0, 2).join(' ') : "";
+        let youtubeArtists = (intent.reference_artists && Array.isArray(intent.reference_artists) && intent.reference_artists.length > 0) ? intent.reference_artists.slice(0, 2).join(' ') : "";
+        let youtubeQuery = intent.original_prompt;
+
+        if (youtubeGenre && !youtubeQuery.toLowerCase().includes(youtubeGenre.toLowerCase())) {
+          youtubeQuery += ` ${youtubeGenre}`;
+        }
+        if (youtubeArtists && !youtubeQuery.toLowerCase().includes(youtubeArtists.toLowerCase())) {
+          youtubeQuery += ` ${youtubeArtists}`;
+        }
+        if (youtubeMoods && !youtubeQuery.toLowerCase().includes(youtubeMoods.toLowerCase())) {
+          youtubeQuery += ` ${youtubeMoods}`;
+        }
+        if (intent.tempo && !youtubeQuery.toLowerCase().includes(intent.tempo.toLowerCase())) {
+          youtubeQuery += ` ${intent.tempo}`;
+        }
+        // Add filters (matching youtube-client enhancement)
+        const enhancedYouTubeQuery = `${youtubeQuery} official audio OR visualizer -"music video" -"live" -"reaction" -"cover"`;
+        // Save the query string for the log display
+        actualYouTubeQueryString = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(enhancedYouTubeQuery)}&maxResults=30&type=video&videoCategoryId=10&videoDuration=medium&videoEmbeddable=true`;
 
         const youtubeResults = await executeSearchFlow(intent, null, ['youtube']).catch(error => {
           console.error("YouTube search failed:", error);

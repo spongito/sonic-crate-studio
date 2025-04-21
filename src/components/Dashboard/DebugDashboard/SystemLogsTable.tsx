@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,7 +42,8 @@ export function SystemLogsTable() {
     return `https://api.spotify.com/v1/search?q=${encodeURIComponent(baseQuery)}&type=track&limit=20`;
   };
 
-  const buildYouTubeSearchQuery = (row: SearchQuery) => {
+  const buildYouTubeApiQuery = (row: any) => {
+    if ((row as any).youtube_query_string) return (row as any).youtube_query_string;
     let youtubeGenre = row.genre && row.genre !== "any" ? row.genre : "";
     let youtubeArtists = row.reference_artists && row.reference_artists.length > 0 ? row.reference_artists.slice(0, 2).join(' ') : "";
     let youtubeQuery = row.query_text || "";
@@ -53,7 +53,8 @@ export function SystemLogsTable() {
     if (youtubeArtists && !youtubeQuery.toLowerCase().includes(youtubeArtists.toLowerCase())) {
       youtubeQuery += ` ${youtubeArtists}`;
     }
-    return youtubeQuery.trim();
+    const enhancedQuery = `${youtubeQuery} official audio OR visualizer -"music video" -"live" -"reaction" -"cover"`;
+    return `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(enhancedQuery)}&maxResults=30&type=video&videoCategoryId=10&videoDuration=medium&videoEmbeddable=true`;
   };
 
   const formatTimestamp = (timestamp: string) => new Date(timestamp).toLocaleString();
@@ -82,7 +83,7 @@ export function SystemLogsTable() {
             <TableHead>Timestamp</TableHead>
             <TableHead>Prompt</TableHead>
             <TableHead>Spotify API Query</TableHead>
-            <TableHead>YouTube Search Query</TableHead>
+            <TableHead>YouTube API Query</TableHead>
             <TableHead>Platforms</TableHead>
           </TableRow>
         </TableHeader>
@@ -114,15 +115,15 @@ export function SystemLogsTable() {
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell className="font-mono text-xs">
+                <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className="truncate max-w-[220px]" title={buildYouTubeSearchQuery(q)}>{buildYouTubeSearchQuery(q)}</span>
+                    <span className="truncate max-w-[280px]" title={buildYouTubeApiQuery(q)}>{buildYouTubeApiQuery(q)}</span>
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
                       className="h-6 w-6"
-                      onClick={() => handleCopy(q.id + "_yt", buildYouTubeSearchQuery(q))}
+                      onClick={() => handleCopy(q.id + "_yt", buildYouTubeApiQuery(q))}
                     >
                       {copied === q.id + "_yt" ? (
                         <span className="text-green-600 font-medium text-xs">Copied!</span>
