@@ -249,7 +249,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               )}
             </div>
 
-            {/* Genre => Genres */}
+            {/* Genres */}
             <div className="space-y-2">
               <FilterSectionHeader
                 label="Genres"
@@ -266,7 +266,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               )}
             </div>
 
-            {/* Location => Locations */}
+            {/* Locations */}
             <div className="space-y-2">
               <FilterSectionHeader
                 label="Locations"
@@ -295,11 +295,9 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
               {params.activeFilters.bpm && (
                 <BpmFilter
                   bpmRange={params.bpmRange}
-                  useBpmFilter={params.useBpmFilter && params.activeFilters.bpm}
-                  onChange={(useBpm, bpmRange) =>
+                  onChange={bpmRange =>
                     setParams({
                       ...params,
-                      useBpmFilter: useBpm,
                       bpmRange
                     })
                   }
@@ -307,7 +305,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
                 />
               )}
             </div>
-
           </div>
         </div>
         <DialogFooter>
