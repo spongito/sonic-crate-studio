@@ -197,18 +197,18 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
       <BackgroundCells className="absolute inset-0 -z-10" />
       
       <div className="relative z-10 flex items-center justify-center min-h-screen px-4 sm:px-6 md:px-8">
-        <div className="animate-fade-in max-w-4xl w-full text-center space-y-8 pt-24 pb-12 sm:space-y-10">
+        <div className="animate-fade-in max-w-4xl w-full text-center space-y-8 pt-24 pb-12 sm:space-y-10 px-4 sm:px-0">
           <div className="h-24 w-24 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark animate-pulse-gold mb-6" />
           
-          <h1 className="text-gradient text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-tight">
+          <h1 className="text-gradient text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-tight px-2 sm:px-0">
             Sound Designed by You
           </h1>
           
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto px-3 sm:px-0">
             Describe your playlist idea. Let our AI do the digging.
           </p>
           
-          <div className="max-w-2xl mx-auto w-full mt-10 px-3">
+          <div className="max-w-2xl mx-auto w-full mt-10 px-0 sm:px-3">
             <div className="glass-morphism p-3 sm:p-4 flex flex-col gap-4 rounded-lg">
               <Input
                 placeholder="curate a soulful afrobeat set for golden hour"
@@ -221,7 +221,7 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
                 autoComplete="off"
               />
               
-              <div className="flex justify-end items-center">
+              <div className="flex justify-center items-center mt-2">
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
@@ -274,4 +274,3 @@ const HeroSection = ({ onPlaylistGenerated, setShowPlaylist }: HeroSectionProps)
 };
 
 export default HeroSection;
-
