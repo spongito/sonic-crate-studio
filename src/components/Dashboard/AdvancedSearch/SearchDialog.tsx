@@ -8,7 +8,7 @@ import { LengthSelector } from "../MusicFinder/AdvancedSettings/LengthSelector";
 import { CommercialSlider } from "../MusicFinder/AdvancedSettings/CommercialSlider";
 import { ReleaseYearRangeSlider } from "../MusicFinder/AdvancedSettings/ReleaseYearRangeSlider";
 import { BpmFilter } from "../MusicFinder/AdvancedSettings/BpmFilter";
-import { ReferenceSearch, type SpotifySearchResult } from "../MusicFinder/ReferenceSearch";
+import { ReferenceMultiSearch } from "../MusicFinder/ReferenceMultiSearch";
 import { getDefaultPlatforms, type Platform } from "../MusicFinder/PlatformSelector";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -133,7 +133,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
         <DialogHeader>
           <DialogTitle>Advanced Search Options</DialogTitle>
         </DialogHeader>
-
         <div className="space-y-5 my-4">
           <Input
             placeholder="What kind of music are you looking for?"
@@ -141,39 +140,32 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             onChange={(e) => setParams({ ...params, prompt: e.target.value })}
             className="w-full"
           />
-
           <GenreSelect value={params.genre} onChange={v => setParams({ ...params, genre: v })} genres={genres} />
-
           <PlatformSelectSection
             platforms={params.platforms}
             onChange={handlePlatformsChange}
           />
-
           <LocationSelectSection
             locations={locations}
             selected={params.locations}
             onAdd={addLocation}
             onRemove={removeLocation}
           />
-
           <LengthSelector
             value={params.length}
             onChange={length => setParams({ ...params, length })}
             lengths={lengths}
           />
-
           <CommercialSlider
             value={params.commercialFactor}
             onChange={value => setParams({ ...params, commercialFactor: value })}
           />
-
           <ReleaseYearRangeSlider
             value={params.releaseYearRange}
             onChange={value => setParams({ ...params, releaseYearRange: value })}
             min={1990}
             max={2025}
           />
-
           <BpmFilter
             bpmRange={params.bpmRange}
             useBpmFilter={params.useBpmFilter}
@@ -186,10 +178,9 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             }
             disabled={!spotifyEnabled}
           />
-
-          <ReferenceSearch
-            selectedReferences={selectedReferences}
-            onReferencesChange={handleReferencesChange}
+          <ReferenceMultiSearch
+            value={selectedReferences}
+            onChange={handleReferencesChange}
             disabled={!spotifyEnabled}
             placeholder={spotifyEnabled 
               ? "Search for artists or tracks..." 
@@ -197,7 +188,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             }
           />
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit}>Find Music</Button>

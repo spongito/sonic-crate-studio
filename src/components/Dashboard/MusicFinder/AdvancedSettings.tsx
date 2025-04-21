@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
@@ -10,6 +9,7 @@ import { CommercialSlider } from "./AdvancedSettings/CommercialSlider";
 import { ReleaseYearRangeSlider } from "./AdvancedSettings/ReleaseYearRangeSlider";
 import { BpmFilter } from "./AdvancedSettings/BpmFilter";
 import { ReferenceSearch, SpotifySearchResult } from "./ReferenceSearch";
+import { ReferenceMultiSearch } from "./ReferenceMultiSearch";
 import { Platform } from "./PlatformSelector";
 
 const genres = [
@@ -124,42 +124,35 @@ export function AdvancedSettings({
           )}
         </Button>
       </div>
-
       {expanded && (
         <div className="space-y-6 animate-fade-in">
           <div className="space-y-4">
             <GenreSelect value={params.genre} onChange={v => updateParams({ genre: v })} genres={genres} />
-
             <PlatformSelectSection
               platforms={platforms}
               onChange={onPlatformsChange}
             />
-
             <LocationSelectSection
               locations={locations}
               selected={params.locations}
               onAdd={addLocation}
               onRemove={removeLocation}
             />
-
             <LengthSelector
               value={params.length}
               onChange={length => updateParams({ length })}
               lengths={lengths}
             />
-
             <CommercialSlider
               value={params.commercialFactor}
               onChange={value => updateParams({ commercialFactor: value })}
             />
-
             <ReleaseYearRangeSlider
               value={params.releaseYearRange}
               onChange={val => updateParams({ releaseYearRange: val })}
               min={1990}
               max={2025}
             />
-
             <BpmFilter
               bpmRange={params.bpmRange}
               useBpmFilter={params.useBpmFilter}
@@ -170,10 +163,9 @@ export function AdvancedSettings({
                 })}
               disabled={!spotifyEnabled}
             />
-
-            <ReferenceSearch
-              selectedReferences={selectedReferences}
-              onReferencesChange={handleReferencesChange}
+            <ReferenceMultiSearch
+              value={selectedReferences}
+              onChange={handleReferencesChange}
               disabled={!spotifyEnabled}
               placeholder={
                 spotifyEnabled
