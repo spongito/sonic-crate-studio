@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GeneratedPlaylistTable from "./GeneratedPlaylistTable";
@@ -41,11 +40,9 @@ export default function TabPlaylistView({
     duration: true
   });
   
-  // Filter tracks based on active platform and search term
   const filteredTracks = React.useMemo(() => {
     let filtered = tracks;
     
-    // Platform filter
     if (activePlatform !== "all") {
       filtered = filtered.filter(track => {
         if (Array.isArray(track.platform)) {
@@ -55,7 +52,6 @@ export default function TabPlaylistView({
       });
     }
     
-    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(track => {
@@ -71,7 +67,6 @@ export default function TabPlaylistView({
   }, [tracks, activePlatform, searchTerm]);
 
   const handleTitleChange = (newTitle: string) => {
-    // Handle playlist title change (to be implemented)
     console.log("New playlist title:", newTitle);
   };
   
@@ -84,42 +79,39 @@ export default function TabPlaylistView({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="flex flex-col space-y-4">
-        <PlaylistHeader
-          title={playlistName}
-          onTitleChange={handleTitleChange}
-          onPlatformChange={setActivePlatform}
-          initialPlatform={activePlatform}
+      <PlaylistHeader
+        title={playlistName}
+        onTitleChange={handleTitleChange}
+        onPlatformChange={setActivePlatform}
+        initialPlatform={activePlatform}
+      />
+      
+      <div className="flex items-center justify-between gap-4 px-6">
+        <Input
+          placeholder="Search tracks..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
         />
-        
-        {/* Search and Filter Controls */}
-        <div className="flex flex-col sm:flex-row items-center py-2 gap-4 px-6">
-          <Input
-            placeholder="Search tracks..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover">
-              {Object.keys(columnVisibility).map((columnId) => (
-                <DropdownMenuCheckboxItem
-                  key={columnId}
-                  className="capitalize"
-                  checked={columnVisibility[columnId]}
-                  onCheckedChange={() => handleToggleColumn(columnId)}
-                >
-                  {columnId.replace('_', ' ')}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              Columns <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-popover">
+            {Object.keys(columnVisibility).map((columnId) => (
+              <DropdownMenuCheckboxItem
+                key={columnId}
+                className="capitalize"
+                checked={columnVisibility[columnId]}
+                onCheckedChange={() => handleToggleColumn(columnId)}
+              >
+                {columnId.replace('_', ' ')}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       <Tabs value={activePlatform} onValueChange={setActivePlatform}>
@@ -133,8 +125,8 @@ export default function TabPlaylistView({
             showLikeButton={true}
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
-            showControls={false} // Hide the default controls since we're using our custom ones
-            columnVisibility={columnVisibility} // Pass the column visibility state
+            showControls={false}
+            columnVisibility={columnVisibility}
           />
         </TabsContent>
       </Tabs>
