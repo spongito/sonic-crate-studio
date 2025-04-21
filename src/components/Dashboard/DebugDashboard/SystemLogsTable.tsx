@@ -10,6 +10,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useToast } from "@/hooks/use-toast";
 
 interface SearchQuery {
   id: string;
@@ -25,10 +26,8 @@ interface SearchQuery {
 export function SystemLogsTable() {
   const [queries, setQueries] = useState<SearchQuery[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState<string | null>(null);
-
-  // For expanding/collapsing debug per row
-  const [openLog, setOpenLog] = useState<string | null>(null);
+  const [openLogs, setOpenLogs] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -99,10 +98,20 @@ export function SystemLogsTable() {
     ];
   };
 
-  const handleCopy = (id: string, value: string) => {
-    navigator.clipboard.writeText(value);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 1300);
+  const handleCopyToClipboard = (text: string, description: string = "Text") => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: `${description} copied to clipboard`,
+      duration: 2000,
+    });
+  };
+
+  const toggleLogVisibility = (id: string) => {
+    setOpenLogs(prev => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
   if (loading) {
@@ -116,115 +125,103 @@ export function SystemLogsTable() {
   }
 
   return (
-    <div className="rounded-md border overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Timestamp</TableHead>
-            <TableHead>Prompt</TableHead>
-            <TableHead>Platforms</TableHead>
-            <TableHead className="min-w-[340px]">Spotify API Query</TableHead>
-            <TableHead className="min-w-[360px]">YouTube Search Query</TableHead>
-            <TableHead>Debug Logs</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {queries.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">No logs found</TableCell>
-            </TableRow>
-          ) : (
-            queries.map(q => {
-              const spotifyQ = buildSpotifyApiQuery(q);
-              const youtubeQ = buildYouTubeApiQuery(q);
-              const debugLogs = generateDebugLogs(q);
-              return (
-                <TableRow key={q.id}>
-                  <TableCell className="font-mono text-xs whitespace-nowrap">{formatTimestamp(q.timestamp)}</TableCell>
-                  <TableCell className="max-w-[260px] truncate" title={q.query_text || ""}>{q.query_text}</TableCell>
-                  <TableCell>{q.platforms?.join(", ") || "N/A"}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    <div className="flex items-center gap-2 max-w-[320px]">
-                      <span className="truncate" title={spotifyQ}>{spotifyQ}</span>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6"
-                        onClick={() => handleCopy(q.id + "_spotify", spotifyQ)}
-                      >
-                        {copied === q.id + "_spotify" ? (
-                          <span className="text-green-600 font-medium text-xs">Copied!</span>
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+    <div className="space-y-4">
+      {queries.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">No logs found</div>
+      ) : (
+        <div className="space-y-4">
+          {queries.map((query) => {
+            const spotifyApiQuery = buildSpotifyApiQuery(query);
+            const youtubeApiQuery = buildYouTubeApiQuery(query);
+            const debugLogs = generateDebugLogs(query);
+            const isOpen = openLogs[query.id] || false;
+            
+            return (
+              <div key={query.id} className="glass-morphism rounded-xl p-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+                  <div className="flex flex-col gap-1">
+                    <div className="font-mono text-xs text-white/70">{formatTimestamp(query.timestamp)}</div>
+                    <div className="text-base font-medium">{query.query_text}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm px-2 py-1 bg-white/10 rounded-md">
+                      {query.platforms?.join(", ") || "N/A"}
                     </div>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    <div className="flex items-center gap-2 max-w-[340px]">
-                      <span className="truncate" title={youtubeQ}>{youtubeQ}</span>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6"
-                        onClick={() => handleCopy(q.id + "_yt", youtubeQ)}
-                      >
-                        {copied === q.id + "_yt" ? (
-                          <span className="text-green-600 font-medium text-xs">Copied!</span>
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Collapsible
-                      open={openLog === q.id}
-                      onOpenChange={open => setOpenLog(open ? q.id : null)}
-                      className="w-[340px]"
+                    <Button
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex items-center gap-2"
+                      onClick={() => toggleLogVisibility(query.id)}
                     >
-                      <div className="flex items-center justify-between px-1">
-                        <CollapsibleTrigger asChild>
-                          <Button variant="ghost" size="sm" className="px-2 py-1">
-                            <Bug className="h-4 w-4 mr-1" />
-                            {openLog === q.id ? "Hide" : "Show"} Debug Logs
-                          </Button>
-                        </CollapsibleTrigger>
-                        {openLog === q.id && (
+                      <Bug className="h-4 w-4" />
+                      {isOpen ? "Hide" : "Show"} Debug Logs
+                    </Button>
+                  </div>
+                </div>
+                
+                <Collapsible open={isOpen} onOpenChange={() => toggleLogVisibility(query.id)}>
+                  <CollapsibleContent>
+                    <div className="mt-4 space-y-3">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium text-white/70">Spotify API Query</div>
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => handleCopy(q.id + "_logs", debugLogs.join('\n'))}
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => handleCopyToClipboard(spotifyApiQuery, "Spotify API Query")}
                           >
-                            {copied === q.id + "_logs" ? (
-                              <span className="text-green-600 font-medium text-xs">Copied!</span>
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
+                            <Copy className="h-3.5 w-3.5" />
                           </Button>
-                        )}
+                        </div>
+                        <div className="bg-black/50 p-2 rounded text-xs font-mono overflow-x-auto">
+                          {spotifyApiQuery}
+                        </div>
                       </div>
-                      <CollapsibleContent className="mt-1">
-                        <div
-                          className="glass-morphism p-3 rounded-lg bg-black/50 max-h-48 overflow-y-auto font-mono text-xs space-y-1"
-                          style={{ whiteSpace: "pre-line", color: "#d1d5db" }}
-                        >
-                          {debugLogs.map((line, i) => (
-                            <div key={i}>{line}</div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium text-white/70">YouTube API Query</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => handleCopyToClipboard(youtubeApiQuery, "YouTube API Query")}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        <div className="bg-black/50 p-2 rounded text-xs font-mono overflow-x-auto">
+                          {youtubeApiQuery}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium text-white/70">Debug Logs</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => handleCopyToClipboard(debugLogs.join('\n'), "Debug Logs")}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        <div className="bg-black/50 p-3 rounded max-h-80 overflow-y-auto font-mono text-xs space-y-1.5 text-white/80">
+                          {debugLogs.map((log, index) => (
+                            <div key={index}>{log}</div>
                           ))}
                         </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </TableCell>
-                </TableRow>
-              )
-            })
-          )}
-        </TableBody>
-      </Table>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
