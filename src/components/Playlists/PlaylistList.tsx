@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { ViewToggle } from "./ViewToggle";
-import { SortControl } from "./SortControl";
+import { SortControl, type SortOption } from "./SortControl";
 import { ListView } from "./ListView";
 import { toast } from "sonner";
 import { PlaylistSkeleton } from "./PlaylistSkeleton";
@@ -13,8 +13,8 @@ export const PlaylistList = () => {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"grid" | "list">("grid");
-  // Change 'alphabetical' to 'name-asc' to match SortOption type
-  const [sort, setSort] = useState<"newest" | "oldest" | "name-asc">("newest");
+  // Update type to match SortOption from SortControl
+  const [sort, setSort] = useState<SortOption>("newest");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -39,6 +39,8 @@ export const PlaylistList = () => {
           query = query.order("created_at", { ascending: true });
         } else if (sort === "name-asc") {
           query = query.order("name", { ascending: true });
+        } else if (sort === "name-desc") {
+          query = query.order("name", { ascending: false });
         }
         
         const { data, error } = await query;
