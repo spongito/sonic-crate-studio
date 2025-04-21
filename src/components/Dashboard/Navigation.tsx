@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import {
   Music,
@@ -27,12 +26,17 @@ const Navigation = () => {
           <NavLink to="/dashboard" icon={LayoutDashboard}>
             <span className="text-[12px] font-medium text-white">Dashboard</span>
           </NavLink>
+          <NavLink to="/library" icon={Music}>
+            <span className="text-[12px] font-medium text-white">Library</span>
+          </NavLink>
           <NavLink to="/playlists" icon={ListMusic}>
             <span className="text-[12px] font-medium text-white">My Playlists</span>
           </NavLink>
-          {/* Removed the Music Finder <li> here */}
           <NavLink to="/music-finder" icon={PlusCircle}>
             <span className="text-[12px] font-medium text-white">Create Playlist</span>
+          </NavLink>
+          <NavLink to="/discover" icon={Sparkles}>
+            <span className="text-[12px] font-medium text-white">Discover</span>
           </NavLink>
         </ul>
       </div>
@@ -42,27 +46,8 @@ const Navigation = () => {
           COMMUNITY
         </h2>
         <ul className="space-y-1 list-none p-0 m-0">
-          <NavLink
-            to="/curation-assistant"
-            icon={Sparkles}
-            isPremium={true}
-            isRestricted={!isPremium}
-          >
-            <span className="text-[12px] font-medium text-white">Curation Assistant</span>
-          </NavLink>
-          <NavLink
-            to="/export"
-            icon={Download}
-            isPremium={true}
-            isRestricted={!isPremium}
-          >
-            <span className="text-[12px] font-medium text-white">Export Tools</span>
-          </NavLink>
           <NavLink to="/community" icon={Users}>
             <span className="text-[12px] font-medium text-white">Community Playlists</span>
-          </NavLink>
-          <NavLink to="/upload" icon={Upload}>
-            <span className="text-[12px] font-medium text-white">Upload Playlist</span>
           </NavLink>
         </ul>
       </div>
@@ -71,4 +56,3 @@ const Navigation = () => {
 };
 
 export default Navigation;
-
