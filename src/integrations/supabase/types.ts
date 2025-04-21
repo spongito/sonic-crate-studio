@@ -160,6 +160,60 @@ export type Database = {
         }
         Relationships: []
       }
+      search_queries: {
+        Row: {
+          bpm_max: number | null
+          bpm_min: number | null
+          commercial_factor: number | null
+          genre: string | null
+          id: string
+          length_minutes: number | null
+          location: string[] | null
+          platforms: string[] | null
+          query_text: string | null
+          reference_artists: string[] | null
+          reference_tracks: string[] | null
+          release_year_max: number | null
+          release_year_min: number | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bpm_max?: number | null
+          bpm_min?: number | null
+          commercial_factor?: number | null
+          genre?: string | null
+          id?: string
+          length_minutes?: number | null
+          location?: string[] | null
+          platforms?: string[] | null
+          query_text?: string | null
+          reference_artists?: string[] | null
+          reference_tracks?: string[] | null
+          release_year_max?: number | null
+          release_year_min?: number | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bpm_max?: number | null
+          bpm_min?: number | null
+          commercial_factor?: number | null
+          genre?: string | null
+          id?: string
+          length_minutes?: number | null
+          location?: string[] | null
+          platforms?: string[] | null
+          query_text?: string | null
+          reference_artists?: string[] | null
+          reference_tracks?: string[] | null
+          release_year_max?: number | null
+          release_year_min?: number | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
