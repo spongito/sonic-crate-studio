@@ -32,22 +32,27 @@ export function ReferenceSearch({
   const [results, setResults] = useState<SpotifySearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // Live search: run on query change with debounce
+  // Handle debouncing the query to avoid interruptions while typing
   useEffect(() => {
-    if (!open) return; // Don't fire when dropdown not open
-
-    const searchTimer = setTimeout(() => {
-      if (query.trim().length >= 2) {
-        searchSpotify(query);
-      } else {
-        setResults([]);
-      }
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
     }, 300);
 
-    return () => clearTimeout(searchTimer);
-    // eslint-disable-next-line
-  }, [query, open]);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Live search: run on debounced query change
+  useEffect(() => {
+    if (!open || !debouncedQuery.trim()) return;
+    
+    if (debouncedQuery.trim().length >= 2) {
+      searchSpotify(debouncedQuery);
+    } else {
+      setResults([]);
+    }
+  }, [debouncedQuery, open]);
 
   const searchSpotify = async (searchQuery: string) => {
     try {
@@ -103,10 +108,7 @@ export function ReferenceSearch({
               <Input
                 placeholder={placeholder}
                 value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  if (!open) setOpen(true);
-                }}
+                onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => setOpen(true)}
                 disabled={disabled}
                 className="bg-background/60"
