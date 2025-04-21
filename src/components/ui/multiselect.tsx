@@ -158,7 +158,7 @@ const MultipleSelector = ({
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onValueChange={setInputValue} // Fixed: changed from onChange to onValueChange
             onFocus={() => setOpen(true)}
             className="ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             placeholder={showPlaceholder ? placeholder : ""}
