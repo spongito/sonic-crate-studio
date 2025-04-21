@@ -33,15 +33,14 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
                     <p className="font-medium truncate">{track.title}</p>
                     <TrackLikeButton
                       trackId={track.id}
-                      liked={track.liked}
-                      onToggle={() => onLikeToggle(track.id, track.liked)}
+                      liked={track.liked || false}
+                      onToggle={() => onLikeToggle(track.id, track.liked || false)}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
                     {Array.isArray(track.artist) ? track.artist.join(", ") : track.artist}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {/* Use optional chaining to safely access created_at */}
                     {track.created_at ? 
                       `Found ${formatDistanceToNow(new Date(track.created_at), { addSuffix: true })}` : 
                       'Recently found'}
