@@ -5,6 +5,7 @@ import { CalendarIcon, SlidersHorizontal } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 interface LibrarySearchProps {
   search: string;
@@ -48,8 +49,10 @@ export function LibrarySearch({
             initialFocus
             mode="range"
             defaultMonth={dateRange?.from}
-            selected={dateRange}
-            onSelect={(range: any) => setDateRange(range || {})}
+            selected={dateRange as DateRange}
+            onSelect={(selectedDateRange: DateRange | undefined) => 
+              setDateRange(selectedDateRange || {})
+            }
             numberOfMonths={2}
             className="pointer-events-auto"
           />
