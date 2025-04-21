@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SearchQuery } from "./types";
-import { LogItem } from "./LogItem";
+import { SystemLogItem } from "./SystemLogItem";
 
 export function SystemLogsTable() {
   const [queries, setQueries] = useState<SearchQuery[]>([]);
@@ -39,7 +39,7 @@ export function SystemLogsTable() {
       ) : (
         <div className="space-y-4">
           {queries.map((query) => (
-            <LogItem query={query} key={query.id} />
+            <SystemLogItem query={query} key={query.id} />
           ))}
         </div>
       )}
