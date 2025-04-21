@@ -1,7 +1,8 @@
 
-import MultipleSelector, { Option } from "@/components/ui/multiselect";
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import MultipleSelector from "@/components/ui/multiselect";
+import type { Option } from "@/components/ui/multiselect";
 
 export interface ReferenceItem {
   id: string;

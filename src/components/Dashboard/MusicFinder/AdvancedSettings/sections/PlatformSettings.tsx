@@ -1,5 +1,5 @@
 
-import { Platform, PlatformSelectSection } from "../../PlatformSelector";
+import { Platform, PlatformSelector } from "../../PlatformSelector";
 
 interface PlatformSettingsProps {
   platforms: Platform[];
@@ -8,6 +8,8 @@ interface PlatformSettingsProps {
 
 export function PlatformSettings({ platforms, onChange }: PlatformSettingsProps) {
   return (
-    <PlatformSelectSection platforms={platforms} onChange={onChange} />
+    <div>
+      <PlatformSelector platforms={platforms} onChange={onChange} />
+    </div>
   );
 }
