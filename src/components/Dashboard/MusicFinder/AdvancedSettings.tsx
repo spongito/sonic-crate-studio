@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
@@ -151,7 +150,6 @@ export function AdvancedSettings({
               onChange={onPlatformsChange}
             />
 
-            {/* Reference Artists & Tracks - Moved to the top */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium">Reference Artists & Tracks</div>
@@ -255,10 +253,8 @@ export function AdvancedSettings({
               </div>
               <BpmFilter
                 bpmRange={params.bpmRange}
-                useBpmFilter={params.useBpmFilter && params.activeFilters.bpm}
-                onChange={(useBpm, bpmRange) =>
+                onChange={(bpmRange) =>
                   updateParams({
-                    useBpmFilter: useBpm,
                     bpmRange
                   })}
                 disabled={!spotifyEnabled || !params.activeFilters.bpm}
