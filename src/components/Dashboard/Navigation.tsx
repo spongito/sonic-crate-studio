@@ -1,14 +1,14 @@
 
 import { Link } from "react-router-dom";
-import { 
-  Music, 
-  Download, 
-  Users, 
+import {
+  Music,
+  Download,
+  Users,
   Sparkles,
   LayoutDashboard,
   ListMusic,
   PlusCircle,
-  Upload
+  Upload,
 } from "lucide-react";
 import NavLink from "./NavLink";
 import { useAuth } from "@/context/AuthContext";
@@ -20,51 +20,51 @@ const Navigation = () => {
   return (
     <nav>
       <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-[10px] font-semibold tracking-tight text-white/50">
+        <h2 className="mb-3 px-4 text-[9px] font-semibold tracking-widest uppercase text-gray-400">
           BROWSE
         </h2>
         <div className="space-y-1">
           <NavLink to="/dashboard" icon={LayoutDashboard}>
-            <span className="text-sm">Dashboard</span>
+            <span className="text-[13px] font-medium text-white">Dashboard</span>
           </NavLink>
           <NavLink to="/playlists" icon={ListMusic}>
-            <span className="text-sm">My Playlists</span>
+            <span className="text-[13px] font-medium text-white">My Playlists</span>
           </NavLink>
           <NavLink to="/music-finder" icon={Music}>
-            <span className="text-sm">Music Finder</span>
+            <span className="text-[13px] font-medium text-white">Music Finder</span>
           </NavLink>
           <NavLink to="/music-finder" icon={PlusCircle}>
-            <span className="text-sm">Create Playlist</span>
+            <span className="text-[13px] font-medium text-white">Create Playlist</span>
           </NavLink>
         </div>
       </div>
 
       <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-[10px] font-semibold tracking-tight text-white/50">
+        <h2 className="mb-3 px-4 text-[9px] font-semibold tracking-widest uppercase text-gray-400">
           COMMUNITY
         </h2>
         <div className="space-y-1">
-          <NavLink 
-            to="/curation-assistant" 
+          <NavLink
+            to="/curation-assistant"
             icon={Sparkles}
             isPremium={true}
             isRestricted={!isPremium}
           >
-            <span className="text-sm">Curation Assistant</span>
+            <span className="text-[13px] font-medium text-white">Curation Assistant</span>
           </NavLink>
-          <NavLink 
-            to="/export" 
-            icon={Download} 
+          <NavLink
+            to="/export"
+            icon={Download}
             isPremium={true}
             isRestricted={!isPremium}
           >
-            <span className="text-sm">Export Tools</span>
+            <span className="text-[13px] font-medium text-white">Export Tools</span>
           </NavLink>
           <NavLink to="/community" icon={Users}>
-            <span className="text-sm">Community Playlists</span>
+            <span className="text-[13px] font-medium text-white">Community Playlists</span>
           </NavLink>
           <NavLink to="/upload" icon={Upload}>
-            <span className="text-sm">Upload Playlist</span>
+            <span className="text-[13px] font-medium text-white">Upload Playlist</span>
           </NavLink>
         </div>
       </div>
