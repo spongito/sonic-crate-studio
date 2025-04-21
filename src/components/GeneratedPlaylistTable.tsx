@@ -25,7 +25,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PlaylistTableControls from "./PlaylistTableControls";
 import TrackCell from "./TrackCell";
 import TrackLikeButton from "./TrackLikeButton";
-import { Button } from "@/components/ui/button";
+import { EmptyTableState } from "./table/EmptyTableState";
+import { TablePagination } from "./table/TablePagination";
+import type { Track, TableProps } from "@/types/table";
 
 // --- Types ---
 export type Track = {
@@ -78,7 +80,7 @@ export function GeneratedPlaylistTable({
   playlistName,
   className = "",
   onLikeChange,
-}: GeneratedPlaylistTableProps) {
+}: TableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
@@ -271,51 +273,13 @@ export function GeneratedPlaylistTable({
                   </TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-36 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <span className="text-2xl">🎵</span>
-                      <span className="text-muted-foreground">
-                        Nothing found! Try adjusting your search or filters.
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <EmptyTableState colSpan={columns.length} />
               )}
             </TableBody>
           </Table>
         </div>
       </div>
-      {table.getFilteredRowModel().rows.length > 0 && showControls && (
-        <div className="flex items-center justify-end space-x-2 py-4 px-6">
-          <div className="text-xs text-muted-foreground">
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
-            )}{" "}
-            of {table.getFilteredRowModel().rows.length} entries
-          </div>
-          <div className="space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination table={table} showControls={showControls} />
     </div>
   );
 }
