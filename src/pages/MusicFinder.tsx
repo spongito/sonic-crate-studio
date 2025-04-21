@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
@@ -8,7 +7,8 @@ import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 import { DebugPanel } from "@/components/Dashboard/MusicFinder/DebugPanel";
-import { GeneratedPlaylistTable, type GeneratedTrack } from "@/components/GeneratedPlaylistTable";
+import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
+import { Track } from "@/types/table";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
 
 const MusicFinder = () => {
@@ -81,7 +81,7 @@ const MusicFinder = () => {
     setPrompt("");
   };
 
-  const formattedTracks: GeneratedTrack[] = playlistData?.tracks?.map((track: any) => ({
+  const formattedTracks: Track[] = playlistData?.tracks?.map((track: any) => ({
     id: track.id || track.spotify_id || `track-${Math.random()}`,
     title: track.title || track.name || "Unknown Track",
     artist: Array.isArray(track.artist) ? track.artist : [track.artist || "Unknown Artist"],

@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import type { Track } from "./GeneratedPlaylistTable";
+import type { Track } from "@/types/table";
 import { Apple, ExternalLink, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

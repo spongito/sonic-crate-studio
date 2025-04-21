@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Track } from "./GeneratedPlaylistTable";
+import type { Track } from "@/types/table";
 
 interface PlaylistTableControlsProps {
   table: any;

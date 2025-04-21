@@ -5,7 +5,8 @@ import { Folder } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePlaylistOperations } from "@/hooks/use-playlist-operations";
 import { toast } from "sonner";
-import { GeneratedPlaylistTable, type GeneratedTrack } from "@/components/GeneratedPlaylistTable";
+import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
+import { Track } from "@/types/table";
 import { useAuth } from "@/context/AuthContext";
 
 interface InlinePlaylistGeneratorProps {
@@ -19,8 +20,8 @@ export default function InlinePlaylistGenerator({ playlistData, className }: Inl
   const [saved, setSaved] = useState(false);
   const { user } = useAuth();
   
-  // Transform tracks data to match GeneratedTrack format
-  const formattedTracks: GeneratedTrack[] = (playlistData?.tracks || []).map((track: any) => ({
+  // Transform tracks data to match Track format
+  const formattedTracks: Track[] = (playlistData?.tracks || []).map((track: any) => ({
     id: track.id || track.spotify_id || `track-${Math.random()}`,
     title: track.title || track.name || "Unknown Track",
     artist: Array.isArray(track.artist) ? track.artist : [track.artist || "Unknown Artist"],

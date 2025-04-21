@@ -18,6 +18,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -26,6 +27,9 @@ import PlaylistTableControls from "./PlaylistTableControls";
 import { EmptyTableState } from "./table/EmptyTableState";
 import { TablePagination } from "./table/TablePagination";
 import type { Track, TableProps } from "@/types/table";
+
+export type { Track };
+export type GeneratedTrack = Track;
 
 export function GeneratedPlaylistTable({
   tracks,

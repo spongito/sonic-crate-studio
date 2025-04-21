@@ -4,7 +4,7 @@ import FeaturesSection from "@/components/LandingPage/FeaturesSection";
 import HowItWorksSection from "@/components/LandingPage/HowItWorksSection";
 import CTASection from "@/components/LandingPage/CTASection";
 import Footer from "@/components/Footer";
-import { GeneratedTrack } from "@/components/GeneratedPlaylistTable";
+import { Track } from "@/types/table";
 import PlaylistPromptPanel from "@/components/PlaylistPromptPanel";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
@@ -37,7 +37,6 @@ const Index = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { user, subscription, checkSubscription } = useAuth();
 
-  // --- Advanced modal related state ---
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [advancedParams, setAdvancedParams] = useState(defaultAdvancedParams);
   const [platforms, setPlatforms] = useState(getDefaultPlatforms());
@@ -116,7 +115,7 @@ const Index = () => {
     }
   };
 
-  const formattedTracks: GeneratedTrack[] = (playlistData?.tracks || []).map((track: any) => ({
+  const formattedTracks: Track[] = (playlistData?.tracks || []).map((track: any) => ({
     id: track.id || track.spotify_id || `track-${Math.random()}`,
     title: track.title || track.name || "Unknown Track",
     artist: Array.isArray(track.artist) ? track.artist : [track.artist || "Unknown Artist"],
