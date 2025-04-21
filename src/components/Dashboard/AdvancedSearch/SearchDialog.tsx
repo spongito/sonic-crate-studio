@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlatformSelectSection } from "../MusicFinder/AdvancedSettings/PlatformSelectSection";
@@ -8,10 +8,12 @@ import { LengthSelector } from "../MusicFinder/AdvancedSettings/LengthSelector";
 import { CommercialSlider } from "../MusicFinder/AdvancedSettings/CommercialSlider";
 import { ReleaseYearRangeSlider } from "../MusicFinder/AdvancedSettings/ReleaseYearRangeSlider";
 import { BpmFilter } from "../MusicFinder/AdvancedSettings/BpmFilter";
-import { ReferenceMultiSearch, type SpotifySearchResult } from "../MusicFinder/ReferenceMultiSearch";
+import { ReferenceSearch, type SpotifySearchResult } from "../MusicFinder/ReferenceSearch";
 import { getDefaultPlatforms, type Platform } from "../MusicFinder/PlatformSelector";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/context/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 const genres = [
   "Afrobeat", "Ambient", "Blues", "Classical", "Deep House", 
@@ -75,7 +77,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
   
   const [selectedReferences, setSelectedReferences] = useState<SpotifySearchResult[]>([]);
   const [locationSearchInput, setLocationSearchInput] = useState("");
-  const { subscription } = useAuth();
 
   useEffect(() => {
     if (initialPrompt) {
@@ -112,7 +113,6 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
       }));
     }
   };
-  
   const removeLocation = (locationValue: string) => {
     setParams(prev => ({
       ...prev,
@@ -133,6 +133,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
         <DialogHeader>
           <DialogTitle>Advanced Search Options</DialogTitle>
         </DialogHeader>
+
         <div className="space-y-5 my-4">
           <Input
             placeholder="What kind of music are you looking for?"
@@ -140,32 +141,39 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             onChange={(e) => setParams({ ...params, prompt: e.target.value })}
             className="w-full"
           />
+
           <GenreSelect value={params.genre} onChange={v => setParams({ ...params, genre: v })} genres={genres} />
+
           <PlatformSelectSection
             platforms={params.platforms}
             onChange={handlePlatformsChange}
           />
+
           <LocationSelectSection
             locations={locations}
             selected={params.locations}
             onAdd={addLocation}
             onRemove={removeLocation}
           />
+
           <LengthSelector
             value={params.length}
             onChange={length => setParams({ ...params, length })}
             lengths={lengths}
           />
+
           <CommercialSlider
             value={params.commercialFactor}
             onChange={value => setParams({ ...params, commercialFactor: value })}
           />
+
           <ReleaseYearRangeSlider
             value={params.releaseYearRange}
             onChange={value => setParams({ ...params, releaseYearRange: value })}
             min={1990}
             max={2025}
           />
+
           <BpmFilter
             bpmRange={params.bpmRange}
             useBpmFilter={params.useBpmFilter}
@@ -174,12 +182,14 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
                 ...params,
                 useBpmFilter: useBpm,
                 bpmRange
-              })}
+              })
+            }
             disabled={!spotifyEnabled}
           />
-          <ReferenceMultiSearch
-            value={selectedReferences}
-            onChange={handleReferencesChange}
+
+          <ReferenceSearch
+            selectedReferences={selectedReferences}
+            onReferencesChange={handleReferencesChange}
             disabled={!spotifyEnabled}
             placeholder={spotifyEnabled 
               ? "Search for artists or tracks..." 
@@ -187,6 +197,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
             }
           />
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit}>Find Music</Button>
@@ -195,5 +206,3 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
     </Dialog>
   );
 }
-
-export default SearchDialog;
