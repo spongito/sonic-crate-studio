@@ -1,4 +1,3 @@
-
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
@@ -15,13 +14,12 @@ interface RecentlyFoundTracksProps {
 export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTracksProps) {
   const logger = useLogger("RecentlyFoundTracks");
   
-  // Add debug logging
   useEffect(() => {
     if (!tracks || tracks.length === 0) {
       logger.info("No tracks available to display");
     } else {
       logger.info(`Displaying ${tracks.length} recently found tracks`);
-      logger.debug("First track:", tracks[0]?.title, tracks[0]?.artist);
+      logger.debug("First track:", { title: tracks[0]?.title, artist: tracks[0]?.artist });
     }
   }, [tracks, logger]);
 
