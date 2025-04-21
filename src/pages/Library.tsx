@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { RecentlyFoundTracks } from "@/components/Library/RecentlyFoundTracks";
-import { LibraryContent } from "@/components/Library/LibraryContent";
+import { LibraryContent as LibraryContentComponent } from "@/components/Library/LibraryContent";
 import { DebugPanel } from "@/components/Library/DebugPanel";
 import { LibraryTabs } from "@/components/Library/LibraryTabs";
 import { DebugButton } from "@/components/Library/DebugButton";
@@ -11,7 +11,7 @@ import { LoadingState } from "@/components/Library/LoadingState";
 import { useLogger } from "@/hooks/useLogger";
 import { TracksProvider, useTracks } from "@/context/TracksContext";
 
-const LibraryContent = () => {
+const LibraryView = () => {
   const { user } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState("");
@@ -79,7 +79,7 @@ const LibraryContent = () => {
           onKeyChange={setKeySignature}
         />
 
-        <LibraryContent
+        <LibraryContentComponent
           activeTab={activeTab}
           tracks={allTracks}
           onLikeToggle={toggleLike}
@@ -93,7 +93,7 @@ const Library = () => {
   return (
     <DashboardLayout>
       <TracksProvider>
-        <LibraryContent />
+        <LibraryView />
       </TracksProvider>
     </DashboardLayout>
   );
