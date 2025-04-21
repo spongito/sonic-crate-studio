@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { SearchQueryTable } from "./SearchQueryTable";
+import { SystemLogsTable } from "./SystemLogsTable";
 
 export function DebugDashboard() {
   const [activeTab, setActiveTab] = useState("search-queries");
@@ -30,9 +30,7 @@ export function DebugDashboard() {
         <TabsContent value="system-logs">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-muted-foreground">
-                System logs coming soon...
-              </p>
+              <SystemLogsTable />
             </CardContent>
           </Card>
         </TabsContent>
