@@ -125,8 +125,12 @@ const MultipleSelector = ({
     [onChange, value]
   );
 
-  const displayOptions = onSearch ? searchResults : options;
-  const showPlaceholder = placeholder && (!value.length || !hidePlaceholderWhenSelected);
+  // Make sure we have arrays for both options and value
+  const safeOptions = options || [];
+  const safeValue = value || [];
+  
+  const displayOptions = onSearch ? (searchResults || []) : safeOptions;
+  const showPlaceholder = placeholder && (!safeValue.length || !hidePlaceholderWhenSelected);
 
   return (
     <Command
@@ -136,7 +140,7 @@ const MultipleSelector = ({
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
-          {value.map((option) => (
+          {safeValue.map((option) => (
             <Badge
               key={option.value}
               className={badgeClassName}
@@ -158,7 +162,7 @@ const MultipleSelector = ({
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}
-            onValueChange={setInputValue} // Fixed: changed from onChange to onValueChange
+            onValueChange={setInputValue}
             onFocus={() => setOpen(true)}
             className="ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             placeholder={showPlaceholder ? placeholder : ""}

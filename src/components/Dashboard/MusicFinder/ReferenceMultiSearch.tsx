@@ -33,7 +33,7 @@ function formatOption(item: SpotifySearchResult): Option {
 }
 
 export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
-  value,
+  value = [],
   onChange,
   disabled,
   placeholder = "Search for artists or tracks..."
@@ -43,7 +43,10 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
   const optionMap = React.useMemo(() => {
     // For quick lookup on selection
     let map = new Map<string, SpotifySearchResult>();
-    value.forEach((v) => map.set(v.id, v));
+    // Safely iterate only if value is defined
+    if (Array.isArray(value)) {
+      value.forEach((v) => map.set(v.id, v));
+    }
     return map;
   }, [value]);
 
@@ -70,6 +73,9 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
           }));
         }
         return [];
+      } catch (error) {
+        console.error("Search error:", error);
+        return [];
       } finally {
         setLoading(false);
       }
@@ -79,6 +85,11 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
 
   // onChange bridge: Option[] -> SpotifySearchResult[]
   function handleChange(newOptions: Option[]) {
+    if (!Array.isArray(newOptions)) {
+      console.warn("Expected newOptions to be an array, got:", newOptions);
+      newOptions = [];
+    }
+    
     const mapped: SpotifySearchResult[] = newOptions.map(opt => ({
       id: opt.value,
       name: opt.label,
@@ -105,12 +116,15 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
     );
   }
 
+  // Ensure we always pass an array to MultipleSelector
+  const safeValue = Array.isArray(value) ? value : [];
+
   return (
     <div>
       <label className="text-sm font-medium mb-2 block">Reference Artists & Tracks</label>
       <MultipleSelector
         options={[]} // Not needed, async mode
-        value={value.map(formatOption)}
+        value={safeValue.map(formatOption)}
         onChange={handleChange}
         onSearch={handleSearch}
         delay={300}
@@ -126,8 +140,7 @@ export const ReferenceMultiSearch: React.FC<ReferenceMultiSearchProps> = ({
         hidePlaceholderWhenSelected={true}
         disabled={disabled}
         badgeClassName="!gap-2"
-        // Custom tag rendering (or rely on MultipleSelector default)
-        // but MultipleSelector will show plain text chips, that's usually fine.
+        renderOption={renderTag}
       />
     </div>
   );
