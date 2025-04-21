@@ -78,12 +78,12 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
     useBpmFilter: false,
     locations: ["global"],
     activeFilters: {
-      genre: false,
-      location: false,
-      releaseYear: false,
-      commercial: false,
+      genre: true,
+      location: true,
+      releaseYear: true,
+      commercial: true,
       references: true,
-      bpm: false
+      bpm: true
     }
   });
   
@@ -214,6 +214,7 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
                       ? "Search for artists or tracks..."
                       : "Enable Spotify to use references"
                   }
+                  hideLabel={true} /* Add this prop to hide the duplicate label */
                 />
               )}
             </div>
@@ -323,4 +324,3 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
     </Dialog>
   );
 }
-

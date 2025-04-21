@@ -20,13 +20,15 @@ interface ReferenceSearchProps {
   selectedReferences: SpotifySearchResult[];
   disabled?: boolean;
   placeholder?: string;
+  hideLabel?: boolean;
 }
 
 export function ReferenceSearch({
   onReferencesChange,
   selectedReferences,
   disabled = false,
-  placeholder = "Search for artists or tracks..."
+  placeholder = "Search for artists or tracks...",
+  hideLabel = false
 }: ReferenceSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SpotifySearchResult[]>([]);
@@ -86,7 +88,9 @@ export function ReferenceSearch({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium mb-2 block">Reference Artists & Tracks</label>
+      {!hideLabel && (
+        <label className="text-sm font-medium mb-2 block">Reference Artists & Tracks</label>
+      )}
       
       <div className="flex flex-col gap-3">
         <Popover open={open} onOpenChange={setOpen}>
