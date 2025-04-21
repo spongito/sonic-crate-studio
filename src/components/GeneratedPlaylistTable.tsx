@@ -1,4 +1,5 @@
 
+// --- Imports ---
 import * as React from "react";
 import {
   ColumnDef,
@@ -20,17 +21,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown, Heart, HeartOff } from "lucide-react";
+import PlaylistTableControls from "./PlaylistTableControls";
+import TrackCell from "./TrackCell";
+import TrackLikeButton from "./TrackLikeButton";
+import { Button } from "@/components/ui/button";
 
+// --- Types ---
 export type Track = {
   id: string;
   title: string;
@@ -49,7 +46,6 @@ export type Track = {
   liked?: boolean;
 };
 
-// Export this type to be used in other components
 export type GeneratedTrack = Track;
 
 export interface GeneratedPlaylistTableProps {
@@ -57,7 +53,6 @@ export interface GeneratedPlaylistTableProps {
   showSelection?: boolean;
   showLikeButton?: boolean;
   onLikeToggle?: (trackId: string) => void;
-  // Additional props used in other components
   userLikedTrackIds?: string[];
   showControls?: boolean;
   fullWidth?: boolean;
@@ -86,18 +81,17 @@ export function GeneratedPlaylistTable({
   });
   const [rowSelection, setRowSelection] = React.useState({});
 
-  // Handle like toggle from both possible handler props
+  // Like handler
   const handleLikeToggle = (trackId: string) => {
     const trackIndex = tracks.findIndex(t => t.id === trackId);
     if (trackIndex >= 0) {
       const isCurrentlyLiked = tracks[trackIndex].liked === true;
-      
-      // Call both handlers if provided
       if (onLikeToggle) onLikeToggle(trackId);
       if (onLikeChange) onLikeChange(trackId, !isCurrentlyLiked);
     }
   };
 
+  // --- Columns ---
   const columns: ColumnDef<Track>[] = [
     ...(showSelection
       ? [
@@ -106,8 +100,11 @@ export function GeneratedPlaylistTable({
             header: ({ table }) => (
               <Checkbox
                 checked={
-                  table.getIsAllPageRowsSelected() ||
-                  (table.getIsSomePageRowsSelected() && "indeterminate")
+                  table.getIsAllPageRowsSelected()
+                    ? true
+                    : table.getIsSomePageRowsSelected()
+                    ? "indeterminate"
+                    : false
                 }
                 onCheckedChange={(value) =>
                   table.toggleAllPageRowsSelected(!!value)
@@ -132,79 +129,62 @@ export function GeneratedPlaylistTable({
     {
       accessorKey: "title",
       header: "Track",
-      cell: ({ row }) => {
-        const track = row.original;
-        const imageUrl = track.albumArt || track.image_url;
-        const artistDisplay = Array.isArray(track.artist) 
-          ? track.artist.join(", ") 
-          : track.artist;
-
-        return (
-          <div className="flex items-center gap-3 py-1">
-            <img 
-              src={imageUrl} 
-              alt={`${track.title} cover`} 
-              className="w-10 h-10 rounded-md shadow-sm object-cover" 
-              onError={(e) => {
-                e.currentTarget.src = "/album-placeholder.svg";
-              }}
-            />
-            <div className="flex flex-col">
-              <div className="font-medium text-sm">{track.title}</div>
-              <div className="text-xs text-muted-foreground">{artistDisplay}</div>
-            </div>
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <TrackCell
+          track={row.original}
+        />
+      ),
     },
-    { 
-      accessorKey: "album", 
+    {
+      accessorKey: "album",
       header: "Album",
       cell: ({ row }) => <span className="text-sm">{row.getValue("album")}</span>,
     },
-    { 
-      accessorKey: "platform", 
-      header: "Platform", 
+    {
+      accessorKey: "platform",
+      header: "Platform",
       cell: ({ row }) => {
         const platform = row.original.platform;
         const platformText = Array.isArray(platform) ? platform.join(", ") : platform;
         return <div className="text-sm">{platformText}</div>;
-      }
+      },
     },
-    { 
-      accessorKey: "bpm", 
+    {
+      accessorKey: "bpm",
       header: "BPM",
       cell: ({ row }) => <span className="text-sm">{row.getValue("bpm")}</span>,
     },
-    { 
-      accessorKey: "key_signature", 
+    {
+      accessorKey: "key_signature",
       header: "Key",
       cell: ({ row }) => {
         const keyValue = row.original.key_signature || row.original.key;
         return <span className="text-sm">{keyValue}</span>;
       },
     },
-    { 
-      accessorKey: "genre", 
+    {
+      accessorKey: "genre",
       header: "Genre",
       cell: ({ row }) => {
         const genre = row.original.genre;
-        const genreText = Array.isArray(genre) 
-          ? genre.join(", ") 
-          : typeof genre === 'string' ? genre : '';
+        const genreText = Array.isArray(genre)
+          ? genre.join(", ")
+          : typeof genre === "string"
+          ? genre
+          : "";
         return <span className="text-sm">{genreText}</span>;
       },
     },
-    { 
-      accessorKey: "release_year", 
+    {
+      accessorKey: "release_year",
       header: "Year",
       cell: ({ row }) => {
         const year = row.original.release_year || row.original.year;
         return <span className="text-sm">{year}</span>;
       },
     },
-    { 
-      accessorKey: "duration", 
+    {
+      accessorKey: "duration",
       header: "Duration",
       cell: ({ row }) => <span className="text-sm">{row.getValue("duration")}</span>,
     },
@@ -213,29 +193,19 @@ export function GeneratedPlaylistTable({
           {
             id: "like",
             header: "",
-            cell: ({ row }) => {
-              const track = row.original;
-              const liked = track.liked ?? userLikedTrackIds.includes(track.id);
-              return (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => handleLikeToggle(track.id)}
-                  className="h-8 w-8 rounded-full hover:bg-muted/80"
-                >
-                  {liked ? (
-                    <Heart className="h-4 w-4 text-primary" fill="currentColor" />
-                  ) : (
-                    <HeartOff className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              );
-            },
+            cell: ({ row }) => (
+              <TrackLikeButton
+                trackId={row.original.id}
+                liked={row.original.liked ?? userLikedTrackIds.includes(row.original.id)}
+                onToggle={handleLikeToggle}
+              />
+            ),
           } as ColumnDef<Track>,
         ]
       : []),
   ];
 
+  // --- Table Instance ---
   const table = useReactTable({
     data: tracks,
     columns,
@@ -255,70 +225,13 @@ export function GeneratedPlaylistTable({
     },
   });
 
-  if (playlistName) {
-    return (
-      <div className={`w-full space-y-4 ${className}`}>
-        <h3 className="font-medium text-lg pl-6">{playlistName}</h3>
-        <RenderTableContent table={table} columns={columns} showControls={showControls} />
-      </div>
-    );
-  }
-
+  // --- Render ---
   return (
     <div className={`w-full space-y-4 ${className}`}>
-      <RenderTableContent table={table} columns={columns} showControls={showControls} />
-    </div>
-  );
-}
-
-// Helper component to avoid code duplication
-function RenderTableContent({ 
-  table, 
-  columns,
-  showControls = true 
-}: { 
-  table: any, 
-  columns: ColumnDef<Track>[], 
-  showControls?: boolean 
-}) {
-  return (
-    <>
-      {showControls && (
-        <div className="flex flex-col sm:flex-row items-center py-4 gap-4 px-6">
-          <Input
-            placeholder="Search tracks..."
-            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("title")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      {playlistName && (
+        <h3 className="font-medium text-lg pl-6">{playlistName}</h3>
       )}
+      <PlaylistTableControls table={table} showControls={showControls} columns={columns} />
       <div className="overflow-hidden">
         <div className="relative w-full overflow-auto">
           <Table>
@@ -326,16 +239,13 @@ function RenderTableContent({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent">
                   {headerGroup.headers.map((header) => (
-                    <TableHead 
+                    <TableHead
                       key={header.id}
                       className="text-xs font-medium text-muted-foreground"
                     >
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -344,8 +254,8 @@ function RenderTableContent({
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row, index) => (
-                  <TableRow 
-                    key={row.id} 
+                  <TableRow
+                    key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={`hover:bg-muted/50 transition-colors ${
                       index % 2 === 0 ? "bg-background" : "bg-muted/20"
@@ -404,6 +314,8 @@ function RenderTableContent({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
+
+export default GeneratedPlaylistTable;
