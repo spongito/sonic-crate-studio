@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { PlatformSelectSection } from "../MusicFinder/AdvancedSettings/PlatformSelectSection";
 import { GenreSelect } from "../MusicFinder/AdvancedSettings/GenreSelect";
 import { LocationSelectSection } from "../MusicFinder/AdvancedSettings/LocationSelectSection";
-import { LengthSelector } from "../MusicFinder/AdvancedSettings/LengthSelector";
 import { CommercialSlider } from "../MusicFinder/AdvancedSettings/CommercialSlider";
 import { ReleaseYearRangeSlider } from "../MusicFinder/AdvancedSettings/ReleaseYearRangeSlider";
 import { BpmFilter } from "../MusicFinder/AdvancedSettings/BpmFilter";
@@ -36,8 +35,6 @@ const locations = [
   { value: "BR", label: "Brazil" },
   { value: "ZA", label: "South Africa" },
 ];
-
-const lengths = ["30m", "1h", "1.5h", "2h", "2.5h", "3h"];
 
 interface SearchDialogProps {
   open: boolean;
@@ -74,17 +71,17 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
   const [params, setParams] = useState<SearchParams>({
     prompt: initialPrompt,
     genre: "",
-    length: "1.5h",
+    length: "1.5h", // default length, not exposed to UI
     commercialFactor: 50,
     platforms: getDefaultPlatforms(),
     releaseYearRange: [1990, 2025],
     useBpmFilter: false,
     locations: ["global"],
     activeFilters: {
-      genre: true,
-      location: true,
-      releaseYear: true,
-      commercial: true,
+      genre: false,
+      location: false,
+      releaseYear: false,
+      commercial: false,
       references: true,
       bpm: false
     }
@@ -152,6 +149,29 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
   
   const spotifyEnabled = params.platforms.find(p => p.id === 'spotify')?.enabled;
 
+  // Helper: Section header with "Enable X" toggle, vertical stack, consistent style
+  const FilterSectionHeader = ({
+    label,
+    filterKey,
+    checked,
+    onCheckedChange,
+    extraClass = ""
+  }: {
+    label: string;
+    filterKey: keyof SearchParams['activeFilters'];
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+    extraClass?: string;
+  }) => (
+    <div className={`flex items-center justify-between py-1 ${extraClass}`}>
+      <span className="text-sm font-medium flex-1">{label}</span>
+      <AdvancedFilterToggle
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+      />
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -159,135 +179,139 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
           <DialogTitle>Advanced Search Options</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5 my-4">
+        <div className="space-y-4 my-4">
+
           <Input
             placeholder="What kind of music are you looking for?"
             value={params.prompt}
             onChange={(e) => setParams({ ...params, prompt: e.target.value })}
             className="w-full"
           />
+          
+          <div className="space-y-6 mt-2">
 
-          <div className="space-y-6">
+            {/* Platform selection always shown */}
             <PlatformSelectSection
               platforms={params.platforms}
               onChange={handlePlatformsChange}
             />
 
-            {/* Reference Artists & Tracks - Moved to the top */}
+            {/* Reference Artists & Tracks */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Reference Artists & Tracks</div>
-                <AdvancedFilterToggle 
-                  checked={params.activeFilters.references}
-                  onCheckedChange={(checked) => updateActiveFilters('references', checked)}
-                />
-              </div>
-              <ReferenceSearch
-                selectedReferences={selectedReferences}
-                onReferencesChange={handleReferencesChange}
-                disabled={!spotifyEnabled || !params.activeFilters.references}
-                placeholder={
-                  !params.activeFilters.references
-                    ? "Enable filter to use references"
-                    : spotifyEnabled
-                    ? "Search for artists or tracks..."
-                    : "Enable Spotify to use references"
-                }
+              <FilterSectionHeader
+                label="Reference Artists & Tracks"
+                filterKey="references"
+                checked={params.activeFilters.references}
+                onCheckedChange={val => updateActiveFilters('references', val)}
               />
+              {params.activeFilters.references && (
+                <ReferenceSearch
+                  selectedReferences={selectedReferences}
+                  onReferencesChange={handleReferencesChange}
+                  disabled={!spotifyEnabled}
+                  placeholder={
+                    spotifyEnabled
+                      ? "Search for artists or tracks..."
+                      : "Enable Spotify to use references"
+                  }
+                />
+              )}
             </div>
 
-            <LengthSelector
-              value={params.length}
-              onChange={length => setParams({ ...params, length })}
-              lengths={lengths}
-            />
-
+            {/* Commercial Factor */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Underground ↔ Commercial</div>
-                <AdvancedFilterToggle 
-                  checked={params.activeFilters.commercial}
-                  onCheckedChange={(checked) => updateActiveFilters('commercial', checked)}
-                />
-              </div>
-              <CommercialSlider
-                value={params.commercialFactor}
-                onChange={value => setParams({ ...params, commercialFactor: value })}
-                disabled={!params.activeFilters.commercial}
+              <FilterSectionHeader
+                label="Enable Commercial Factor"
+                filterKey="commercial"
+                checked={params.activeFilters.commercial}
+                onCheckedChange={val => updateActiveFilters('commercial', val)}
               />
+              {params.activeFilters.commercial && (
+                <CommercialSlider
+                  value={params.commercialFactor}
+                  onChange={value => setParams({ ...params, commercialFactor: value })}
+                />
+              )}
             </div>
 
+            {/* Release Date Range */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Release Date Range</div>
-                <AdvancedFilterToggle 
-                  checked={params.activeFilters.releaseYear}
-                  onCheckedChange={(checked) => updateActiveFilters('releaseYear', checked)}
-                />
-              </div>
-              <ReleaseYearRangeSlider
-                value={params.releaseYearRange}
-                onChange={val => setParams({ ...params, releaseYearRange: val })}
-                min={1990}
-                max={2025}
-                disabled={!params.activeFilters.releaseYear}
+              <FilterSectionHeader
+                label="Enable Release Date Range"
+                filterKey="releaseYear"
+                checked={params.activeFilters.releaseYear}
+                onCheckedChange={val => updateActiveFilters('releaseYear', val)}
               />
+              {params.activeFilters.releaseYear && (
+                <ReleaseYearRangeSlider
+                  value={params.releaseYearRange}
+                  onChange={val => setParams({ ...params, releaseYearRange: val })}
+                  min={1990}
+                  max={2025}
+                />
+              )}
             </div>
 
+            {/* Genre */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Genre</div>
-                <AdvancedFilterToggle 
-                  checked={params.activeFilters.genre}
-                  onCheckedChange={(checked) => updateActiveFilters('genre', checked)}
-                />
-              </div>
-              <GenreSelect 
-                value={params.genre} 
-                onChange={v => setParams({ ...params, genre: v })} 
-                genres={genres}
-                disabled={!params.activeFilters.genre} 
+              <FilterSectionHeader
+                label="Enable Genre"
+                filterKey="genre"
+                checked={params.activeFilters.genre}
+                onCheckedChange={val => updateActiveFilters('genre', val)}
               />
+              {params.activeFilters.genre && (
+                <GenreSelect 
+                  value={params.genre} 
+                  onChange={v => setParams({ ...params, genre: v })} 
+                  genres={genres}
+                />
+              )}
             </div>
 
+            {/* Location */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Location</div>
-                <AdvancedFilterToggle 
-                  checked={params.activeFilters.location}
-                  onCheckedChange={(checked) => updateActiveFilters('location', checked)}
-                />
-              </div>
-              <LocationSelectSection
-                locations={locations}
-                selected={params.locations}
-                onAdd={addLocation}
-                onRemove={removeLocation}
-                disabled={!params.activeFilters.location}
+              <FilterSectionHeader
+                label="Enable Location"
+                filterKey="location"
+                checked={params.activeFilters.location}
+                onCheckedChange={val => updateActiveFilters('location', val)}
               />
+              {params.activeFilters.location && (
+                <LocationSelectSection
+                  locations={locations}
+                  selected={params.locations}
+                  onAdd={addLocation}
+                  onRemove={removeLocation}
+                />
+              )}
             </div>
 
+            {/* BPM Range */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">BPM Range</div>
-                <AdvancedFilterToggle 
-                  checked={params.activeFilters.bpm}
-                  onCheckedChange={(checked) => updateActiveFilters('bpm', checked)}
-                />
-              </div>
-              <BpmFilter
-                bpmRange={params.bpmRange}
-                useBpmFilter={params.useBpmFilter && params.activeFilters.bpm}
-                onChange={(useBpm, bpmRange) =>
-                  setParams({
-                    ...params,
-                    useBpmFilter: useBpm,
-                    bpmRange
-                  })
-                }
-                disabled={!spotifyEnabled || !params.activeFilters.bpm}
+              <FilterSectionHeader
+                label="Enable BPM Range"
+                filterKey="bpm"
+                checked={params.activeFilters.bpm}
+                onCheckedChange={val => updateActiveFilters('bpm', val)}
               />
+              {params.activeFilters.bpm && (
+                <BpmFilter
+                  bpmRange={params.bpmRange}
+                  useBpmFilter={params.useBpmFilter && params.activeFilters.bpm}
+                  onChange={(useBpm, bpmRange) =>
+                    setParams({
+                      ...params,
+                      useBpmFilter: useBpm,
+                      bpmRange
+                    })
+                  }
+                  disabled={!spotifyEnabled}
+                />
+              )}
             </div>
+
+
           </div>
         </div>
 
@@ -299,3 +323,4 @@ export function SearchDialog({ open, onOpenChange, initialPrompt = "", onSubmit 
     </Dialog>
   );
 }
+
