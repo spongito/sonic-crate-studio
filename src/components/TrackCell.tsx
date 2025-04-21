@@ -4,10 +4,6 @@ import type { Track } from "@/types/table";
 import { Apple, ExternalLink, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface TrackCellProps {
-  track: Track;
-}
-
 /** Handles title, artist (with array support), album art (with fallback). */
 export default function TrackCell({ track }: TrackCellProps) {
   const artistDisplay = Array.isArray(track.artist)
@@ -35,18 +31,18 @@ export default function TrackCell({ track }: TrackCellProps) {
       return null;
     };
     
-    // Function to get platform icon
-    const getPlatformIcon = (platform: string) => {
+    // Function to get platform indicator
+    const getPlatformIndicator = (platform: string) => {
       switch (platform.toLowerCase()) {
         case 'spotify':
-          return <div className="w-4 h-4 rounded-full bg-green-500" />;
+          return <div className="w-3 h-3 rounded-full bg-green-500" />;
         case 'apple music':
         case 'apple':
-          return <Apple className="w-3 h-3" />;
+          return <div className="w-3 h-3 rounded-full bg-red-500" />;
         case 'youtube':
-          return <Youtube className="w-3 h-3 text-red-500" />;
+          return <div className="w-3 h-3 rounded-full bg-red-500" />;
         default:
-          return <div className="w-4 h-4 rounded-full bg-gray-500" />;
+          return <div className="w-3 h-3 rounded-full bg-gray-500" />;
       }
     };
     
@@ -61,21 +57,11 @@ export default function TrackCell({ track }: TrackCellProps) {
             rel="noopener noreferrer"
             className="inline-block"
           >
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-5 w-5 rounded-full hover:bg-muted"
-            >
-              {getPlatformIcon(platform)}
-            </Button>
+            {getPlatformIndicator(platform)}
           </a>
         );
       } else {
-        links.push(
-          <div key={platform} className="inline-block">
-            {getPlatformIcon(platform)}
-          </div>
-        );
+        links.push(getPlatformIndicator(platform));
       }
     });
     
@@ -102,3 +88,8 @@ export default function TrackCell({ track }: TrackCellProps) {
     </div>
   );
 }
+
+interface TrackCellProps {
+  track: Track;
+}
+
