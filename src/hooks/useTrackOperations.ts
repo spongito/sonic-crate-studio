@@ -62,11 +62,15 @@ export const useTrackOperations = (userId: string | undefined) => {
         // Calculate formatted duration if available
         let formattedDuration = "0:00";
         
-        // Check for existing duration or duration_seconds
-        if (track.duration) {
+        // Handle duration safely using optional chaining and type checking
+        if (typeof track.duration === 'string' && track.duration) {
           formattedDuration = track.duration;
-        } else if (track.duration_seconds) {
-          formattedDuration = formatDuration({ duration_seconds: track.duration_seconds });
+        } else if (typeof track.duration_seconds === 'number' || typeof track.duration_seconds === 'string') {
+          const durationSeconds = typeof track.duration_seconds === 'string' 
+            ? parseFloat(track.duration_seconds)
+            : track.duration_seconds;
+          
+          formattedDuration = formatDuration({ duration_seconds: durationSeconds });
         }
         
         return {
@@ -106,11 +110,15 @@ export const useTrackOperations = (userId: string | undefined) => {
           if (!existingTrackIds.has(track.id)) {
             let formattedDuration = "0:00";
             
-            // Check for existing formatted duration or duration_seconds
-            if (track.duration) {
+            // Handle duration safely
+            if (typeof track.duration === 'string' && track.duration) {
               formattedDuration = track.duration;
-            } else if (track.duration_seconds) {
-              formattedDuration = formatDuration({ duration_seconds: track.duration_seconds });
+            } else if (typeof track.duration_seconds === 'number' || typeof track.duration_seconds === 'string') {
+              const durationSeconds = typeof track.duration_seconds === 'string' 
+                ? parseFloat(track.duration_seconds)
+                : track.duration_seconds;
+                
+              formattedDuration = formatDuration({ duration_seconds: durationSeconds });
             }
             
             allTracks.push({
