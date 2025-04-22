@@ -1,5 +1,9 @@
 
-export const activityMappings = {
+/**
+ * Expose diaspora-aware activity mappings for playlist generation and filtering logic
+ */
+
+export const activityMappings: Record<string, any> = {
   "workout": {
     genres: ["drill", "trap", "afrobeat", "dancehall", "gqom"],
     bpm_range: { min: 120, max: 150 },
@@ -43,3 +47,4 @@ export const activityMappings = {
     valence: 0.4
   }
 };
+
