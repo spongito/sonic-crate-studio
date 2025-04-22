@@ -1,7 +1,6 @@
-
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, HeartOff, Plus } from "lucide-react";
+import { Heart } from "lucide-react";
 
 interface TrackLikeButtonProps {
   trackId: string;
@@ -20,19 +19,16 @@ export default function TrackLikeButton({
 }: TrackLikeButtonProps) {
   return (
     <div className="flex items-center gap-1">
-      <Button
-        size="icon"
-        variant="ghost"
+      <button
         onClick={() => onToggle(trackId)}
-        className="h-8 w-8 rounded-full hover:bg-muted/80 transition-colors"
+        className={`ml-3 p-1 rounded-full ${liked ? "text-gold" : "text-white/50"} hover:text-gold transition-colors`}
         title={liked ? "Unlike" : "Like"}
       >
-        {liked ? (
-          <Heart className="h-4 w-4 text-primary" fill="currentColor" />
-        ) : (
-          <HeartOff className="h-4 w-4 text-muted-foreground" />
-        )}
-      </Button>
+        <Heart 
+          fill={liked ? "#DBB13B" : "none"} 
+          className="w-6 h-6" 
+        />
+      </button>
       
       {showAddToLibrary && onAddToLibrary && (
         <Button

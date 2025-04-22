@@ -80,7 +80,7 @@ export const RecentlyLikedTracks: React.FC = () => {
 
                 <TrackLikeButton
                   trackId={track.id}
-                  liked={true}
+                  liked={true} 
                   onToggle={() => toggleLike(track.id, true)}
                 />
               </div>
