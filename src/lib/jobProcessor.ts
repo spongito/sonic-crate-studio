@@ -9,14 +9,22 @@ export class JobProcessor {
     jobType: string, 
     settings: Record<string, any> = {}
   ): Promise<Job> {
+    // Get the current user session
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user?.id;
+    
+    if (!userId) {
+      throw new Error('User must be authenticated to create a job');
+    }
+
     const { data, error } = await supabase
       .from('jobs')
       .insert({
         name: `Job for: ${prompt.slice(0, 50)}...`,
-        status: 'pending',
+        status: 'pending' as JobStatus,
         job_type: jobType,
         prompt,
-        user_username: supabase.auth.user()?.id,
+        user_username: userId,
         settings,
         partial: false
       })
@@ -24,7 +32,7 @@ export class JobProcessor {
       .single();
 
     if (error) throw new Error(`Failed to create job: ${error.message}`);
-    return data;
+    return data as Job;
   }
 
   static async updateJobStatus(
@@ -54,7 +62,7 @@ export class JobProcessor {
       .single();
 
     if (error) throw new Error(`Failed to update job: ${error.message}`);
-    return data;
+    return data as Job;
   }
 
   static async checkUserJobConcurrency(

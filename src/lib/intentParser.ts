@@ -1,6 +1,6 @@
 
 import { JobType, IntentAnalysis } from '@/types/job';
-import { activityMappings } from './activityMapping';
+import { activityMappings } from '@/lib/activityMapping';
 
 export class IntentService {
   static classifyIntent(prompt: string): JobType {
