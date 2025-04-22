@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { RecentlyFoundTracks } from "@/components/Library/RecentlyFoundTracks";
@@ -13,6 +14,7 @@ import { TracksProvider, useTracks } from "@/context/TracksContext";
 
 const LibraryView = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -24,6 +26,16 @@ const LibraryView = () => {
   const [showDebug, setShowDebug] = useState(false);
   const logger = useLogger("Library");
   const { allTracks, recentTracks, isLoading, toggleLike, error } = useTracks();
+
+  // New effect to handle tab change from query parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    
+    if (tabParam === 'liked') {
+      setActiveTab('liked');
+    }
+  }, [location.search]);
 
   const filters = {
     search,
@@ -100,3 +112,4 @@ const Library = () => {
 };
 
 export default Library;
+
