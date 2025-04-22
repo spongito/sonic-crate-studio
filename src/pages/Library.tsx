@@ -11,6 +11,7 @@ import { DebugButton } from "@/components/Library/DebugButton";
 import { LoadingState } from "@/components/Library/LoadingState";
 import { useLogger } from "@/hooks/useLogger";
 import { useTracks } from "@/context/TracksContext";
+import { TracksProvider } from "@/context/TracksContext";
 
 const LibraryView = () => {
   const { user } = useAuth();

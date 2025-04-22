@@ -60,9 +60,12 @@ export const useTrackOperations = (userId: string | undefined) => {
       // Transform history tracks into the Track format and mark liked tracks
       const allTracks: Track[] = historyTracks?.map(track => {
         // Calculate formatted duration if available
-        let formattedDuration = track.duration || "0:00";
+        let formattedDuration = "0:00";
         
-        if (!formattedDuration && track.duration_seconds) {
+        // Check for existing duration or duration_seconds
+        if (track.duration) {
+          formattedDuration = track.duration;
+        } else if (track.duration_seconds) {
           formattedDuration = formatDuration({ duration_seconds: track.duration_seconds });
         }
         
@@ -101,8 +104,14 @@ export const useTrackOperations = (userId: string | undefined) => {
         // Add any master tracks that aren't already in our list
         masterTracks?.forEach(track => {
           if (!existingTrackIds.has(track.id)) {
-            const formattedDuration = track.duration || 
-              (track.duration_seconds ? formatDuration({ duration_seconds: track.duration_seconds }) : "0:00");
+            let formattedDuration = "0:00";
+            
+            // Check for existing formatted duration or duration_seconds
+            if (track.duration) {
+              formattedDuration = track.duration;
+            } else if (track.duration_seconds) {
+              formattedDuration = formatDuration({ duration_seconds: track.duration_seconds });
+            }
             
             allTracks.push({
               id: track.id,
