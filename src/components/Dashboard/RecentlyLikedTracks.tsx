@@ -1,80 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import TrackLikeButton from '@/components/TrackLikeButton';
 import { formatDuration } from '@/lib/utils';
-
-// Sample data for recently liked tracks - in a real app, this would come from the database
-const sampleTracks = [
-  {
-    id: '1',
-    title: 'Deep Dive',
-    artist: 'Oceanic Waves',
-    cover_url: 'https://picsum.photos/seed/track1/60',
-    bpm: 124,
-    key: 'C Minor',
-    year: '2023',
-    duration: 367, // in seconds
-    liked: true,
-  },
-  {
-    id: '2',
-    title: 'Midnight Rush',
-    artist: 'Neon Drive',
-    cover_url: 'https://picsum.photos/seed/track2/60',
-    bpm: 128,
-    key: 'G Major',
-    year: '2022',
-    duration: 392,
-    liked: true,
-  },
-  {
-    id: '3',
-    title: 'Cosmic Symphony',
-    artist: 'Stardust Collective',
-    cover_url: 'https://picsum.photos/seed/track3/60',
-    bpm: 110,
-    key: 'D Minor',
-    year: '2023',
-    duration: 458,
-    liked: true,
-  },
-  {
-    id: '4',
-    title: 'Electric Soul',
-    artist: 'Voltage',
-    cover_url: 'https://picsum.photos/seed/track4/60',
-    bpm: 140,
-    key: 'A Minor',
-    year: '2022',
-    duration: 345,
-    liked: true,
-  },
-  {
-    id: '5',
-    title: 'Summer Breeze',
-    artist: 'Coastal Vibes',
-    cover_url: 'https://picsum.photos/seed/track5/60',
-    bpm: 118,
-    key: 'F Major',
-    year: '2023',
-    duration: 392,
-    liked: true,
-  },
-];
+import { useTracks } from '@/context/TracksContext';
 
 export const RecentlyLikedTracks: React.FC = () => {
-  const [likedTracks, setLikedTracks] = useState(sampleTracks);
-
-  const toggleLike = (trackId: string) => {
-    setLikedTracks(tracks => 
-      tracks.map(track => 
-        track.id === trackId 
-          ? { ...track, liked: !track.liked } 
-          : track
-      )
-    );
-  };
+  const { likedTracks, toggleLike } = useTracks();
+  
+  // Take only the 5 most recent liked tracks
+  const recentLikedTracks = likedTracks.slice(0, 5);
 
   return (
     <div className="space-y-3">
@@ -89,51 +24,61 @@ export const RecentlyLikedTracks: React.FC = () => {
       </div>
 
       <div className="space-y-2">
-        {likedTracks.map((track) => (
-          <div 
-            key={track.id}
-            className="flex items-center justify-between p-3 rounded-lg transition-all hover:bg-white/5"
-          >
-            <div className="flex items-center space-x-3">
-              <img 
-                src={track.cover_url} 
-                alt={track.title}
-                className="w-12 h-12 rounded object-cover"
-              />
-              <div>
-                <h3 className="font-medium text-white">{track.title}</h3>
-                <p className="text-sm text-white/60">{track.artist}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:flex space-x-4">
-                <span className="text-xs bg-white/10 px-2 py-1 rounded">
-                  {track.bpm} BPM
-                </span>
-                <span className="text-xs bg-white/10 px-2 py-1 rounded">
-                  {track.key}
-                </span>
-                <span className="text-xs bg-white/10 px-2 py-1 rounded">
-                  {track.year}
-                </span>
-                <span className="text-xs bg-white/10 px-2 py-1 rounded">
-                  {formatDuration(track.duration)}
-                </span>
-              </div>
-
-              <button
-                onClick={() => toggleLike(track.id)}
-                className="text-white hover:text-gold transition-colors"
-              >
-                <Heart 
-                  className={track.liked ? "fill-gold text-gold" : "text-white/60"} 
-                  size={18} 
+        {recentLikedTracks.length === 0 ? (
+          <p className="text-white/60 text-sm">No liked tracks yet</p>
+        ) : (
+          recentLikedTracks.map((track) => (
+            <div 
+              key={track.id}
+              className="flex items-center justify-between p-3 rounded-lg transition-all hover:bg-white/5"
+            >
+              <div className="flex items-center space-x-3">
+                <img 
+                  src={track.image_url || '/placeholder.svg'} 
+                  alt={track.title}
+                  className="w-12 h-12 rounded object-cover"
                 />
-              </button>
+                <div>
+                  <h3 className="font-medium text-white">{track.title}</h3>
+                  <p className="text-sm text-white/60">
+                    {Array.isArray(track.artist) ? track.artist.join(', ') : track.artist}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="hidden md:flex space-x-4">
+                  {track.bpm && (
+                    <span className="text-xs bg-white/10 px-2 py-1 rounded">
+                      {track.bpm} BPM
+                    </span>
+                  )}
+                  {track.key_signature && (
+                    <span className="text-xs bg-white/10 px-2 py-1 rounded">
+                      {track.key_signature}
+                    </span>
+                  )}
+                  {track.release_year && (
+                    <span className="text-xs bg-white/10 px-2 py-1 rounded">
+                      {track.release_year}
+                    </span>
+                  )}
+                  {track.duration && (
+                    <span className="text-xs bg-white/10 px-2 py-1 rounded">
+                      {formatDuration(track.duration)}
+                    </span>
+                  )}
+                </div>
+
+                <TrackLikeButton
+                  trackId={track.id}
+                  liked={true}
+                  onToggle={() => toggleLike(track.id, true)}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
