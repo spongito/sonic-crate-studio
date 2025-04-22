@@ -13,6 +13,14 @@ export const formatDuration = (track: any): string => {
     const minutes = Math.floor(track.duration_seconds / 60);
     const seconds = Math.floor(track.duration_seconds % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  } else if (typeof track.duration_seconds === 'string' && track.duration_seconds) {
+    // Handle string duration_seconds
+    const durationSecs = parseFloat(track.duration_seconds);
+    if (!isNaN(durationSecs)) {
+      const minutes = Math.floor(durationSecs / 60);
+      const seconds = Math.floor(durationSecs % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
   }
   
   // Default duration if nothing is available

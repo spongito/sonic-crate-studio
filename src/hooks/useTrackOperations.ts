@@ -58,36 +58,33 @@ export const useTrackOperations = (userId: string | undefined) => {
       const likedTrackIdSet = new Set(likedTracksData?.map(item => item.track_id) || []);
       
       // Transform history tracks into the Track format and mark liked tracks
-      const allTracks: Track[] = historyTracks?.map(track => {
-        // Calculate formatted duration if available
+      const allTracks: Track[] = historyTracks?.map(historyTrack => {
+        const track = historyTrack as any; // Use any temporarily for type safety
+        
+        // Calculate formatted duration
         let formattedDuration = "0:00";
-        
-        const trackAny = track as any; // Use any temporarily to access potentially undefined properties
-        
-        // Handle duration safely using optional chaining and type checking
-        if (typeof trackAny.duration === 'string' && trackAny.duration) {
-          formattedDuration = trackAny.duration;
-        } else if (typeof trackAny.duration_seconds === 'number' || typeof trackAny.duration_seconds === 'string') {
-          const durationSeconds = typeof trackAny.duration_seconds === 'string' 
-            ? parseFloat(trackAny.duration_seconds)
-            : trackAny.duration_seconds;
-          
-          formattedDuration = formatDuration({ duration_seconds: durationSeconds });
+        if (track.duration_seconds) {
+          formattedDuration = formatDuration({ 
+            duration_seconds: typeof track.duration_seconds === 'string' 
+              ? parseFloat(track.duration_seconds) 
+              : track.duration_seconds 
+          });
         }
         
         return {
-          ...track,
           id: track.track_id || track.id,
-          liked: likedTrackIdSet.has(track.track_id || track.id),
-          duration: formattedDuration,
           title: track.title || '',
           artist: Array.isArray(track.artist) ? track.artist : [track.artist || ''],
           album: track.album || '',
           platform: track.platform || '',
-          genre: track.genre ? (Array.isArray(track.genre) ? track.genre : [track.genre]) : [],
           bpm: track.bpm || null,
           key_signature: track.key_signature || undefined,
-          image_url: track.image_url || undefined
+          image_url: track.image_url || undefined,
+          genre: track.genre ? (Array.isArray(track.genre) ? track.genre : [track.genre]) : [],
+          liked: likedTrackIdSet.has(track.track_id || track.id),
+          duration: formattedDuration,
+          duration_seconds: track.duration_seconds,
+          created_at: track.created_at
         };
       }) || [];
       
@@ -108,21 +105,20 @@ export const useTrackOperations = (userId: string | undefined) => {
         const existingTrackIds = new Set(allTracks.map(t => t.id));
 
         // Add any master tracks that aren't already in our list
-        masterTracks?.forEach(track => {
+        masterTracks?.forEach(masterTrack => {
+          const track = masterTrack as any; // Use any temporarily for safer access
+          
           if (!existingTrackIds.has(track.id)) {
+            // Calculate formatted duration
             let formattedDuration = "0:00";
-            
-            const trackAny = track as any; // Use any temporarily to access potentially undefined properties
-            
-            // Handle duration safely
-            if (typeof trackAny.duration === 'string' && trackAny.duration) {
-              formattedDuration = trackAny.duration;
-            } else if (typeof trackAny.duration_seconds === 'number' || typeof trackAny.duration_seconds === 'string') {
-              const durationSeconds = typeof trackAny.duration_seconds === 'string' 
-                ? parseFloat(trackAny.duration_seconds)
-                : trackAny.duration_seconds;
-                
-              formattedDuration = formatDuration({ duration_seconds: durationSeconds });
+            if (track.duration_seconds) {
+              formattedDuration = formatDuration({ 
+                duration_seconds: typeof track.duration_seconds === 'string' 
+                  ? parseFloat(track.duration_seconds) 
+                  : track.duration_seconds 
+              });
+            } else if (track.duration) {
+              formattedDuration = track.duration;
             }
             
             allTracks.push({
@@ -132,7 +128,7 @@ export const useTrackOperations = (userId: string | undefined) => {
               album: track.album || '',
               platform: track.platform || '',
               duration: formattedDuration,
-              duration_seconds: trackAny.duration_seconds,
+              duration_seconds: track.duration_seconds,
               bpm: track.bpm || null,
               genre: track.genre || [],
               key_signature: track.key_signature,
