@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Track } from '@/types/table';
 import { GeneratedPlaylistTable } from '@/components/GeneratedPlaylistTable';
 import { 
@@ -28,27 +28,38 @@ export function PaginatedTrackList({
   const [currentPage, setCurrentPage] = useState(1);
   const logger = useLogger('PaginatedTrackList');
   
-  // Calculate total number of pages
-  const totalPages = Math.max(1, Math.ceil(tracks.length / pageSize));
+  // Calculate values with useMemo to prevent unnecessary recalculations
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(tracks.length / pageSize)), [tracks.length, pageSize]);
   
-  // Calculate start and end indices
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, tracks.length);
+  // Reset current page when tracks change significantly
+  React.useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
   
-  // Get current page tracks
-  const currentTracks = tracks.slice(startIndex, endIndex);
+  // Calculate current page tracks
+  const { currentTracks, startIndex, endIndex } = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = Math.min(start + pageSize, tracks.length);
+    return {
+      currentTracks: tracks.slice(start, end),
+      startIndex: start,
+      endIndex: end
+    };
+  }, [currentPage, tracks, pageSize]);
   
   logger.debug(`Showing tracks ${startIndex + 1}-${endIndex} of ${tracks.length} (Page ${currentPage}/${totalPages})`);
   
-  // Handle page change
-  const handlePageChange = (page: number) => {
+  // Handle page change with useCallback
+  const handlePageChange = useCallback((page: number) => {
     if (page < 1 || page > totalPages) return;
     logger.debug(`Changing to page ${page}`);
     setCurrentPage(page);
-  };
+  }, [totalPages, logger]);
   
-  // Generate page numbers to display
-  const getPageNumbers = () => {
+  // Generate page numbers with useMemo
+  const pageNumbers = useMemo(() => {
     const pages: number[] = [];
     const maxPagesToShow = 5;
     
@@ -84,10 +95,19 @@ export function PaginatedTrackList({
     }
     
     return pages;
-  };
+  }, [totalPages, currentPage]);
+
+  // If there are no tracks, show a simple message
+  if (tracks.length === 0) {
+    return (
+      <div className="bg-muted/20 p-6 rounded-lg text-center">
+        <p className="text-muted-foreground">No tracks available</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 transition-all duration-200">
       <GeneratedPlaylistTable
         tracks={currentTracks}
         showControls={showControls}
@@ -105,7 +125,7 @@ export function PaginatedTrackList({
               />
             </PaginationItem>
             
-            {getPageNumbers().map((page, index) => (
+            {pageNumbers.map((page, index) => (
               <PaginationItem key={index}>
                 {page < 0 ? (
                   <span className="px-2.5">...</span>

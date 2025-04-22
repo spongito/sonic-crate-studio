@@ -79,6 +79,9 @@ const LibraryView = () => {
     camelotMode: false
   };
 
+  // Use a stable empty array for empty states to prevent unnecessary re-renders
+  const emptyTracks = [];
+
   if (isLoading) {
     return <LoadingState />;
   }
@@ -97,7 +100,7 @@ const LibraryView = () => {
 
       <div className="flex flex-col gap-8">
         <RecentlyFoundTracks 
-          tracks={recentTracks} 
+          tracks={recentTracks || emptyTracks} 
           onLikeToggle={toggleLike} 
         />
 
@@ -122,7 +125,7 @@ const LibraryView = () => {
 
         <LibraryContent
           activeTab={activeTab}
-          tracks={allTracks}
+          tracks={allTracks || emptyTracks}
           onLikeToggle={toggleLike}
         />
       </div>

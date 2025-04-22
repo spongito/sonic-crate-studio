@@ -3,6 +3,7 @@ import { PaginatedTrackList } from "@/components/Library/PaginatedTrackList";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import type { Track } from "@/types/table";
 import { useLogger } from "@/hooks/useLogger";
+import { useMemo } from "react";
 
 interface LibraryContentProps {
   activeTab: string;
@@ -13,22 +14,24 @@ interface LibraryContentProps {
 export function LibraryContent({ activeTab, tracks, onLikeToggle }: LibraryContentProps) {
   const logger = useLogger("LibraryContent");
   
-  logger.debug(`Rendering LibraryContent with tab: ${activeTab}, ${tracks.length} total tracks`);
+  // Use memoized values to prevent unnecessary re-renders
+  const memoizedTracks = useMemo(() => tracks, [tracks]);
+  const likedTracks = useMemo(() => memoizedTracks.filter(track => track.liked), [memoizedTracks]);
   
-  const likedTracks = tracks.filter(track => track.liked);
+  logger.debug(`Rendering LibraryContent with tab: ${activeTab}, ${memoizedTracks.length} total tracks`);
   logger.debug(`Found ${likedTracks.length} liked tracks`);
   
   return (
-    <Tabs value={activeTab}>
-      <TabsContent value="all" className="space-y-4">
+    <Tabs value={activeTab} className="transition-all duration-200">
+      <TabsContent value="all" className="space-y-4 animate-fade-in">
         <PaginatedTrackList
-          tracks={tracks}
+          tracks={memoizedTracks}
           onLikeToggle={onLikeToggle}
           pageSize={15}
         />
       </TabsContent>
 
-      <TabsContent value="liked" className="space-y-4">
+      <TabsContent value="liked" className="space-y-4 animate-fade-in">
         <PaginatedTrackList
           tracks={likedTracks}
           onLikeToggle={onLikeToggle}
