@@ -1,3 +1,4 @@
+
 // Refactored imports for a lighter file
 import { searchTracks, searchArtists } from './spotify-client.ts';
 import { searchYouTubeVideos } from './youtube-client.ts';
