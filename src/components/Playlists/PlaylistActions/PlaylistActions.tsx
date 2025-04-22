@@ -22,10 +22,6 @@ interface PlaylistActionsProps {
 export function PlaylistActions({ onShare, onDelete, playlistId }: PlaylistActionsProps) {
   return (
     <div className="flex gap-2 mt-8">
-      <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
-        <Share2 className="h-4 w-4" />
-        Share
-      </Button>
       {onDelete && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -49,6 +45,11 @@ export function PlaylistActions({ onShare, onDelete, playlistId }: PlaylistActio
           </AlertDialogContent>
         </AlertDialog>
       )}
+      
+      <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
+        <Share2 className="h-4 w-4" />
+        Share
+      </Button>
     </div>
   );
 }
