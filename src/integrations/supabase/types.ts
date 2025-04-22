@@ -96,6 +96,7 @@ export type Database = {
       }
       playlists: {
         Row: {
+          cover_image_url: string | null
           created_at: string
           description: string | null
           genres: string[]
@@ -110,6 +111,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           genres?: string[]
@@ -124,6 +126,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           genres?: string[]

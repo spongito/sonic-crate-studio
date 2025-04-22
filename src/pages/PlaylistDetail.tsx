@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +12,9 @@ import { PlaylistActions } from "@/components/Playlists/PlaylistActions/Playlist
 import { type Playlist } from "@/components/Playlists/types";
 import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
 import type { Track } from "@/types/table";
+import { usePlaylistEdit } from "@/hooks/usePlaylistEdit";
+import { PlaylistEditModal } from "@/components/Playlists/PlaylistEditModal";
+import { Edit } from "lucide-react";
 
 const PlaylistDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +23,19 @@ const PlaylistDetail = () => {
   const [notFound, setNotFound] = useState(false);
   const [unauthorized, setUnauthorized] = useState(false);
   const { user } = useAuth();
+
+  const {
+    isEditing,
+    setIsEditing,
+    editedName,
+    setEditedName,
+    editedCoverUrl,
+    setEditedCoverUrl,
+    tracks,
+    setTracks,
+    handleSaveChanges,
+    handleRemoveTracks
+  } = usePlaylistEdit(playlist || {} as Playlist);
 
   useEffect(() => {
     const fetchPlaylist = async () => {
@@ -135,12 +151,22 @@ const PlaylistDetail = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
               {/* Playlist Cover Image */}
-              <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg">
+              <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg relative">
                 <img 
                   src={playlist.results[0]?.image_url || "/placeholder.svg"} 
                   alt={playlist.name}
                   className="w-full h-full object-cover"
                 />
+                {user?.id === playlist.user_id && (
+                  <Button 
+                    variant="secondary" 
+                    size="icon" 
+                    className="absolute top-2 right-2"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit className="w-5 h-5" />
+                  </Button>
+                )}
               </div>
 
               {/* Playlist Info */}
@@ -186,6 +212,21 @@ const PlaylistDetail = () => {
             </div>
           </div>
         ) : null}
+
+        {/* Edit Modal */}
+        {playlist && (
+          <PlaylistEditModal 
+            isOpen={isEditing}
+            playlistName={playlist.name}
+            coverImageUrl={playlist.results[0]?.image_url || ''}
+            onClose={() => setIsEditing(false)}
+            onSave={(name, coverUrl) => {
+              // Update local state and save to Supabase
+              setPlaylist(prev => prev ? {...prev, name, cover_image_url: coverUrl} : null);
+              handleSaveChanges();
+            }}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
