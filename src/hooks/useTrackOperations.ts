@@ -62,13 +62,15 @@ export const useTrackOperations = (userId: string | undefined) => {
         // Calculate formatted duration if available
         let formattedDuration = "0:00";
         
+        const trackAny = track as any; // Use any temporarily to access potentially undefined properties
+        
         // Handle duration safely using optional chaining and type checking
-        if (typeof track.duration === 'string' && track.duration) {
-          formattedDuration = track.duration;
-        } else if (typeof track.duration_seconds === 'number' || typeof track.duration_seconds === 'string') {
-          const durationSeconds = typeof track.duration_seconds === 'string' 
-            ? parseFloat(track.duration_seconds)
-            : track.duration_seconds;
+        if (typeof trackAny.duration === 'string' && trackAny.duration) {
+          formattedDuration = trackAny.duration;
+        } else if (typeof trackAny.duration_seconds === 'number' || typeof trackAny.duration_seconds === 'string') {
+          const durationSeconds = typeof trackAny.duration_seconds === 'string' 
+            ? parseFloat(trackAny.duration_seconds)
+            : trackAny.duration_seconds;
           
           formattedDuration = formatDuration({ duration_seconds: durationSeconds });
         }
@@ -110,13 +112,15 @@ export const useTrackOperations = (userId: string | undefined) => {
           if (!existingTrackIds.has(track.id)) {
             let formattedDuration = "0:00";
             
+            const trackAny = track as any; // Use any temporarily to access potentially undefined properties
+            
             // Handle duration safely
-            if (typeof track.duration === 'string' && track.duration) {
-              formattedDuration = track.duration;
-            } else if (typeof track.duration_seconds === 'number' || typeof track.duration_seconds === 'string') {
-              const durationSeconds = typeof track.duration_seconds === 'string' 
-                ? parseFloat(track.duration_seconds)
-                : track.duration_seconds;
+            if (typeof trackAny.duration === 'string' && trackAny.duration) {
+              formattedDuration = trackAny.duration;
+            } else if (typeof trackAny.duration_seconds === 'number' || typeof trackAny.duration_seconds === 'string') {
+              const durationSeconds = typeof trackAny.duration_seconds === 'string' 
+                ? parseFloat(trackAny.duration_seconds)
+                : trackAny.duration_seconds;
                 
               formattedDuration = formatDuration({ duration_seconds: durationSeconds });
             }
@@ -128,7 +132,7 @@ export const useTrackOperations = (userId: string | undefined) => {
               album: track.album || '',
               platform: track.platform || '',
               duration: formattedDuration,
-              duration_seconds: track.duration_seconds,
+              duration_seconds: trackAny.duration_seconds,
               bpm: track.bpm || null,
               genre: track.genre || [],
               key_signature: track.key_signature,
