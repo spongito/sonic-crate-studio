@@ -13,7 +13,7 @@ export const FeatureCards: React.FC = () => {
           <h2 className="text-xl font-semibold mb-2 text-black">Discover music that moves you</h2>
           <p className="text-black/70 mb-4">Build playlists with intention. Organize your sound.</p>
           
-          <Link to="/music-finder" className="mt-auto">
+          <Link to="/library" className="mt-auto">
             <Button 
               className="bg-black/20 hover:bg-black/30 text-black" 
               variant="secondary"
