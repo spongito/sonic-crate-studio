@@ -18,7 +18,7 @@ export function PlaylistCard({ id, title, coverUrl, trackCount, createdAt }: Pla
       <Card className="neo-card overflow-hidden group transition-all duration-300 hover:scale-[1.02]">
         <AspectRatio ratio={1} className="bg-muted">
           <img 
-            src={coverUrl || "placeholder.svg"} 
+            src={coverUrl || "/placeholder.svg"} 
             alt={title}
             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
           />

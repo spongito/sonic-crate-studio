@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import MusicFinder from './pages/MusicFinder';
 import CurationAssistant from './pages/CurationAssistant';
 import Playlists from './pages/Playlists';
+import PlaylistDetail from './pages/PlaylistDetail';
 import Export from './pages/Export';
 import Community from './pages/Community';
 import Profile from './pages/Profile';
@@ -63,6 +64,11 @@ function App() {
               <Route path="/playlists" element={
                 <ProtectedRoute>
                   <Playlists />
+                </ProtectedRoute>
+              } />
+              <Route path="/playlists/:id" element={
+                <ProtectedRoute>
+                  <PlaylistDetail />
                 </ProtectedRoute>
               } />
               <Route path="/export" element={
