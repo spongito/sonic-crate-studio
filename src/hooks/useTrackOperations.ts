@@ -42,12 +42,24 @@ export const useTrackOperations = (userId: string | undefined) => {
         throw likedError;
       }
 
-      // Transform the joined data into the expected format
-      const likedTracks = likedTracksData.map(item => ({
-        ...item.tracks_master,
-        liked: true,
-        id: item.track_id
-      }));
+      // Transform the joined data into the expected Track format
+      // Ensuring all required fields are present
+      const likedTracks: Track[] = likedTracksData.map(item => {
+        // Make sure to set the required duration property
+        const duration = item.tracks_master.duration || '';
+        
+        return {
+          ...item.tracks_master,
+          // Ensure required properties from Track interface are present
+          duration: duration,
+          liked: true,
+          id: item.track_id,
+          artist: item.tracks_master.artist || '',
+          title: item.tracks_master.title || '',
+          album: item.tracks_master.album || '',
+          platform: item.tracks_master.platform || ''
+        } as Track;
+      });
 
       logger.info(`Found ${likedTracks.length} liked tracks`);
       

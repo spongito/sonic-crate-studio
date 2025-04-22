@@ -18,4 +18,3 @@ export const formatDuration = (track: any): string => {
   // Default duration if nothing is available
   return "0:00";
 };
-
