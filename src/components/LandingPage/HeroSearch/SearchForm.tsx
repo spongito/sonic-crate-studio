@@ -1,7 +1,7 @@
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Sliders, Loader2 } from "lucide-react";
+import { AdvancedButton } from "./AdvancedButton";
+import { GenerateButton } from "./GenerateButton";
 
 interface SearchFormProps {
   prompt: string;
@@ -35,31 +35,16 @@ export const SearchForm = ({
       
       <div className="flex justify-center items-center mt-2">
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="border-white/10 hover:bg-white/5 px-5 py-2 md:px-6 md:py-2"
+          <AdvancedButton 
             onClick={onAdvancedClick}
             disabled={isGenerating}
-          >
-            <Sliders className="h-5 w-5" />
-          </Button>
-          <Button 
-            className="bg-gold hover:bg-gold-dark text-black font-semibold px-5 py-2 md:px-6 md:py-2"
+          />
+          <GenerateButton 
             onClick={handleSubmit}
             disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                Find Songs
-                {user && <ArrowRight className="ml-2 h-5 w-5" />}
-              </>
-            )}
-          </Button>
+            isGenerating={isGenerating}
+            user={user}
+          />
         </div>
       </div>
     </div>
