@@ -1,40 +1,29 @@
-
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import TrackLikeButton from "@/components/TrackLikeButton";
 import type { Track } from "@/types/table";
 import { useLogger } from "@/hooks/useLogger";
-import { useMemo, useEffect } from "react";
+import { useEffect } from "react";
 
 interface RecentlyFoundTracksProps {
   tracks: Track[];
   onLikeToggle: (trackId: string, liked: boolean) => void;
-  isLoading?: boolean;
 }
 
-export function RecentlyFoundTracks({ tracks, onLikeToggle, isLoading = false }: RecentlyFoundTracksProps) {
+export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTracksProps) {
   const logger = useLogger("RecentlyFoundTracks");
   
-  // Use memoized tracks to prevent unnecessary re-renders
-  const memoizedTracks = useMemo(() => tracks, [tracks]);
-  
   useEffect(() => {
-    if (!memoizedTracks || memoizedTracks.length === 0) {
+    if (!tracks || tracks.length === 0) {
       logger.info("No tracks available to display");
     } else {
-      logger.info(`Displaying ${memoizedTracks.length} recently found tracks`);
-      logger.debug("First track:", { title: memoizedTracks[0]?.title, artist: memoizedTracks[0]?.artist });
+      logger.info(`Displaying ${tracks.length} recently found tracks`);
+      logger.debug("First track:", { title: tracks[0]?.title, artist: tracks[0]?.artist });
     }
-  }, [memoizedTracks, logger]);
+  }, [tracks, logger]);
 
-  const handleTrackLikeToggle = (trackId: string, liked: boolean) => {
-    logger.debug(`Toggling like for track ${trackId}, currently liked: ${liked}`);
-    onLikeToggle(trackId, liked);
-  };
-
-  // Early return with placeholder for empty states
-  if ((!memoizedTracks || memoizedTracks.length === 0) && !isLoading) {
+  if (!tracks || tracks.length === 0) {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Recently Found Tracks</h2>
@@ -45,13 +34,18 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle, isLoading = false }:
     );
   }
 
+  const handleTrackLikeToggle = (trackId: string, liked: boolean) => {
+    logger.debug(`Toggling like for track ${trackId}, currently liked: ${liked}`);
+    onLikeToggle(trackId, liked);
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Recently Found Tracks</h2>
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex w-max space-x-4 p-4">
-          {memoizedTracks.map((track) => (
-            <Card key={track.id} className="w-[200px] shrink-0 transition-all duration-200 hover:shadow-md">
+          {tracks.map((track) => (
+            <Card key={track.id} className="w-[200px] shrink-0">
               <div className="p-3">
                 {track.image_url ? (
                   <img

@@ -1,10 +1,9 @@
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Track } from '@/types/table';
 import { useLogger } from '@/hooks/useLogger';
 import { useTrackOperations } from '@/hooks/useTrackOperations';
-import { toast } from '@/components/ui/use-toast';
 
 interface TracksContextType {
   allTracks: Track[];
@@ -25,81 +24,25 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { user } = useAuth();
   const logger = useLogger('TracksContext');
   const { isLoading, error, fetchUserTracks, toggleLike: toggleTrackLike } = useTrackOperations(user?.id);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const refreshTracks = useCallback(async () => {
-    if (!user?.id) {
-      logger.info('No user logged in, skipping refresh');
-      return;
-    }
+  const refreshTracks = async () => {
+    logger.info('Manually refreshing tracks');
+    const { allTracks: newAllTracks, recentTracks: newRecentTracks, likedTracks: newLikedTracks } = 
+      await fetchUserTracks();
     
-    logger.info('Refreshing tracks data');
-    setIsRefreshing(true);
-    
-    try {
-      const { allTracks: newAllTracks, recentTracks: newRecentTracks, likedTracks: newLikedTracks } = 
-        await fetchUserTracks();
-      
-      logger.info(`Retrieved ${newAllTracks.length} total tracks, ${newLikedTracks.length} liked tracks`);
-      
-      setAllTracks(newAllTracks);
-      setRecentTracks(newRecentTracks);
-      setLikedTracks(newLikedTracks);
-    } catch (err) {
-      logger.error('Error refreshing tracks:', err);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to refresh tracks",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [user?.id, fetchUserTracks, logger]);
+    setAllTracks(newAllTracks);
+    setRecentTracks(newRecentTracks);
+    setLikedTracks(newLikedTracks);
+  };
 
-  const toggleLike = useCallback(async (trackId: string, liked: boolean) => {
-    if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "You must be logged in to like tracks",
-      });
-      return;
-    }
-    
-    try {
-      await toggleTrackLike(trackId, liked);
-      
-      // Update local state to reflect the change
-      const updatedAllTracks = allTracks.map(track => 
-        track.id === trackId ? { ...track, liked: !liked } : track
-      );
-      
-      setAllTracks(updatedAllTracks);
-      
-      // Update likedTracks
-      if (liked) {
-        // Remove from liked tracks
-        setLikedTracks(prev => prev.filter(track => track.id !== trackId));
-      } else {
-        // Add to liked tracks
-        const trackToAdd = allTracks.find(track => track.id === trackId);
-        if (trackToAdd) {
-          setLikedTracks(prev => [{ ...trackToAdd, liked: true }, ...prev]);
-        }
-      }
-      
-      logger.success(`Successfully toggled like for track ${trackId}`);
-    } catch (err) {
-      logger.error('Error toggling track like:', err);
-      throw err;
-    }
-  }, [allTracks, toggleTrackLike, user?.id, logger]);
+  const toggleLike = async (trackId: string, liked: boolean) => {
+    await toggleTrackLike(trackId, liked);
+    await refreshTracks();
+  };
 
-  // Initial fetch when user changes
   useEffect(() => {
     refreshTracks();
-  }, [user?.id, refreshTracks]);
+  }, [user?.id]);
 
   return (
     <TracksContext.Provider
@@ -107,7 +50,7 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         allTracks,
         recentTracks,
         likedTracks,
-        isLoading: isLoading || isRefreshing,
+        isLoading,
         error,
         refreshTracks,
         toggleLike,
@@ -125,3 +68,4 @@ export const useTracks = (): TracksContextType => {
   }
   return context;
 };
+

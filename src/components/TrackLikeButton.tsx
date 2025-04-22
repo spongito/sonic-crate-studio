@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Heart, Plus } from "lucide-react";
 import { useTracks } from "@/context/TracksContext";
 import { toast } from "@/components/ui/use-toast";
-import { useLogger } from "@/hooks/useLogger";
 
 interface TrackLikeButtonProps {
   trackId: string;
@@ -24,7 +23,6 @@ export default function TrackLikeButton({
   const { toggleLike } = useTracks();
   const [isLiked, setIsLiked] = React.useState<boolean>(liked);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const logger = useLogger('TrackLikeButton');
 
   // Update internal state when the liked prop changes
   React.useEffect(() => {
@@ -43,10 +41,8 @@ export default function TrackLikeButton({
       const newLikedState = !isLiked;
       setIsLiked(newLikedState);
       
-      logger.debug(`Toggling like for track ${trackId}, new state: ${newLikedState}`);
-      
       // Call the toggleLike function from context
-      await toggleLike(trackId, isLiked);
+      await toggleLike(trackId, newLikedState);
       
       // If onToggle callback exists, call it
       if (onToggle) {

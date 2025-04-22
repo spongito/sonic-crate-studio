@@ -1,3 +1,4 @@
+
 export type Track = {
   id: string;
   title: string;
@@ -10,8 +11,8 @@ export type Track = {
   year?: number;
   release_year?: number;
   release_date?: string;
-  duration: string; // Formatted duration (e.g., "3:45")
-  duration_seconds?: number; // Raw duration in seconds
+  duration: string;
+  duration_seconds?: number;
   albumArt?: string;
   image_url?: string;
   platform: string | string[];

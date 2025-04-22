@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
+
+import React, { useState } from 'react';
 import { Track } from '@/types/table';
 import { GeneratedPlaylistTable } from '@/components/GeneratedPlaylistTable';
 import { 
@@ -10,14 +11,12 @@ import {
   PaginationPrevious 
 } from '@/components/ui/pagination';
 import { useLogger } from '@/hooks/useLogger';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface PaginatedTrackListProps {
   tracks: Track[];
   pageSize?: number;
   onLikeToggle: (trackId: string, liked: boolean) => void;
   showControls?: boolean;
-  showLoading?: boolean;
 }
 
 export function PaginatedTrackList({
@@ -25,43 +24,31 @@ export function PaginatedTrackList({
   pageSize = 10,
   onLikeToggle,
   showControls = false,
-  showLoading = false,
 }: PaginatedTrackListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const logger = useLogger('PaginatedTrackList');
   
-  // Calculate values with useMemo to prevent unnecessary recalculations
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(tracks.length / pageSize)), [tracks.length, pageSize]);
+  // Calculate total number of pages
+  const totalPages = Math.max(1, Math.ceil(tracks.length / pageSize));
   
-  // Reset current page when tracks change significantly
-  React.useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [totalPages, currentPage]);
+  // Calculate start and end indices
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, tracks.length);
   
-  // Calculate current page tracks
-  const { currentTracks, startIndex, endIndex } = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    const end = Math.min(start + pageSize, tracks.length);
-    return {
-      currentTracks: tracks.slice(start, end),
-      startIndex: start,
-      endIndex: end
-    };
-  }, [currentPage, tracks, pageSize]);
+  // Get current page tracks
+  const currentTracks = tracks.slice(startIndex, endIndex);
   
   logger.debug(`Showing tracks ${startIndex + 1}-${endIndex} of ${tracks.length} (Page ${currentPage}/${totalPages})`);
   
-  // Handle page change with useCallback
-  const handlePageChange = useCallback((page: number) => {
+  // Handle page change
+  const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
     logger.debug(`Changing to page ${page}`);
     setCurrentPage(page);
-  }, [totalPages, logger]);
+  };
   
-  // Generate page numbers with useMemo
-  const pageNumbers = useMemo(() => {
+  // Generate page numbers to display
+  const getPageNumbers = () => {
     const pages: number[] = [];
     const maxPagesToShow = 5;
     
@@ -97,38 +84,16 @@ export function PaginatedTrackList({
     }
     
     return pages;
-  }, [totalPages, currentPage]);
-
-  // If there are no tracks, show a simple message
-  if (tracks.length === 0) {
-    return (
-      <div className="bg-muted/20 p-6 rounded-lg text-center">
-        <p className="text-muted-foreground">No tracks available</p>
-      </div>
-    );
-  }
-
-  // Keep consistent height to prevent layout shifts
-  const tableWrapperStyle = {
-    minHeight: `${Math.min(tracks.length, pageSize) * 60}px`
   };
 
   return (
-    <div className="space-y-4 transition-all duration-300">
-      <div style={tableWrapperStyle} className="relative">
-        {showLoading && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        )}
-        
-        <GeneratedPlaylistTable
-          tracks={currentTracks}
-          showControls={showControls}
-          fullWidth={true}
-          onLikeChange={onLikeToggle}
-        />
-      </div>
+    <div className="space-y-4">
+      <GeneratedPlaylistTable
+        tracks={currentTracks}
+        showControls={showControls}
+        fullWidth={true}
+        onLikeChange={onLikeToggle}
+      />
       
       {totalPages > 1 && (
         <Pagination>
@@ -140,7 +105,7 @@ export function PaginatedTrackList({
               />
             </PaginationItem>
             
-            {pageNumbers.map((page, index) => (
+            {getPageNumbers().map((page, index) => (
               <PaginationItem key={index}>
                 {page < 0 ? (
                   <span className="px-2.5">...</span>
