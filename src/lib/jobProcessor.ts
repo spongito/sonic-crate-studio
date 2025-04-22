@@ -1,96 +1,71 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { Job, JobStatus, IntentAnalysis } from '@/types/job';
-import { Track } from '@/types/table';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { JobStatus, IntentAnalysis } from '@/types/job';
+import { IntentService } from '@/lib/intentParser';
+import { processTracksRequest } from '@/supabase/functions/process-music-request/tracks-processor';
 
-export class JobProcessor {
-  static async createJob(
-    prompt: string, 
-    jobType: string, 
-    settings: Record<string, any> = {}
-  ): Promise<Job> {
-    // Get the current user session
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user?.id;
-    
-    if (!userId) {
-      throw new Error('User must be authenticated to create a job');
-    }
-
-    const { data, error } = await supabase
+export async function processJob(supabase: SupabaseClient, jobId: string) {
+  try {
+    // 1. Get job details and update status to processing
+    const { data: job, error: jobError } = await supabase
       .from('jobs')
-      .insert({
-        name: `Job for: ${prompt.slice(0, 50)}...`,
-        status: 'pending' as JobStatus,
-        job_type: jobType,
-        prompt,
-        user_username: userId,
-        settings,
-        partial: false
-      })
       .select('*')
-      .single();
-
-    if (error) throw new Error(`Failed to create job: ${error.message}`);
-    return data as Job;
-  }
-
-  static async updateJobStatus(
-    jobId: string, 
-    status: JobStatus, 
-    partialResults?: Track[], 
-    errorMessage?: string
-  ): Promise<Job> {
-    const updateData: Partial<Job> = { 
-      status,
-      partial: !!partialResults?.length
-    };
-
-    if (partialResults) {
-      updateData.results = partialResults;
-    }
-
-    if (errorMessage) {
-      updateData.error_message = errorMessage;
-    }
-
-    const { data, error } = await supabase
-      .from('jobs')
-      .update(updateData)
       .eq('id', jobId)
-      .select('*')
       .single();
 
-    if (error) throw new Error(`Failed to update job: ${error.message}`);
-    return data as Job;
-  }
+    if (jobError || !job) {
+      throw new Error(`Failed to fetch job: ${jobError?.message}`);
+    }
 
-  static async checkUserJobConcurrency(
-    userId: string, 
-    maxConcurrentJobs: number = 3
-  ): Promise<boolean> {
-    const { count, error } = await supabase
+    await supabase
       .from('jobs')
-      .select('*', { count: 'exact' })
-      .eq('user_username', userId)
-      .in('status', ['pending', 'processing', 'analysis']);
+      .update({ status: 'processing' as JobStatus })
+      .eq('id', jobId);
 
-    if (error) throw new Error(`Failed to check job concurrency: ${error.message}`);
-    return (count || 0) < maxConcurrentJobs;
-  }
+    // 2. Parse intent using our existing IntentService
+    const jobType = IntentService.classifyIntent(job.prompt);
+    const intent = IntentService.analyzeIntent(job.prompt, jobType);
+    console.log(`Intent analyzed for job ${jobId}:`, intent);
 
-  static async addJobEvent(
-    jobId: string, 
-    eventType: string, 
-    eventData: Record<string, any>
-  ) {
-    const { error } = await supabase
-      .rpc('add_job_event', {
-        p_job_id: jobId,
-        p_event_type: eventType,
-        p_event_data: eventData
-      });
+    // 3. Process tracks using our existing processor
+    const platforms = job.settings?.platforms || ['spotify', 'youtube'];
+    const results = await processTracksRequest(
+      job.prompt,
+      job.settings || {},
+      platforms,
+      intent
+    );
 
-    if (error) throw new Error(`Failed to log job event: ${error.message}`);
+    // 4. Update job with results and completed status
+    const { error: updateError } = await supabase
+      .from('jobs')
+      .update({
+        status: 'completed' as JobStatus,
+        results: results.tracks,
+        genres: results.intent.genres || [],
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', jobId);
+
+    if (updateError) {
+      throw new Error(`Failed to update job results: ${updateError.message}`);
+    }
+
+    return results;
+
+  } catch (error) {
+    console.error(`Error processing job ${jobId}:`, error);
+
+    // Update job with error status
+    await supabase
+      .from('jobs')
+      .update({
+        status: 'error' as JobStatus,
+        error_message: error.message,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', jobId);
+
+    throw error;
   }
 }
