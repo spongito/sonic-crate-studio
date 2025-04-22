@@ -10,8 +10,20 @@ import { LibraryTabs } from "@/components/Library/LibraryTabs";
 import { DebugButton } from "@/components/Library/DebugButton";
 import { LoadingState } from "@/components/Library/LoadingState";
 import { useLogger } from "@/hooks/useLogger";
-import { useTracks } from "@/context/TracksContext";
-import { TracksProvider } from "@/context/TracksContext";
+import { TracksProvider, useTracks } from "@/context/TracksContext";
+import { useLibraryTracks } from "@/hooks/useLibraryTracks";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60, // 1 minute
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const LibraryView = () => {
   const { user } = useAuth();
@@ -27,7 +39,7 @@ const LibraryView = () => {
   const [keySignature, setKeySignature] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const logger = useLogger("Library");
-  const { allTracks, recentTracks, likedTracks, isLoading, toggleLike, error, refreshTracks } = useTracks();
+  const { recentTracks, toggleLike } = useTracks();
 
   // Effect to handle URL parameters
   useEffect(() => {
@@ -56,35 +68,23 @@ const LibraryView = () => {
     navigate(newPath, { replace: true });
   };
 
-  useEffect(() => {
-    logger.info(`Library loaded with ${allTracks.length} tracks, ${likedTracks.length} liked`);
-    
-    // Force a refresh if we have no tracks but we're logged in
-    if (user?.id && allTracks.length === 0 && !isLoading) {
-      logger.info('No tracks found, triggering refresh');
-      refreshTracks();
-    }
-  }, [user?.id, allTracks.length, likedTracks.length, isLoading, logger, refreshTracks]);
-
+  // Use the new React Query hook
   const filters = {
     search,
-    bpmMin: bpmRange[0].toString(),
-    bpmMax: bpmRange[1].toString(),
-    yearMin: yearRange[0].toString(),
-    yearMax: yearRange[1].toString(),
-    genre: genre ? [genre] : [],
-    key: keySignature,
-    energy: [],
-    mood: [],
-    camelotMode: false
+    bpmRange,
+    yearRange,
+    genre: genre || undefined,
+    key: keySignature || undefined
   };
-
-  // Use a stable empty array for empty states to prevent unnecessary re-renders
-  const emptyTracks = [];
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
+  
+  const { 
+    tracks, 
+    isLoading,
+    isPreviousData 
+  } = useLibraryTracks({ 
+    tab: activeTab, 
+    filters 
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
@@ -100,7 +100,7 @@ const LibraryView = () => {
 
       <div className="flex flex-col gap-8">
         <RecentlyFoundTracks 
-          tracks={recentTracks || emptyTracks} 
+          tracks={recentTracks || []} 
           onLikeToggle={toggleLike} 
         />
 
@@ -125,7 +125,9 @@ const LibraryView = () => {
 
         <LibraryContent
           activeTab={activeTab}
-          tracks={allTracks || emptyTracks}
+          tracks={tracks}
+          isLoading={isLoading}
+          isPreviousData={isPreviousData}
           onLikeToggle={toggleLike}
         />
       </div>
@@ -135,11 +137,13 @@ const LibraryView = () => {
 
 const Library = () => {
   return (
-    <DashboardLayout>
-      <TracksProvider>
-        <LibraryView />
-      </TracksProvider>
-    </DashboardLayout>
+    <QueryClientProvider client={queryClient}>
+      <DashboardLayout>
+        <TracksProvider>
+          <LibraryView />
+        </TracksProvider>
+      </DashboardLayout>
+    </QueryClientProvider>
   );
 };
 

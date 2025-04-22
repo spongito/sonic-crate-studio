@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback } from 'react';
 import { Track } from '@/types/table';
 import { GeneratedPlaylistTable } from '@/components/GeneratedPlaylistTable';
@@ -11,12 +10,14 @@ import {
   PaginationPrevious 
 } from '@/components/ui/pagination';
 import { useLogger } from '@/hooks/useLogger';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PaginatedTrackListProps {
   tracks: Track[];
   pageSize?: number;
   onLikeToggle: (trackId: string, liked: boolean) => void;
   showControls?: boolean;
+  showLoading?: boolean;
 }
 
 export function PaginatedTrackList({
@@ -24,6 +25,7 @@ export function PaginatedTrackList({
   pageSize = 10,
   onLikeToggle,
   showControls = false,
+  showLoading = false,
 }: PaginatedTrackListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const logger = useLogger('PaginatedTrackList');
@@ -106,14 +108,27 @@ export function PaginatedTrackList({
     );
   }
 
+  // Keep consistent height to prevent layout shifts
+  const tableWrapperStyle = {
+    minHeight: `${Math.min(tracks.length, pageSize) * 60}px`
+  };
+
   return (
-    <div className="space-y-4 transition-all duration-200">
-      <GeneratedPlaylistTable
-        tracks={currentTracks}
-        showControls={showControls}
-        fullWidth={true}
-        onLikeChange={onLikeToggle}
-      />
+    <div className="space-y-4 transition-all duration-300">
+      <div style={tableWrapperStyle} className="relative">
+        {showLoading && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        )}
+        
+        <GeneratedPlaylistTable
+          tracks={currentTracks}
+          showControls={showControls}
+          fullWidth={true}
+          onLikeChange={onLikeToggle}
+        />
+      </div>
       
       {totalPages > 1 && (
         <Pagination>

@@ -10,9 +10,10 @@ import { useMemo, useEffect } from "react";
 interface RecentlyFoundTracksProps {
   tracks: Track[];
   onLikeToggle: (trackId: string, liked: boolean) => void;
+  isLoading?: boolean;
 }
 
-export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTracksProps) {
+export function RecentlyFoundTracks({ tracks, onLikeToggle, isLoading = false }: RecentlyFoundTracksProps) {
   const logger = useLogger("RecentlyFoundTracks");
   
   // Use memoized tracks to prevent unnecessary re-renders
@@ -33,7 +34,7 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
   };
 
   // Early return with placeholder for empty states
-  if (!memoizedTracks || memoizedTracks.length === 0) {
+  if ((!memoizedTracks || memoizedTracks.length === 0) && !isLoading) {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Recently Found Tracks</h2>
@@ -50,7 +51,7 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex w-max space-x-4 p-4">
           {memoizedTracks.map((track) => (
-            <Card key={track.id} className="w-[200px] shrink-0">
+            <Card key={track.id} className="w-[200px] shrink-0 transition-all duration-200 hover:shadow-md">
               <div className="p-3">
                 {track.image_url ? (
                   <img
