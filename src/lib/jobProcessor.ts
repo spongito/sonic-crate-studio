@@ -2,6 +2,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { JobStatus, IntentAnalysis } from '@/types/job';
 import { IntentParser } from '@/lib/intent/parser';
+import { orchestrateApiCalls } from '@/lib/jobProcessor/apiOrchestrator';
 
 /**
  * Process a job by getting the job details, analyzing the intent,
@@ -34,38 +35,15 @@ export async function processJob(supabase: SupabaseClient, jobId: string) {
     const intent = IntentParser.parse(inputs);
     console.log(`Intent analyzed for job ${jobId}:`, intent);
 
-    // 3. Process tracks by calling the edge function
-    const platforms = job.settings?.platforms || ['spotify', 'youtube'];
-    
-    // Call the Supabase edge function to process the music request
-    const { data: results, error: processingError } = await supabase.functions.invoke('process-music-request', {
-      body: {
-        prompt: job.prompt,
-        advancedParams: job.settings || {},
-        platforms
-      }
-    });
+    // 3. Orchestrate API calls to process the music request
+    // This is where we'll implement our new orchestration logic
+    const tracks = await orchestrateApiCalls(supabase, jobId, intent);
 
-    if (processingError || !results) {
-      throw new Error(`Failed to process music request: ${processingError?.message || 'Unknown error'}`);
-    }
-
-    // 4. Update job with results and completed status
-    const { error: updateError } = await supabase
-      .from('jobs')
-      .update({
-        status: 'completed' as JobStatus,
-        results: results.tracks,
-        genres: results.intent?.genres || [],
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', jobId);
-
-    if (updateError) {
-      throw new Error(`Failed to update job results: ${updateError.message}`);
-    }
-
-    return results;
+    // Return the processed tracks
+    return {
+      tracks,
+      intent
+    };
 
   } catch (error) {
     console.error(`Error processing job ${jobId}:`, error);
