@@ -1,8 +1,10 @@
 
-import { getSpotifyToken, getRecommendations, enrichTracksWithAudioFeatures } from './spotify-client.ts';
+import { getSpotifyToken } from './spotify-client.ts';
 import { executeSearchFlow } from './search-flow.ts';
 import { calculateConfidenceScore } from './response-utils.ts';
 import { generatePlaylistName } from './track-scorer.ts';
+import { enrichTracksWithFilters } from './track-enrichment.ts';
+import { processRecommendations } from './recommendations-handler.ts';
 
 export async function processTracksRequest(prompt: string, advancedParams: any, platforms: string[], intent: any) {
   let allTracks = [];
@@ -10,6 +12,7 @@ export async function processTracksRequest(prompt: string, advancedParams: any, 
   let seedArtists = null;
   let spotifyToken = null;
 
+  // Handle Spotify search
   if (platforms.includes('spotify')) {
     try {
       spotifyToken = await getSpotifyToken();
@@ -34,6 +37,7 @@ export async function processTracksRequest(prompt: string, advancedParams: any, 
     }
   }
 
+  // Handle YouTube search
   if (platforms.includes('youtube')) {
     try {
       const youtubeResults = await executeSearchFlow(intent, null, ['youtube']).catch(error => {
@@ -57,19 +61,8 @@ export async function processTracksRequest(prompt: string, advancedParams: any, 
     throw new Error("No tracks found matching your criteria. Try different search terms or platforms.");
   }
 
-  // Process recommendations if we have Spotify data
-  let recommendedTracks = [];
-  if (platforms.includes('spotify') && spotifyToken && seedTracks && seedTracks.length > 0) {
-    try {
-      recommendedTracks = await getRecommendations(seedTracks, seedArtists, intent, spotifyToken).catch(error => {
-        console.error("Recommendations failed:", error);
-        return [];
-      });
-      console.log(`Found ${recommendedTracks.length} tracks through recommendations`);
-    } catch (error) {
-      console.error("Failed to get recommendations:", error);
-    }
-  }
+  // Get recommendations if we have Spotify data
+  const recommendedTracks = await processRecommendations(platforms, spotifyToken, seedTracks, seedArtists, intent);
 
   // Combine and filter tracks
   const combinedTracks = [...allTracks, ...recommendedTracks];
@@ -89,56 +82,4 @@ export async function processTracksRequest(prompt: string, advancedParams: any, 
     recommendation_confidence: calculateConfidenceScore(processedTracks.slice(0, 50)),
     platforms: platforms
   };
-}
-
-async function enrichTracksWithFilters(tracks: any[], intent: any, spotifyToken: string | null, platforms: string[]) {
-  const validTracks = tracks.filter(track => track !== null && track !== undefined);
-  
-  // Deduplicate tracks
-  const uniqueTracks = Array.from(new Map(validTracks.map(track =>
-    [track.id || track.spotify_id || track.youtube_id, track]
-  )).values());
-  console.log(`Combined unique tracks: ${uniqueTracks.length}`);
-
-  // Enrich with audio features if possible
-  let tracksWithFeatures = uniqueTracks;
-  if (platforms.includes('spotify') && spotifyToken) {
-    const spotifyTracks = uniqueTracks.filter(track => track.platform === 'spotify');
-    if (spotifyTracks.length > 0) {
-      try {
-        const enrichedSpotifyTracks = await enrichTracksWithAudioFeatures(spotifyTracks, spotifyToken);
-        const nonSpotifyTracks = uniqueTracks.filter(track => track.platform !== 'spotify');
-        tracksWithFeatures = [...enrichedSpotifyTracks, ...nonSpotifyTracks];
-      } catch (error) {
-        console.error("Failed to enrich tracks with audio features:", error);
-      }
-    }
-  }
-
-  // Apply filters
-  return applyTrackFilters(tracksWithFeatures, intent);
-}
-
-function applyTrackFilters(tracks: any[], intent: any) {
-  let filteredTracks = tracks;
-
-  // Apply release year filter if active
-  if (intent.release_year_range && intent.activeFilters?.releaseYear) {
-    filteredTracks = filteredTracks.filter(track => {
-      const year = track.release_year || (track.album?.release_date ? parseInt(track.album.release_date.substring(0, 4)) : null);
-      return year ? (year >= intent.release_year_range.min && year <= intent.release_year_range.max) : true;
-    });
-    console.log(`After release year filtering: ${filteredTracks.length} tracks`);
-  }
-
-  // Apply BPM filter if active
-  if (intent.bpm_range && intent.activeFilters?.bpm) {
-    filteredTracks = filteredTracks.filter(track => {
-      const bpm = track.audio_features?.tempo || track.audio_features?.bpm;
-      return bpm ? (bpm >= intent.bpm_range.min && bpm <= intent.bpm_range.max) : true;
-    });
-    console.log(`After BPM filtering: ${filteredTracks.length} tracks`);
-  }
-
-  return filteredTracks;
 }
