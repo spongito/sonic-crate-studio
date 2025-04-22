@@ -1,7 +1,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { JobStatus, IntentAnalysis } from '@/types/job';
-import { IntentService } from '@/lib/intentParser';
+import { IntentParser } from '@/lib/intent/parser';
 
 /**
  * Process a job by getting the job details, analyzing the intent,
@@ -25,9 +25,13 @@ export async function processJob(supabase: SupabaseClient, jobId: string) {
       .update({ status: 'processing' as JobStatus })
       .eq('id', jobId);
 
-    // 2. Parse intent using our existing IntentService
-    const jobType = IntentService.classifyIntent(job.prompt);
-    const intent = IntentService.analyzeIntent(job.prompt, jobType);
+    // 2. Parse intent using our IntentParser
+    const inputs = {
+      prompt: job.prompt,
+      platforms: job.settings?.platforms || ['spotify', 'youtube'],
+      advancedParams: job.settings
+    };
+    const intent = IntentParser.parse(inputs);
     console.log(`Intent analyzed for job ${jobId}:`, intent);
 
     // 3. Process tracks by calling the edge function

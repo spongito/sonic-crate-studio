@@ -64,10 +64,10 @@ describe('IntentParser', () => {
         prompt: 'chill mix',
         advancedParams: {
           commercialFactor: 75,
-          releaseYearRange: [2000, 2020] as [number, number],
+          releaseYearRange: [2000, 2020] as [number, number], // Explicitly cast as tuple
           genre: 'jazz',
           locations: ['US'],
-          bpmRange: [60, 120] as [number, number],
+          bpmRange: [60, 120] as [number, number], // Explicitly cast as tuple
           activeFilters: {
             genre: true,
             location: true,
