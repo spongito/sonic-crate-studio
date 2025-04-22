@@ -24,12 +24,21 @@ interface LibraryTracksResult {
   tracksToShow: Track[];
 }
 
+// Safe environment checks that work in browser
+const isDevelopment = typeof window !== 'undefined' 
+  ? window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  : false;
+
+// We can safely check this at runtime since it will be replaced with the actual value during build
+const isDebugEnabled = false;
+
 export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
   const { user } = useAuth();
   const logger = useLogger("useLibraryTracks");
   
   const fetchTracks = useCallback(async (): Promise<LibraryTracksResult> => {
-    if (process.env.NODE_ENV !== 'production') {
+    // Use non-process based checks for timing
+    if (isDevelopment) {
       console.time('fetchTracks');
     }
     
@@ -40,7 +49,7 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
     // Set timeout of 10 seconds
     const timeoutId = setTimeout(() => {
       controller.abort();
-      if (process.env.NODE_ENV !== 'production') {
+      if (isDevelopment) {
         console.warn('Library tracks fetch timeout after 10s');
       }
     }, 10000);
@@ -100,14 +109,20 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
       
       // IMPORTANT: Only use explain in development mode with explicit debug flag
       // This was causing the header issue in the production environment
-      if (process.env.NODE_ENV !== 'production' && process.env.DEBUG_SUPABASE_PLAN === 'true') {
+      if (isDevelopment && isDebugEnabled) {
         logger.info('Debug mode: Executing query explain plan');
-        const { data: explainData, error: explainError } = await historyQuery.explain({ analyze: true });
+        const explainQuery = historyQuery.explain({ analyze: true });
         
-        if (explainError) {
-          console.error('Query explain error:', explainError);
-        } else {
-          console.log('Query explain plan:', explainData);
+        try {
+          const { data: explainData, error: explainError } = await explainQuery;
+          
+          if (explainError) {
+            console.error('Query explain error:', explainError);
+          } else {
+            console.log('Query explain plan:', explainData);
+          }
+        } catch (explainErr) {
+          console.error('Error executing explain plan:', explainErr);
         }
       }
       
@@ -167,7 +182,7 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
       throw error;
     } finally {
       clearTimeout(timeoutId);
-      if (process.env.NODE_ENV !== 'production') {
+      if (isDevelopment) {
         console.timeEnd('fetchTracks');
       }
     }
