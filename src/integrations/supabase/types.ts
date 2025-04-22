@@ -9,6 +9,89 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      job_events: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          job_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          job_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          audio_features: Json | null
+          created_at: string
+          error_message: string | null
+          genres: string[] | null
+          id: string
+          job_type: string | null
+          name: string
+          partial: boolean | null
+          prompt: string | null
+          results: Json | null
+          settings: Json | null
+          status: string
+          updated_at: string
+          user_username: string | null
+        }
+        Insert: {
+          audio_features?: Json | null
+          created_at?: string
+          error_message?: string | null
+          genres?: string[] | null
+          id?: string
+          job_type?: string | null
+          name: string
+          partial?: boolean | null
+          prompt?: string | null
+          results?: Json | null
+          settings?: Json | null
+          status?: string
+          updated_at?: string
+          user_username?: string | null
+        }
+        Update: {
+          audio_features?: Json | null
+          created_at?: string
+          error_message?: string | null
+          genres?: string[] | null
+          id?: string
+          job_type?: string | null
+          name?: string
+          partial?: boolean | null
+          prompt?: string | null
+          results?: Json | null
+          settings?: Json | null
+          status?: string
+          updated_at?: string
+          user_username?: string | null
+        }
+        Relationships: []
+      }
       liked_tracks: {
         Row: {
           created_at: string
@@ -288,16 +371,25 @@ export type Database = {
           bpm: number | null
           created_at: string
           danceability: number | null
+          duration: string | null
+          duration_seconds: number | null
           energy: number | null
           external_url: string
           genre: string[] | null
           id: string
           image_url: string | null
           instrumentalness: number | null
+          is_explicit: boolean | null
+          job_id: string | null
           key_signature: string | null
+          label: string | null
+          language: string | null
+          mood: string[] | null
           platform: Database["public"]["Enums"]["platform_type"]
+          play_count: number | null
           popularity: number | null
           preview_url: string | null
+          release_date: string | null
           release_year: number | null
           spotify_id: string | null
           title: string
@@ -311,16 +403,25 @@ export type Database = {
           bpm?: number | null
           created_at?: string
           danceability?: number | null
+          duration?: string | null
+          duration_seconds?: number | null
           energy?: number | null
           external_url: string
           genre?: string[] | null
           id?: string
           image_url?: string | null
           instrumentalness?: number | null
+          is_explicit?: boolean | null
+          job_id?: string | null
           key_signature?: string | null
+          label?: string | null
+          language?: string | null
+          mood?: string[] | null
           platform?: Database["public"]["Enums"]["platform_type"]
+          play_count?: number | null
           popularity?: number | null
           preview_url?: string | null
+          release_date?: string | null
           release_year?: number | null
           spotify_id?: string | null
           title: string
@@ -334,23 +435,40 @@ export type Database = {
           bpm?: number | null
           created_at?: string
           danceability?: number | null
+          duration?: string | null
+          duration_seconds?: number | null
           energy?: number | null
           external_url?: string
           genre?: string[] | null
           id?: string
           image_url?: string | null
           instrumentalness?: number | null
+          is_explicit?: boolean | null
+          job_id?: string | null
           key_signature?: string | null
+          label?: string | null
+          language?: string | null
+          mood?: string[] | null
           platform?: Database["public"]["Enums"]["platform_type"]
+          play_count?: number | null
           popularity?: number | null
           preview_url?: string | null
+          release_date?: string | null
           release_year?: number | null
           spotify_id?: string | null
           title?: string
           updated_at?: string
           valence?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tracks_master_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_track_history: {
         Row: {
@@ -439,6 +557,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_job_event: {
+        Args: { p_job_id: string; p_event_type: string; p_event_data: Json }
+        Returns: string
+      }
       get_most_common_genre: {
         Args: { user_uuid: string }
         Returns: string
