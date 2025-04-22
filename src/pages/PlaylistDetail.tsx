@@ -4,13 +4,14 @@ import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { PlaylistTracksTable } from "@/components/Playlists/PlaylistTracksTable/PlaylistTracksTable";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PlaylistActions } from "@/components/Playlists/PlaylistActions/PlaylistActions";
 import { type Playlist } from "@/components/Playlists/types";
+import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
+import type { Track } from "@/types/table";
 
 const PlaylistDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +46,26 @@ const PlaylistDetail = () => {
           return;
         }
         
-        setPlaylist(data as Playlist);
+        // Transform the results JSON into Track[] format
+        const transformedResults = data.results ? (data.results as any[]).map((track: any): Track => ({
+          id: track.spotify_id || track.youtube_id || track.id,
+          title: track.title,
+          artist: Array.isArray(track.artist) ? track.artist : [track.artist],
+          album: track.album,
+          platform: track.platform,
+          image_url: track.cover_url || track.image_url,
+          bpm: track.audio_features?.bpm || null,
+          key_signature: track.key_signature,
+          genre: track.genre,
+          release_year: track.release_year,
+          duration: track.duration,
+          platform_url: track.platform_url || track.external_url,
+        })) : [];
+
+        setPlaylist({
+          ...data,
+          results: transformedResults,
+        } as Playlist);
       } catch (error) {
         console.error("Error fetching playlist:", error);
         toast.error("Failed to load playlist details");
@@ -74,7 +94,6 @@ const PlaylistDetail = () => {
       }
       
       toast.success("Playlist deleted successfully");
-      // Navigate back to playlists page
       window.location.href = "/playlists";
     } catch (error) {
       console.error("Error deleting playlist:", error);
@@ -118,7 +137,7 @@ const PlaylistDetail = () => {
               {/* Playlist Cover Image */}
               <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg">
                 <img 
-                  src={playlist.cover_url || "/placeholder.svg"} 
+                  src={playlist.results[0]?.image_url || "/placeholder.svg"} 
                   alt={playlist.name}
                   className="w-full h-full object-cover"
                 />
@@ -158,7 +177,12 @@ const PlaylistDetail = () => {
             {/* Tracks Table */}
             <div>
               <h2 className="text-xl font-bold mb-4">Tracks</h2>
-              <PlaylistTracksTable tracks={playlist.results || []} />
+              <GeneratedPlaylistTable 
+                tracks={playlist.results || []}
+                showControls={false}
+                fullWidth={true}
+                playlistName={playlist.name}
+              />
             </div>
           </div>
         ) : null}
