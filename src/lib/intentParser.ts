@@ -1,26 +1,7 @@
-import { JobType } from '@/types/job';
 import { activityMappings } from '@/lib/activityMapping';
+import { JobType } from '@/types/job';
 
-export interface Intent {
-  prompt: string;
-  platforms: ('spotify' | 'youtube_audio')[];
-  seeds?: { 
-    artists?: string[]; 
-    tracks?: string[] 
-  };
-  filters?: {
-    commercialBalance?: number;
-    releaseYearRange?: [number, number];
-    genres?: string[];
-    location?: string;
-    bpmRange?: [number, number];
-  };
-}
-
-export type IntentType = 'artist_search' | 'track_search' | 'theme_search' | 'activity_search';
-export type ParsedIntent = Intent & { type: IntentType };
-
-interface UIInputs {
+export interface UIInputs {
   prompt: string;
   platforms?: ('spotify' | 'youtube_audio')[];
   advancedParams?: {
@@ -42,24 +23,40 @@ interface UIInputs {
   };
 }
 
-interface IntentAnalysis {
-  type: IntentType;
-  genres: string[];
-  energy: number;
-  valence: number;
-  bpm_range?: { min: number; max: number };
+export interface Intent {
+  prompt: string;
+  platforms: ('spotify' | 'youtube_audio')[];
+  seeds?: { 
+    artists?: string[]; 
+    tracks?: string[] 
+  };
+  filters?: {
+    commercialBalance?: number;
+    releaseYearRange?: [number, number];
+    genres?: string[];
+    location?: string;
+    bpmRange?: [number, number];
+  };
 }
 
+export type IntentType = 'artist_search' | 'track_search' | 'theme_search' | 'activity_search';
+export type ParsedIntent = Intent & { type: IntentType };
+
 export class IntentService {
-  static classifyIntent(prompt: string): JobType {
+  /**
+   * Classifies the input prompt into one of four intent types
+   */
+  static classifyIntent(prompt: string): IntentType {
     const lowercasePrompt = prompt.toLowerCase();
 
+    // Check for explicit artist/track search indicators
     if (lowercasePrompt.includes('by') || 
         lowercasePrompt.includes('song') || 
         lowercasePrompt.includes('track')) {
       return 'track_search';
     }
 
+    // Check for activity-based search
     const activityKeywords = Object.keys(activityMappings);
     for (const activity of activityKeywords) {
       if (lowercasePrompt.includes(activity)) {
@@ -67,9 +64,13 @@ export class IntentService {
       }
     }
 
+    // Default to theme search
     return 'theme_search';
   }
 
+  /**
+   * Main function to parse UI inputs into a normalized intent object
+   */
   static parse(inputs: UIInputs): ParsedIntent {
     const type = this.classifyIntent(inputs.prompt);
     const baseIntent: Intent = {
@@ -77,10 +78,12 @@ export class IntentService {
       platforms: inputs.platforms || ['spotify', 'youtube_audio']
     };
 
+    // Process advanced filters if present
     if (inputs.advancedParams) {
       const filters: Intent['filters'] = {};
       const { activeFilters } = inputs.advancedParams;
 
+      // Only include filters that are explicitly toggled on
       if (activeFilters.commercial && inputs.advancedParams.commercialFactor !== undefined) {
         filters.commercialBalance = inputs.advancedParams.commercialFactor / 100;
       }
@@ -106,6 +109,7 @@ export class IntentService {
       }
     }
 
+    // Add type-specific processing
     switch (type) {
       case 'artist_search':
         return {
@@ -151,68 +155,6 @@ export class IntentService {
     }
   }
 
-  public static analyzeIntent(prompt: string, jobType: JobType): IntentAnalysis {
-    switch (jobType) {
-      case 'activity_search':
-        return this.analyzeActivityIntent(prompt);
-      case 'track_search':
-        return this.analyzeTrackIntent(prompt);
-      case 'theme_search':
-        return this.analyzeThemeIntent(prompt);
-      default:
-        return this.defaultIntent();
-    }
-  }
-
-  private static analyzeActivityIntent(prompt: string): IntentAnalysis {
-    const lowercasePrompt = prompt.toLowerCase();
-    
-    const activities = Object.keys(activityMappings);
-    const matchedActivity = activities.find(activity => 
-      lowercasePrompt.includes(activity)
-    );
-
-    if (matchedActivity) {
-      const activityDetails = activityMappings[matchedActivity];
-      return {
-        type: 'activity_search',
-        genres: activityDetails.genres,
-        bpm_range: activityDetails.bpm_range,
-        energy: activityDetails.energy,
-        valence: activityDetails.valence
-      };
-    }
-
-    return this.defaultIntent();
-  }
-
-  private static analyzeTrackIntent(prompt: string): IntentAnalysis {
-    return {
-      type: 'track_search',
-      genres: [],
-      energy: 0.5,
-      valence: 0.5
-    };
-  }
-
-  private static analyzeThemeIntent(prompt: string): IntentAnalysis {
-    return {
-      type: 'theme_search',
-      genres: [],
-      energy: 0.5,
-      valence: 0.5
-    };
-  }
-
-  private static defaultIntent(): IntentAnalysis {
-    return {
-      type: 'theme_search',
-      genres: [],
-      energy: 0.5,
-      valence: 0.5
-    };
-  }
-
   private static extractPossibleArtists(prompt: string): string[] {
     // Implement logic to extract possible artists from the prompt
     return [];
@@ -223,23 +165,17 @@ export class IntentService {
     return [];
   }
 
-  private static extractMoodWords(prompt: string): string[] {
-    // Implement logic to extract mood words from the prompt
-    return [];
+  private static detectActivity(prompt: string): string | null {
+    const promptLower = prompt.toLowerCase();
+    for (const activity of Object.keys(activityMappings)) {
+      if (promptLower.includes(activity)) {
+        return activity;
+      }
+    }
+    return null;
   }
 
-  private static extractGenre(prompt: string): string {
-    // Implement logic to extract genre from the prompt
-    return '';
-  }
-
-  private static extractKeywords(prompt: string): string[] {
-    // Implement logic to extract keywords from the prompt
-    return [];
-  }
-
-  private static detectActivity(prompt: string): string {
-    // Implement logic to detect activity from the prompt
-    return '';
+  public static analyzeIntent(prompt: string, jobType: JobType): any {
+    throw new Error("Method not implemented.");
   }
 }
