@@ -45,13 +45,17 @@ export const useTrackOperations = (userId: string | undefined) => {
       // Transform the joined data into the expected Track format
       // Ensuring all required fields are present
       const likedTracks: Track[] = likedTracksData.map(item => {
-        // Make sure to set the required duration property
-        const duration = item.tracks_master.duration || '';
+        // Calculate formatted duration if available, otherwise use default format
+        let formattedDuration = "0:00";
+        
+        if (item.tracks_master.duration_seconds) {
+          formattedDuration = formatDuration({ duration_seconds: item.tracks_master.duration_seconds });
+        }
         
         return {
           ...item.tracks_master,
           // Ensure required properties from Track interface are present
-          duration: duration,
+          duration: formattedDuration,
           liked: true,
           id: item.track_id,
           artist: item.tracks_master.artist || '',

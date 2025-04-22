@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import TrackLikeButton from '@/components/TrackLikeButton';
-import { formatDuration } from '@/lib/utils';
 import { useTracks } from '@/context/TracksContext';
 
 export const RecentlyLikedTracks: React.FC = () => {
@@ -10,14 +9,6 @@ export const RecentlyLikedTracks: React.FC = () => {
   
   // Take only the 5 most recent liked tracks
   const recentLikedTracks = likedTracks.slice(0, 5);
-
-  // Helper function to handle duration formatting
-  const handleDurationFormat = (duration: string | number): string => {
-    if (typeof duration === 'number') {
-      return formatDuration(duration);
-    }
-    return duration;
-  };
 
   return (
     <div className="space-y-3">
@@ -73,7 +64,7 @@ export const RecentlyLikedTracks: React.FC = () => {
                   )}
                   {track.duration && (
                     <span className="text-xs bg-white/10 px-2 py-1 rounded">
-                      {handleDurationFormat(track.duration)}
+                      {track.duration}
                     </span>
                   )}
                 </div>

@@ -4,7 +4,7 @@
  */
 export const formatDuration = (track: any): string => {
   // If track already has a duration string, use it
-  if (typeof track.duration === 'string') {
+  if (typeof track.duration === 'string' && track.duration) {
     return track.duration;
   }
   
