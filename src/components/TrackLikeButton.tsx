@@ -42,7 +42,7 @@ export default function TrackLikeButton({
       setIsLiked(newLikedState);
       
       // Call the toggleLike function from context
-      await toggleLike(trackId, newLikedState);
+      await toggleLike(trackId, !newLikedState);
       
       // If onToggle callback exists, call it
       if (onToggle) {

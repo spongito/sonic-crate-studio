@@ -41,7 +41,21 @@ export function useUserLikedTracks({
       }
 
       try {
-        // Step 1: Get user's liked track IDs
+        // Get user's track history
+        const { data: historyTracks, error: historyError } = await supabase
+          .from("user_track_history")
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false });
+
+        if (historyError) {
+          logger.error("Error loading track history:", historyError);
+          return [];
+        }
+
+        logger.info(`Found ${historyTracks.length} history tracks`);
+
+        // Get user's liked tracks
         const { data: likedTracksData, error: likedError } = await supabase
           .from("liked_tracks")
           .select("track_id")
@@ -53,35 +67,15 @@ export function useUserLikedTracks({
         }
 
         logger.info(`Found ${likedTracksData.length} liked tracks`);
-        
-        if (likedTracksData.length === 0) {
-          return [];
-        }
-
-        // Create a list of track IDs to fetch
-        const likedTrackIds = likedTracksData.map(lt => lt.track_id);
-        
-        // Step 2: Get the full track details from user_track_history
-        const { data: historyTracks, error: historyError } = await supabase
-          .from("user_track_history")
-          .select("*")
-          .in("track_id", likedTrackIds);
-
-        if (historyError) {
-          logger.error("Error loading track history:", historyError);
-          return [];
-        }
-
-        logger.info(`Found ${historyTracks?.length || 0} matching tracks in history`);
 
         // Create a Set of liked track IDs for easy lookup
-        const likedTrackIdSet = new Set(likedTrackIds);
+        const likedTrackIds = new Set(likedTracksData.map(lt => lt.track_id));
 
         // Transform history tracks and add liked status
         let tracks = historyTracks.map(track => ({
           ...track,
           id: track.track_id,
-          liked: likedTrackIdSet.has(track.track_id),
+          liked: likedTrackIds.has(track.track_id),
           // Make sure all necessary fields are passed along
           created_at: track.created_at,
           // Safely handle duration - use a default format if not available

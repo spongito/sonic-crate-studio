@@ -5,12 +5,6 @@ import { Track } from '@/types/table';
 import { useLogger } from '@/hooks/useLogger';
 import { formatDuration } from '@/utils/trackUtils';
 
-// Helper function to validate if a string is a valid UUID
-const isValidUUID = (str: string) => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-};
-
 export const useTrackOperations = (userId: string | undefined) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -27,59 +21,55 @@ export const useTrackOperations = (userId: string | undefined) => {
       setIsLoading(true);
       logger.info('Fetching user tracks');
 
-      const { data: likedTracksData, error: likedError } = await supabase
+      // Get user's track history
+      const { data: historyTracks, error: historyError } = await supabase
+        .from("user_track_history")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (historyError) {
+        logger.error('Error loading track history:', historyError);
+        setError(historyError);
+        return { allTracks: [], recentTracks: [], likedTracks: [] };
+      }
+
+      logger.info(`Found ${historyTracks.length} history tracks`);
+
+      // Get user's liked tracks (Join with user_track_history to get full track details)
+      const { data: likedTracksJoin, error: likedError } = await supabase
         .from("liked_tracks")
         .select(`
           track_id,
-          tracks_master (*)
+          user_track_history!inner(*)
         `)
-        .eq("user_id", userId)
-        .order('created_at', { ascending: false });
+        .eq("user_id", userId);
 
       if (likedError) {
         logger.error('Error loading liked tracks:', likedError);
-        throw likedError;
+        setError(likedError);
+        return { allTracks: [], recentTracks: [], likedTracks: [] };
       }
-
-      // Transform the joined data into the expected Track format
-      const likedTracks: Track[] = likedTracksData.map(item => {
-        const trackMaster = item.tracks_master;
-        // Calculate formatted duration if available
-        let formattedDuration = trackMaster.duration || "0:00";
-        
-        if (!formattedDuration && trackMaster.duration_seconds) {
-          formattedDuration = formatDuration({ duration_seconds: trackMaster.duration_seconds });
-        }
-        
-        return {
-          ...trackMaster,
-          duration: formattedDuration,
-          liked: true,
-          id: item.track_id,
-          artist: Array.isArray(trackMaster.artist) ? trackMaster.artist : [trackMaster.artist || ''],
-          title: trackMaster.title || '',
-          album: trackMaster.album || '',
-          platform: trackMaster.platform || '',
-          duration_seconds: trackMaster.duration_seconds,
-          key_signature: trackMaster.key_signature,
-          genre: trackMaster.genre || [],
-          release_year: trackMaster.release_year,
-          release_date: trackMaster.release_date,
-          mood: trackMaster.mood || [],
-          language: trackMaster.language,
-          label: trackMaster.label,
-          is_explicit: trackMaster.is_explicit || false,
-          play_count: trackMaster.play_count || 0
-        } as Track;
-      });
-
-      logger.info(`Found ${likedTracks.length} liked tracks`);
       
-      return { 
-        allTracks: likedTracks, 
-        recentTracks: likedTracks.slice(0, 10), 
-        likedTracks 
-      };
+      // Extract track IDs from the liked tracks response
+      const likedTrackIds = new Set(likedTracksJoin.map(lt => lt.track_id));
+      
+      // Process history tracks and mark liked ones
+      const processedTracks = historyTracks.map(track => ({
+        ...track,
+        id: track.track_id,
+        liked: likedTrackIds.has(track.id || track.track_id),
+        created_at: track.created_at,
+        duration: formatDuration(track)
+      }));
+
+      // Get recent tracks (10 most recent)
+      const recentTracks = processedTracks.slice(0, 10);
+      
+      // Get liked tracks
+      const likedTracks = processedTracks.filter(track => track.liked);
+
+      return { allTracks: processedTracks, recentTracks, likedTracks };
     } catch (err) {
       const error = err as Error;
       logger.error('Unexpected error fetching tracks:', error);
@@ -99,6 +89,22 @@ export const useTrackOperations = (userId: string | undefined) => {
     try {
       logger.info(`Toggling like for track ${trackId}, current liked state: ${liked}`);
       
+      // First, we need to find the corresponding record in user_track_history
+      const { data: trackData, error: trackError } = await supabase
+        .from("user_track_history")
+        .select("id")
+        .eq("track_id", trackId)
+        .maybeSingle();
+        
+      if (trackError) {
+        throw new Error(`Error finding track with ID ${trackId}: ${trackError.message}`);
+      }
+      
+      if (!trackData) {
+        throw new Error(`No track found with ID ${trackId}`);
+      }
+
+      // Use the internal ID from user_track_history to manipulate liked_tracks
       if (!liked) {
         // Like: Add to liked_tracks
         const { error } = await supabase

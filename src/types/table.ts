@@ -10,21 +10,15 @@ export type Track = {
   genre: string | string[] | null;
   year?: number;
   release_year?: number;
-  release_date?: string;
-  duration: string;
-  duration_seconds?: number;
+  duration: string | number;
   albumArt?: string;
   image_url?: string;
   platform: string | string[];
   liked?: boolean;
   platform_url?: string;
   spotify_id?: string;
-  created_at?: string;
-  mood?: string[];
-  language?: string;
-  label?: string;
-  is_explicit?: boolean;
-  play_count?: number;
+  created_at?: string; // Add this to fix the type error
+  duration_seconds?: number; // Add this to support duration calculation
 };
 
 export type GeneratedTrack = Track;
