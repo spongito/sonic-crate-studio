@@ -7,7 +7,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
@@ -25,8 +24,9 @@ export function PlaylistActions({ onShare, onDelete, playlistId }: PlaylistActio
       {onDelete && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <Trash2 className="h-4 w-4 text-black hover:text-neutral-700" />
+            <Button variant="outline" size="sm" className="gap-2">
+              <Trash2 className="h-4 w-4" />
+              Delete
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -36,12 +36,12 @@ export function PlaylistActions({ onShare, onDelete, playlistId }: PlaylistActio
                 This action cannot be undone. This will permanently delete your playlist.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <div className="flex justify-end gap-2">
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={() => onDelete(playlistId)}>
                 Delete
               </AlertDialogAction>
-            </AlertDialogFooter>
+            </div>
           </AlertDialogContent>
         </AlertDialog>
       )}
