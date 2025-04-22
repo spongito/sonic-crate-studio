@@ -24,9 +24,8 @@ export function PlaylistActions({ onShare, onDelete, playlistId }: PlaylistActio
       {onDelete && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="icon" className="gap-2">
               <Trash2 className="h-4 w-4" />
-              Delete
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
