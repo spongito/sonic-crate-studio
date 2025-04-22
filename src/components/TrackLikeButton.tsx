@@ -3,6 +3,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, Plus } from "lucide-react";
 import { useTracks } from "@/context/TracksContext";
+import { toast } from "@/components/ui/use-toast";
 
 interface TrackLikeButtonProps {
   trackId: string;
@@ -20,15 +21,48 @@ export default function TrackLikeButton({
   showAddToLibrary = false
 }: TrackLikeButtonProps) {
   const { toggleLike } = useTracks();
+  const [isLiked, setIsLiked] = React.useState<boolean>(liked);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
-  const handleLikeClick = async () => {
+  // Update internal state when the liked prop changes
+  React.useEffect(() => {
+    setIsLiked(liked);
+  }, [liked]);
+
+  const handleLikeClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isLoading) return;
+    
+    setIsLoading(true);
     try {
-      await toggleLike(trackId, !liked);
+      // Toggle the local state immediately for a more responsive feel
+      setIsLiked(!isLiked);
+      
+      // Call the toggleLike function from context
+      await toggleLike(trackId, !isLiked);
+      
+      // If onToggle callback exists, call it
       if (onToggle) {
-        onToggle(trackId, !liked);
+        onToggle(trackId, !isLiked);
       }
+      
+      toast({
+        description: isLiked ? "Removed from liked tracks" : "Added to liked tracks",
+        duration: 2000,
+      });
     } catch (error) {
       console.error('Error toggling like:', error);
+      // Revert the local state if there was an error
+      setIsLiked(isLiked);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update liked status",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -36,12 +70,13 @@ export default function TrackLikeButton({
     <div className="flex items-center gap-1">
       <button
         onClick={handleLikeClick}
-        className={`ml-3 p-1 rounded-full ${liked ? "text-gold" : "text-white/50"} hover:text-gold transition-colors`}
-        title={liked ? "Unlike" : "Like"}
+        disabled={isLoading}
+        className={`ml-3 p-1 rounded-full ${isLiked ? "text-gold" : "text-white/50"} hover:text-gold transition-colors ${isLoading ? 'opacity-50' : ''}`}
+        title={isLiked ? "Unlike" : "Like"}
       >
         <Heart 
-          fill={liked ? "#DBB13B" : "none"} 
-          className="w-6 h-6" 
+          fill={isLiked ? "#DBB13B" : "none"} 
+          className={`w-6 h-6 ${isLoading ? 'animate-pulse' : ''}`} 
         />
       </button>
       

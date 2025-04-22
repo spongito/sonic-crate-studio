@@ -88,22 +88,60 @@ export const useTrackOperations = (userId: string | undefined) => {
     try {
       logger.info(`Toggling like for track ${trackId}, current state: ${liked}`);
       
-      if (liked) {
-        // Unlike: Remove from liked_tracks
-        const { error } = await supabase
-          .from("liked_tracks")
-          .delete()
-          .eq("user_id", userId)
-          .eq("track_id", trackId);
+      // Important change: Check if the trackId is already a UUID
+      // Spotify IDs, YouTube IDs, etc. are not valid UUIDs so we need to handle them differently
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trackId)) {
+        // For non-UUID trackIds, we need to query the track's UUID from the tracks_master table
+        const { data: trackData, error: trackError } = await supabase
+          .from("user_track_history")
+          .select("id")
+          .eq("track_id", trackId)
+          .single();
           
-        if (error) throw error;
+        if (trackError) {
+          throw new Error(`Cannot find track with ID ${trackId}: ${trackError.message}`);
+        }
+        
+        if (!trackData) {
+          throw new Error(`No track found with ID ${trackId}`);
+        }
+        
+        if (!liked) {
+          // Like: Add to liked_tracks using the database UUID, not the external ID
+          const { error } = await supabase
+            .from("liked_tracks")
+            .insert({ user_id: userId, track_id: trackData.id });
+            
+          if (error) throw error;
+        } else {
+          // Unlike: Remove from liked_tracks
+          const { error } = await supabase
+            .from("liked_tracks")
+            .delete()
+            .eq("user_id", userId)
+            .eq("track_id", trackData.id);
+            
+          if (error) throw error;
+        }
       } else {
-        // Like: Add to liked_tracks
-        const { error } = await supabase
-          .from("liked_tracks")
-          .insert({ user_id: userId, track_id: trackId });
-          
-        if (error) throw error;
+        // If it's already a valid UUID, use it directly
+        if (!liked) {
+          // Like: Add to liked_tracks
+          const { error } = await supabase
+            .from("liked_tracks")
+            .insert({ user_id: userId, track_id: trackId });
+            
+          if (error) throw error;
+        } else {
+          // Unlike: Remove from liked_tracks
+          const { error } = await supabase
+            .from("liked_tracks")
+            .delete()
+            .eq("user_id", userId)
+            .eq("track_id", trackId);
+            
+          if (error) throw error;
+        }
       }
       
       logger.success(`Successfully toggled like for track ${trackId}`);
@@ -120,4 +158,3 @@ export const useTrackOperations = (userId: string | undefined) => {
     toggleLike
   };
 };
-
