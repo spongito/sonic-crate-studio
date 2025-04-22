@@ -1,7 +1,8 @@
 
-import { IntentService, type UIInputs } from './intentParser';
+import { IntentParser } from './intent/parser';
+import type { UIInputs } from './intent/types';
 
-describe('IntentService', () => {
+describe('IntentParser', () => {
   describe('parse', () => {
     const defaultInputs: UIInputs = {
       prompt: '',
@@ -24,7 +25,7 @@ describe('IntentService', () => {
         prompt: 'drake playlist'
       };
 
-      const result = IntentService.parse(inputs);
+      const result = IntentParser.parse(inputs);
 
       expect(result.type).toBe('artist_search');
       expect(result.seeds?.artists).toBeDefined();
@@ -37,7 +38,7 @@ describe('IntentService', () => {
         prompt: 'golden hour vibe'
       };
 
-      const result = IntentService.parse(inputs);
+      const result = IntentParser.parse(inputs);
 
       expect(result.type).toBe('theme_search');
       expect(result.seeds).toBeUndefined();
@@ -50,7 +51,7 @@ describe('IntentService', () => {
         prompt: 'workout mix'
       };
 
-      const result = IntentService.parse(inputs);
+      const result = IntentParser.parse(inputs);
 
       expect(result.type).toBe('activity_search');
       expect(result.filters?.genres).toBeDefined();
@@ -63,10 +64,10 @@ describe('IntentService', () => {
         prompt: 'chill mix',
         advancedParams: {
           commercialFactor: 75,
-          releaseYearRange: [2000, 2020],
+          releaseYearRange: [2000, 2020] as [number, number],
           genre: 'jazz',
           locations: ['US'],
-          bpmRange: [60, 120],
+          bpmRange: [60, 120] as [number, number],
           activeFilters: {
             genre: true,
             location: true,
@@ -78,7 +79,7 @@ describe('IntentService', () => {
         }
       };
 
-      const result = IntentService.parse(inputs);
+      const result = IntentParser.parse(inputs);
 
       expect(result.filters?.commercialBalance).toBe(0.75);
       expect(result.filters?.genres).toEqual(['jazz']);
