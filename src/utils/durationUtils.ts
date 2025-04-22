@@ -26,10 +26,3 @@ export const formatDuration = (track: any): string => {
   // Default duration if nothing is available
   return "0:00";
 };
-
-/**
- * Convert milliseconds to seconds
- */
-export const msToSeconds = (ms: number): number => {
-  return Math.floor(ms / 1000);
-};

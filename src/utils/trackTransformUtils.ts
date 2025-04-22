@@ -1,6 +1,5 @@
-
 import { Track } from '@/types/table';
-import { formatDuration } from './trackUtils';
+import { formatDuration } from './durationUtils';
 
 export const transformHistoryTrack = (historyTrack: any, likedTrackIdSet: Set<string>): Track => {
   const formattedDuration = historyTrack.duration_seconds 
@@ -56,4 +55,3 @@ export const transformMasterTrack = (masterTrack: any): Track => {
     play_count: masterTrack.play_count
   };
 };
-
