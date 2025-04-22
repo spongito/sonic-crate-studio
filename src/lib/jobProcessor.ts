@@ -2,8 +2,11 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { JobStatus, IntentAnalysis } from '@/types/job';
 import { IntentService } from '@/lib/intentParser';
-import { processTracksRequest } from '@/supabase/functions/process-music-request/tracks-processor';
 
+/**
+ * Process a job by getting the job details, analyzing the intent,
+ * and processing the music request
+ */
 export async function processJob(supabase: SupabaseClient, jobId: string) {
   try {
     // 1. Get job details and update status to processing
@@ -27,14 +30,21 @@ export async function processJob(supabase: SupabaseClient, jobId: string) {
     const intent = IntentService.analyzeIntent(job.prompt, jobType);
     console.log(`Intent analyzed for job ${jobId}:`, intent);
 
-    // 3. Process tracks using our existing processor
+    // 3. Process tracks by calling the edge function
     const platforms = job.settings?.platforms || ['spotify', 'youtube'];
-    const results = await processTracksRequest(
-      job.prompt,
-      job.settings || {},
-      platforms,
-      intent
-    );
+    
+    // Call the Supabase edge function to process the music request
+    const { data: results, error: processingError } = await supabase.functions.invoke('process-music-request', {
+      body: {
+        prompt: job.prompt,
+        advancedParams: job.settings || {},
+        platforms
+      }
+    });
+
+    if (processingError || !results) {
+      throw new Error(`Failed to process music request: ${processingError?.message || 'Unknown error'}`);
+    }
 
     // 4. Update job with results and completed status
     const { error: updateError } = await supabase
@@ -42,7 +52,7 @@ export async function processJob(supabase: SupabaseClient, jobId: string) {
       .update({
         status: 'completed' as JobStatus,
         results: results.tracks,
-        genres: results.intent.genres || [],
+        genres: results.intent?.genres || [],
         updated_at: new Date().toISOString()
       })
       .eq('id', jobId);
