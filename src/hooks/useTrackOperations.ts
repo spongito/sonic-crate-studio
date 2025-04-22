@@ -27,54 +27,35 @@ export const useTrackOperations = (userId: string | undefined) => {
       setIsLoading(true);
       logger.info('Fetching user tracks');
 
-      // Get user's track history
-      const { data: historyTracks, error: historyError } = await supabase
-        .from("user_track_history")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-
-      if (historyError) {
-        logger.error('Error loading track history:', historyError);
-        setError(historyError);
-        return { allTracks: [], recentTracks: [], likedTracks: [] };
-      }
-
-      logger.info(`Found ${historyTracks.length} history tracks`);
-
-      // Get user's liked tracks (directly query the liked_tracks table)
+      // Get liked tracks with full track information from tracks_master
       const { data: likedTracksData, error: likedError } = await supabase
-        .from("liked_tracks")
-        .select("track_id")
-        .eq("user_id", userId);
+        .from('liked_tracks')
+        .select(`
+          track_id,
+          tracks_master (*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
       if (likedError) {
         logger.error('Error loading liked tracks:', likedError);
-        setError(likedError);
-        return { allTracks: [], recentTracks: [], likedTracks: [] };
+        throw likedError;
       }
-      
-      // Extract track IDs from the liked tracks response
-      const likedTrackIds = new Set(likedTracksData.map(lt => lt.track_id));
-      
-      // Process history tracks and mark liked ones
-      const processedTracks = historyTracks.map(track => ({
-        ...track,
-        id: track.track_id,
-        liked: likedTrackIds.has(track.track_id),
-        created_at: track.created_at,
-        duration: formatDuration(track)
+
+      // Transform the joined data into the expected format
+      const likedTracks = likedTracksData.map(item => ({
+        ...item.tracks_master,
+        liked: true,
+        id: item.track_id
       }));
 
-      // Get recent tracks (10 most recent)
-      const recentTracks = processedTracks.slice(0, 10);
+      logger.info(`Found ${likedTracks.length} liked tracks`);
       
-      // Match liked tracks with full track information
-      const likedTracks = processedTracks.filter(track => 
-        likedTrackIds.has(track.track_id)
-      );
-
-      return { allTracks: processedTracks, recentTracks, likedTracks };
+      return { 
+        allTracks: likedTracks, 
+        recentTracks: likedTracks.slice(0, 10), 
+        likedTracks 
+      };
     } catch (err) {
       const error = err as Error;
       logger.error('Unexpected error fetching tracks:', error);

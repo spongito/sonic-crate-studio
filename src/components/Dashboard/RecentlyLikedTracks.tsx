@@ -16,7 +16,7 @@ export const RecentlyLikedTracks: React.FC = () => {
     if (typeof duration === 'number') {
       return formatDuration(duration);
     }
-    return duration; // If it's already a string, return as is
+    return duration;
   };
 
   return (
@@ -81,7 +81,7 @@ export const RecentlyLikedTracks: React.FC = () => {
                 <TrackLikeButton
                   trackId={track.id}
                   liked={true} 
-                  onToggle={(id, liked) => toggleLike(id, !liked)}
+                  onToggle={(id, liked) => toggleLike(id, liked)}
                 />
               </div>
             </div>
