@@ -13,7 +13,10 @@ interface LibraryContentProps {
 export function LibraryContent({ activeTab, tracks, onLikeToggle }: LibraryContentProps) {
   const logger = useLogger("LibraryContent");
   
-  logger.debug(`Rendering ${tracks.length} tracks for tab: ${activeTab}`);
+  logger.debug(`Rendering LibraryContent with tab: ${activeTab}, ${tracks.length} total tracks`);
+  
+  const likedTracks = tracks.filter(track => track.liked);
+  logger.debug(`Found ${likedTracks.length} liked tracks`);
   
   return (
     <Tabs value={activeTab}>
@@ -27,7 +30,7 @@ export function LibraryContent({ activeTab, tracks, onLikeToggle }: LibraryConte
 
       <TabsContent value="liked" className="space-y-4">
         <PaginatedTrackList
-          tracks={tracks.filter(track => track.liked)}
+          tracks={likedTracks}
           onLikeToggle={onLikeToggle}
           pageSize={15}
         />

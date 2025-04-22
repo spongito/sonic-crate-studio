@@ -27,57 +27,115 @@ export const useTrackOperations = (userId: string | undefined) => {
       setIsLoading(true);
       logger.info('Fetching user tracks');
 
-      const { data: likedTracksData, error: likedError } = await supabase
-        .from("liked_tracks")
-        .select(`
-          track_id,
-          tracks_master (*)
-        `)
+      // First, fetch all tracks saved in the user's history
+      const { data: historyTracks, error: historyError } = await supabase
+        .from("user_track_history")
+        .select("*")
         .eq("user_id", userId)
         .order('created_at', { ascending: false });
+      
+      if (historyError) {
+        logger.error('Error loading track history:', historyError);
+        throw historyError;
+      }
+
+      logger.info(`Found ${historyTracks?.length || 0} tracks in history`);
+
+      // Then, get liked track IDs for this user
+      const { data: likedTracksData, error: likedError } = await supabase
+        .from("liked_tracks")
+        .select("track_id")
+        .eq("user_id", userId);
 
       if (likedError) {
         logger.error('Error loading liked tracks:', likedError);
         throw likedError;
       }
 
-      // Transform the joined data into the expected Track format
-      const likedTracks: Track[] = likedTracksData.map(item => {
-        const trackMaster = item.tracks_master;
+      logger.info(`Found ${likedTracksData?.length || 0} liked tracks`);
+
+      // Create a Set of liked track IDs for easy lookup
+      const likedTrackIdSet = new Set(likedTracksData?.map(item => item.track_id) || []);
+      
+      // Transform history tracks into the Track format and mark liked tracks
+      const allTracks: Track[] = historyTracks?.map(track => {
         // Calculate formatted duration if available
-        let formattedDuration = trackMaster.duration || "0:00";
+        let formattedDuration = track.duration || "0:00";
         
-        if (!formattedDuration && trackMaster.duration_seconds) {
-          formattedDuration = formatDuration({ duration_seconds: trackMaster.duration_seconds });
+        if (!formattedDuration && track.duration_seconds) {
+          formattedDuration = formatDuration({ duration_seconds: track.duration_seconds });
         }
         
         return {
-          ...trackMaster,
+          ...track,
+          id: track.track_id || track.id,
+          liked: likedTrackIdSet.has(track.track_id || track.id),
           duration: formattedDuration,
-          liked: true,
-          id: item.track_id,
-          artist: Array.isArray(trackMaster.artist) ? trackMaster.artist : [trackMaster.artist || ''],
-          title: trackMaster.title || '',
-          album: trackMaster.album || '',
-          platform: trackMaster.platform || '',
-          duration_seconds: trackMaster.duration_seconds,
-          key_signature: trackMaster.key_signature,
-          genre: trackMaster.genre || [],
-          release_year: trackMaster.release_year,
-          release_date: trackMaster.release_date,
-          mood: trackMaster.mood || [],
-          language: trackMaster.language,
-          label: trackMaster.label,
-          is_explicit: trackMaster.is_explicit || false,
-          play_count: trackMaster.play_count || 0
-        } as Track;
-      });
-
-      logger.info(`Found ${likedTracks.length} liked tracks`);
+          title: track.title || '',
+          artist: Array.isArray(track.artist) ? track.artist : [track.artist || ''],
+          album: track.album || '',
+          platform: track.platform || '',
+          genre: track.genre ? (Array.isArray(track.genre) ? track.genre : [track.genre]) : [],
+          bpm: track.bpm || null,
+          key_signature: track.key_signature || undefined,
+          image_url: track.image_url || undefined
+        };
+      }) || [];
       
+      // Also fetch the full master track data for liked tracks if they weren't in history
+      if (likedTracksData && likedTracksData.length > 0) {
+        // Fetch full track details from tracks_master for liked tracks
+        const { data: masterTracks, error: masterError } = await supabase
+          .from("tracks_master")
+          .select("*")
+          .in("id", likedTracksData.map(item => item.track_id));
+
+        if (masterError) {
+          logger.error('Error loading master tracks:', masterError);
+          throw masterError;
+        }
+
+        // Create a map of track IDs we already have from history
+        const existingTrackIds = new Set(allTracks.map(t => t.id));
+
+        // Add any master tracks that aren't already in our list
+        masterTracks?.forEach(track => {
+          if (!existingTrackIds.has(track.id)) {
+            const formattedDuration = track.duration || 
+              (track.duration_seconds ? formatDuration({ duration_seconds: track.duration_seconds }) : "0:00");
+            
+            allTracks.push({
+              id: track.id,
+              title: track.title || '',
+              artist: Array.isArray(track.artist) ? track.artist : [track.artist || ''],
+              album: track.album || '',
+              platform: track.platform || '',
+              duration: formattedDuration,
+              duration_seconds: track.duration_seconds,
+              bpm: track.bpm || null,
+              genre: track.genre || [],
+              key_signature: track.key_signature,
+              release_year: track.release_year,
+              image_url: track.image_url,
+              liked: true, // These are from liked_tracks so they're definitely liked
+              mood: track.mood,
+              language: track.language,
+              label: track.label,
+              is_explicit: track.is_explicit,
+              play_count: track.play_count
+            });
+          }
+        });
+      }
+
+      // Get the liked tracks by filtering allTracks
+      const likedTracks = allTracks.filter(track => track.liked);
+      
+      logger.info(`Processed ${allTracks.length} total tracks and ${likedTracks.length} liked tracks`);
+
       return { 
-        allTracks: likedTracks, 
-        recentTracks: likedTracks.slice(0, 10), 
+        allTracks, 
+        recentTracks: allTracks.slice(0, 10), // Just take the 10 most recent tracks
         likedTracks 
       };
     } catch (err) {
@@ -97,7 +155,7 @@ export const useTrackOperations = (userId: string | undefined) => {
     }
 
     try {
-      logger.info(`Toggling like for track ${trackId}, current liked state: ${liked}`);
+      logger.info(`Toggling like for track ${trackId}, current state: ${!liked}`);
       
       if (!liked) {
         // Like: Add to liked_tracks
