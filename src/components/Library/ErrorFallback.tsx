@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useQueryClient } from "@tanstack/react-query";
-import { ReloadIcon } from "@radix-ui/react-icons";
+import { RefreshCw } from "lucide-react";
 import { useLogger } from "@/hooks/useLogger";
 
 interface ErrorFallbackProps {
@@ -40,7 +40,7 @@ export function ErrorFallback({ error, queryKey, children }: ErrorFallbackProps)
           
           <div className="flex gap-4 pt-2">
             <Button onClick={handleRetry} className="flex items-center gap-2">
-              <ReloadIcon className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
               Try Again
             </Button>
             

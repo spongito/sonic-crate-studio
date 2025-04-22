@@ -178,7 +178,6 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 1,
-    suspense: false,
     gcTime: 5 * 60 * 1000,
     meta: { requestStartedAt: Date.now() },
     enabled: !!user?.id
