@@ -80,7 +80,10 @@ export const RecentlyLikedTracks: React.FC = () => {
     <div className="space-y-3">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-white">Recently Liked Tracks</h2>
-        <Link to="/library/liked" className="text-xs text-gold hover:underline">
+        <Link 
+          to="/library?tab=liked" 
+          className="text-xs text-gold hover:underline"
+        >
           View All
         </Link>
       </div>
@@ -135,3 +138,4 @@ export const RecentlyLikedTracks: React.FC = () => {
     </div>
   );
 };
+
