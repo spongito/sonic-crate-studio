@@ -1,12 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { PlaylistActions } from "@/components/Playlists/PlaylistActions/PlaylistActions";
 import { type Playlist, type Track as PlaylistTrack } from "@/components/Playlists/types";
@@ -14,7 +11,9 @@ import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
 import type { Track } from "@/types/table";
 import { usePlaylistEdit } from "@/hooks/usePlaylistEdit";
 import { PlaylistEditModal } from "@/components/Playlists/PlaylistEditModal";
-import { Edit } from "lucide-react";
+import { PlaylistHeader } from "@/components/Playlists/PlaylistHeader/PlaylistHeader";
+import { LoadingState } from "@/components/Playlists/PlaylistDetail/LoadingState";
+import { NotFoundState } from "@/components/Playlists/PlaylistDetail/NotFoundState";
 
 // Helper function to convert playlist track to table track
 const convertPlaylistTracks = (playlistResults: any[]): Track[] => {
@@ -74,26 +73,22 @@ const PlaylistDetail = () => {
           return;
         }
         
-        // Check if the user is the owner of this playlist
         if (data.user_id !== user?.id) {
           setUnauthorized(true);
           return;
         }
         
-        // Transform the results JSON into Track[] format
         const processedResults = Array.isArray(data.results) 
           ? data.results 
           : (typeof data.results === 'string' ? JSON.parse(data.results) : []);
         
         const formattedPlaylist: Playlist = {
           ...data,
-          // Ensure results is processed as an array of Track objects
           results: processedResults as PlaylistTrack[],
         };
         
         setPlaylist(formattedPlaylist);
         
-        // Convert tracks for the table
         const transformedResults = processedResults ? convertPlaylistTracks(processedResults) : [];
         setTracks(transformedResults);
       } catch (error) {
@@ -139,15 +134,7 @@ const PlaylistDetail = () => {
     return (
       <DashboardLayout>
         <div className="container mx-auto px-4 py-12">
-          <div className="max-w-lg mx-auto text-center">
-            <h1 className="text-3xl font-bold mb-4 text-white">Playlist Not Found</h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              This playlist doesn't exist or has been removed.
-            </p>
-            <Button asChild>
-              <a href="/playlists">Back to Playlists</a>
-            </Button>
-          </div>
+          <NotFoundState />
         </div>
       </DashboardLayout>
     );
@@ -157,64 +144,24 @@ const PlaylistDetail = () => {
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <div className="h-12 w-12 rounded-full border-4 border-gold border-t-transparent animate-spin"></div>
-            <p className="mt-4 text-muted-foreground">Loading playlist...</p>
-          </div>
+          <LoadingState />
         ) : playlist ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
-              {/* Playlist Cover Image */}
-              <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg relative">
-                <img 
-                  src={(editedCoverUrl || (tracks[0]?.image_url || '')) || "/placeholder.svg"} 
-                  alt={playlist.name}
-                  className="w-full h-full object-cover"
-                />
-                {user?.id === playlist.user_id && (
-                  <Button 
-                    variant="secondary" 
-                    size="icon" 
-                    className="absolute top-2 right-2"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Edit className="w-5 h-5" />
-                  </Button>
-                )}
-              </div>
+            <PlaylistHeader
+              playlist={playlist}
+              tracks={tracks}
+              onEditClick={() => setIsEditing(true)}
+              coverImageUrl={editedCoverUrl || (tracks[0]?.image_url || '')}
+            />
 
-              {/* Playlist Info */}
-              <div className="space-y-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-white">{playlist.name}</h1>
-                  <p className="text-muted-foreground">
-                    {playlist.description || playlist.prompt}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                  <span>Created {format(new Date(playlist.created_at), "MMM d, yyyy")}</span>
-                  <span>•</span>
-                  <span>{tracks.length || 0} tracks</span>
-                  {playlist.genres && playlist.genres.length > 0 && (
-                    <>
-                      <span>•</span>
-                      <span>{playlist.genres.join(", ")}</span>
-                    </>
-                  )}
-                </div>
-
-                <PlaylistActions 
-                  playlistId={playlist.id} 
-                  onDelete={handleDelete}
-                  onShare={() => {}}
-                />
-              </div>
-            </div>
+            <PlaylistActions 
+              playlistId={playlist.id} 
+              onDelete={handleDelete}
+              onShare={() => {}}
+            />
 
             <Separator className="my-6" />
 
-            {/* Tracks Table */}
             <div>
               <h2 className="text-xl font-bold mb-4">Tracks</h2>
               <GeneratedPlaylistTable 
@@ -227,7 +174,6 @@ const PlaylistDetail = () => {
           </div>
         ) : null}
 
-        {/* Edit Modal */}
         {playlist && (
           <PlaylistEditModal 
             isOpen={isEditing}
@@ -235,10 +181,8 @@ const PlaylistDetail = () => {
             coverImageUrl={editedCoverUrl || ((tracks[0]?.image_url) || '')}
             onClose={() => setIsEditing(false)}
             onSave={(name, coverUrl) => {
-              // Update local state
               setEditedName(name);
               setEditedCoverUrl(coverUrl);
-              // Save to Supabase
               handleSaveChanges();
             }}
           />
