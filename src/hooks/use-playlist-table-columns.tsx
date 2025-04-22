@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -159,7 +158,7 @@ export function usePlaylistTableColumns({
       ),
       cell: ({ row }) => {
         const metric = row.original.social_metric;
-        if (!metric) return <span className="text-muted-foreground text-sm">N/A</span>;
+        if (!metric && metric !== 0) return <span className="text-muted-foreground text-sm">N/A</span>;
         
         return (
           <Badge variant="outline" className="bg-muted/30">
