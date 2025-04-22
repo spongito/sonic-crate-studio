@@ -1,20 +1,17 @@
 
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
-import { ViewToggle } from "./ViewToggle";
-import { SortControl, type SortOption } from "./SortControl";
-import { ListView } from "./ListView";
-import { toast } from "sonner";
+import { PlaylistCard } from "./PlaylistCard";
 import { PlaylistSkeleton } from "./PlaylistSkeleton";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export const PlaylistList = () => {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"grid" | "list">("grid");
-  // Update type to match SortOption from SortControl
-  const [sort, setSort] = useState<SortOption>("newest");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -27,23 +24,11 @@ export const PlaylistList = () => {
       try {
         setLoading(true);
         
-        let query = supabase
+        const { data, error } = await supabase
           .from("playlists")
           .select("*")
-          .eq("user_id", user.id); // Only fetch playlists for the logged-in user
-        
-        // Apply sorting based on SortOption
-        if (sort === "newest") {
-          query = query.order("created_at", { ascending: false });
-        } else if (sort === "oldest") {
-          query = query.order("created_at", { ascending: true });
-        } else if (sort === "name-asc") {
-          query = query.order("name", { ascending: true });
-        } else if (sort === "name-desc") {
-          query = query.order("name", { ascending: false });
-        }
-        
-        const { data, error } = await query;
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
         
         if (error) {
           console.error("Error fetching playlists:", error);
@@ -61,42 +46,43 @@ export const PlaylistList = () => {
     };
     
     fetchPlaylists();
-  }, [sort, user]);
-
-  const handlePlaylistClick = (playlist: any) => {
-    // Implement playlist click handler (e.g., open playlist viewer)
-    console.log("Playlist clicked:", playlist);
-  };
+  }, [user]);
   
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">
+          {playlists.length === 0 ? "No playlists yet" : `${playlists.length} Playlists`}
+        </h2>
+        <Link to="/music-finder">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Playlist
+          </Button>
+        </Link>
+      </div>
+      
       {loading ? (
-        <div className="space-y-6">
-          <PlaylistSkeleton count={3} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <PlaylistSkeleton count={6} />
+        </div>
+      ) : playlists.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Generate your first playlist to see it here.</p>
         </div>
       ) : (
-        <>
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">
-                {playlists.length === 0 ? "No playlists yet" : `${playlists.length} Playlists`}
-              </h2>
-            </div>
-            
-            <div className="flex gap-2">
-              <SortControl value={sort} onValueChange={setSort} />
-              <ViewToggle view={view} onViewChange={setView} />
-            </div>
-          </div>
-          
-          {playlists.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Generate your first playlist to see it here.</p>
-            </div>
-          ) : (
-            <ListView playlists={playlists} onPlaylistClick={handlePlaylistClick} />
-          )}
-        </>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {playlists.map((playlist) => (
+            <PlaylistCard
+              key={playlist.id}
+              id={playlist.id}
+              title={playlist.name}
+              coverUrl={playlist.cover_url}
+              trackCount={(playlist.results as any[]).length}
+              createdAt={playlist.created_at}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
