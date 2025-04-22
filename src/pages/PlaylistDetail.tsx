@@ -16,6 +16,24 @@ import { usePlaylistEdit } from "@/hooks/usePlaylistEdit";
 import { PlaylistEditModal } from "@/components/Playlists/PlaylistEditModal";
 import { Edit } from "lucide-react";
 
+// Helper function to convert playlist track to table track
+const convertPlaylistTracks = (playlistResults: any[]): Track[] => {
+  return playlistResults.map(track => ({
+    id: track.spotify_id || track.youtube_id || track.id || '',
+    title: track.title,
+    artist: Array.isArray(track.artist) ? track.artist : [track.artist],
+    album: track.album || '',
+    platform: track.platform || 'spotify',
+    image_url: track.cover_url || '',
+    bpm: track.audio_features?.bpm || null,
+    key_signature: track.key_signature || undefined,
+    genre: track.genre || null,
+    release_year: track.release_year,
+    duration: track.duration || '',
+    platform_url: track.platform_url || track.external_url || '',
+  }));
+};
+
 const PlaylistDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
@@ -63,25 +81,14 @@ const PlaylistDetail = () => {
         }
         
         // Transform the results JSON into Track[] format
-        const transformedResults = data.results ? (data.results as any[]).map((track: any): Track => ({
-          id: track.spotify_id || track.youtube_id || track.id,
-          title: track.title,
-          artist: Array.isArray(track.artist) ? track.artist : [track.artist],
-          album: track.album,
-          platform: track.platform,
-          image_url: track.cover_url || track.image_url,
-          bpm: track.audio_features?.bpm || null,
-          key_signature: track.key_signature,
-          genre: track.genre,
-          release_year: track.release_year,
-          duration: track.duration,
-          platform_url: track.platform_url || track.external_url,
-        })) : [];
+        const transformedResults = data.results ? convertPlaylistTracks(data.results as any[]) : [];
 
         setPlaylist({
           ...data,
-          results: transformedResults,
+          results: data.results || [],
         } as Playlist);
+        
+        setTracks(transformedResults);
       } catch (error) {
         console.error("Error fetching playlist:", error);
         toast.error("Failed to load playlist details");
@@ -153,7 +160,7 @@ const PlaylistDetail = () => {
               {/* Playlist Cover Image */}
               <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg relative">
                 <img 
-                  src={playlist.results[0]?.image_url || "/placeholder.svg"} 
+                  src={(editedCoverUrl || tracks[0]?.image_url) || "/placeholder.svg"} 
                   alt={playlist.name}
                   className="w-full h-full object-cover"
                 />
@@ -181,7 +188,7 @@ const PlaylistDetail = () => {
                 <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                   <span>Created {format(new Date(playlist.created_at), "MMM d, yyyy")}</span>
                   <span>•</span>
-                  <span>{playlist.results?.length || 0} tracks</span>
+                  <span>{tracks.length || 0} tracks</span>
                   {playlist.genres && playlist.genres.length > 0 && (
                     <>
                       <span>•</span>
@@ -204,7 +211,7 @@ const PlaylistDetail = () => {
             <div>
               <h2 className="text-xl font-bold mb-4">Tracks</h2>
               <GeneratedPlaylistTable 
-                tracks={playlist.results || []}
+                tracks={tracks}
                 showControls={false}
                 fullWidth={true}
                 playlistName={playlist.name}
@@ -218,11 +225,13 @@ const PlaylistDetail = () => {
           <PlaylistEditModal 
             isOpen={isEditing}
             playlistName={playlist.name}
-            coverImageUrl={playlist.results[0]?.image_url || ''}
+            coverImageUrl={editedCoverUrl || (tracks[0]?.image_url || '')}
             onClose={() => setIsEditing(false)}
             onSave={(name, coverUrl) => {
-              // Update local state and save to Supabase
-              setPlaylist(prev => prev ? {...prev, name, cover_image_url: coverUrl} : null);
+              // Update local state
+              setEditedName(name);
+              setEditedCoverUrl(coverUrl);
+              // Save to Supabase
               handleSaveChanges();
             }}
           />

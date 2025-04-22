@@ -2,14 +2,34 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Track } from "@/types/table";
-import type { Playlist } from "@/components/Playlists/types";
+import type { Track as TableTrack } from "@/types/table";
+import type { Track as PlaylistTrack, Playlist } from "@/components/Playlists/types";
+
+// Helper function to convert between track types
+const convertPlaylistTrackToTableTrack = (track: PlaylistTrack): TableTrack => {
+  return {
+    id: track.spotify_id || track.youtube_id || track.id || '',
+    title: track.title,
+    artist: Array.isArray(track.artist) ? track.artist : [track.artist],
+    album: track.album || '',
+    platform: track.platform || 'spotify',
+    image_url: track.cover_url || '',
+    bpm: track.audio_features?.bpm || null,
+    key_signature: track.key_signature || undefined,
+    genre: track.genre || null,
+    release_year: track.release_year,
+    duration: track.duration || '',
+    platform_url: track.platform_url || track.external_url || '',
+  };
+};
 
 export const usePlaylistEdit = (playlist: Playlist) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(playlist.name);
   const [editedCoverUrl, setEditedCoverUrl] = useState(playlist.cover_image_url || '');
-  const [tracks, setTracks] = useState<Track[]>(playlist.results || []);
+  const [tracks, setTracks] = useState<TableTrack[]>(
+    playlist.results ? playlist.results.map(convertPlaylistTrackToTableTrack) : []
+  );
 
   const handleSaveChanges = async () => {
     try {
@@ -35,8 +55,7 @@ export const usePlaylistEdit = (playlist: Playlist) => {
       const { error: trackError } = await supabase
         .from('playlist_tracks')
         .upsert(trackUpdates, { 
-          onConflict: 'track_id,playlist_id',
-          returning: 'minimal'
+          onConflict: 'track_id,playlist_id'
         });
 
       if (trackError) throw trackError;
