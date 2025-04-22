@@ -11,6 +11,14 @@ export const RecentlyLikedTracks: React.FC = () => {
   // Take only the 5 most recent liked tracks
   const recentLikedTracks = likedTracks.slice(0, 5);
 
+  // Helper function to handle duration formatting
+  const handleDurationFormat = (duration: string | number): string => {
+    if (typeof duration === 'number') {
+      return formatDuration(duration);
+    }
+    return duration; // If it's already a string, return as is
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center mb-4">
@@ -65,7 +73,7 @@ export const RecentlyLikedTracks: React.FC = () => {
                   )}
                   {track.duration && (
                     <span className="text-xs bg-white/10 px-2 py-1 rounded">
-                      {formatDuration(track.duration)}
+                      {handleDurationFormat(track.duration)}
                     </span>
                   )}
                 </div>
@@ -83,4 +91,3 @@ export const RecentlyLikedTracks: React.FC = () => {
     </div>
   );
 };
-
