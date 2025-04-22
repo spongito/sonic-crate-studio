@@ -27,14 +27,13 @@ export const useTrackOperations = (userId: string | undefined) => {
       setIsLoading(true);
       logger.info('Fetching user tracks');
 
-      // Get liked tracks with full track information from tracks_master
       const { data: likedTracksData, error: likedError } = await supabase
-        .from('liked_tracks')
+        .from("liked_tracks")
         .select(`
           track_id,
           tracks_master (*)
         `)
-        .eq('user_id', userId)
+        .eq("user_id", userId)
         .order('created_at', { ascending: false });
 
       if (likedError) {
@@ -43,25 +42,34 @@ export const useTrackOperations = (userId: string | undefined) => {
       }
 
       // Transform the joined data into the expected Track format
-      // Ensuring all required fields are present
       const likedTracks: Track[] = likedTracksData.map(item => {
-        // Calculate formatted duration if available, otherwise use default format
-        let formattedDuration = "0:00";
+        const trackMaster = item.tracks_master;
+        // Calculate formatted duration if available
+        let formattedDuration = trackMaster.duration || "0:00";
         
-        if (item.tracks_master.duration_seconds) {
-          formattedDuration = formatDuration({ duration_seconds: item.tracks_master.duration_seconds });
+        if (!formattedDuration && trackMaster.duration_seconds) {
+          formattedDuration = formatDuration({ duration_seconds: trackMaster.duration_seconds });
         }
         
         return {
-          ...item.tracks_master,
-          // Ensure required properties from Track interface are present
+          ...trackMaster,
           duration: formattedDuration,
           liked: true,
           id: item.track_id,
-          artist: item.tracks_master.artist || '',
-          title: item.tracks_master.title || '',
-          album: item.tracks_master.album || '',
-          platform: item.tracks_master.platform || ''
+          artist: Array.isArray(trackMaster.artist) ? trackMaster.artist : [trackMaster.artist || ''],
+          title: trackMaster.title || '',
+          album: trackMaster.album || '',
+          platform: trackMaster.platform || '',
+          duration_seconds: trackMaster.duration_seconds,
+          key_signature: trackMaster.key_signature,
+          genre: trackMaster.genre || [],
+          release_year: trackMaster.release_year,
+          release_date: trackMaster.release_date,
+          mood: trackMaster.mood || [],
+          language: trackMaster.language,
+          label: trackMaster.label,
+          is_explicit: trackMaster.is_explicit || false,
+          play_count: trackMaster.play_count || 0
         } as Track;
       });
 

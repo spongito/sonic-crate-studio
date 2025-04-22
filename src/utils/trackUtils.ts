@@ -3,7 +3,7 @@
  * Format track duration based on available data
  */
 export const formatDuration = (track: any): string => {
-  // If track already has a duration string, use it
+  // If track already has a formatted duration string, use it
   if (typeof track.duration === 'string' && track.duration) {
     return track.duration;
   }
@@ -17,4 +17,11 @@ export const formatDuration = (track: any): string => {
   
   // Default duration if nothing is available
   return "0:00";
+};
+
+/**
+ * Convert milliseconds to seconds
+ */
+export const msToSeconds = (ms: number): number => {
+  return Math.floor(ms / 1000);
 };

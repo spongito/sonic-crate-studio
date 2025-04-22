@@ -288,16 +288,24 @@ export type Database = {
           bpm: number | null
           created_at: string
           danceability: number | null
+          duration: string | null
+          duration_seconds: number | null
           energy: number | null
           external_url: string
           genre: string[] | null
           id: string
           image_url: string | null
           instrumentalness: number | null
+          is_explicit: boolean | null
           key_signature: string | null
+          label: string | null
+          language: string | null
+          mood: string[] | null
           platform: Database["public"]["Enums"]["platform_type"]
+          play_count: number | null
           popularity: number | null
           preview_url: string | null
+          release_date: string | null
           release_year: number | null
           spotify_id: string | null
           title: string
@@ -311,16 +319,24 @@ export type Database = {
           bpm?: number | null
           created_at?: string
           danceability?: number | null
+          duration?: string | null
+          duration_seconds?: number | null
           energy?: number | null
           external_url: string
           genre?: string[] | null
           id?: string
           image_url?: string | null
           instrumentalness?: number | null
+          is_explicit?: boolean | null
           key_signature?: string | null
+          label?: string | null
+          language?: string | null
+          mood?: string[] | null
           platform?: Database["public"]["Enums"]["platform_type"]
+          play_count?: number | null
           popularity?: number | null
           preview_url?: string | null
+          release_date?: string | null
           release_year?: number | null
           spotify_id?: string | null
           title: string
@@ -334,16 +350,24 @@ export type Database = {
           bpm?: number | null
           created_at?: string
           danceability?: number | null
+          duration?: string | null
+          duration_seconds?: number | null
           energy?: number | null
           external_url?: string
           genre?: string[] | null
           id?: string
           image_url?: string | null
           instrumentalness?: number | null
+          is_explicit?: boolean | null
           key_signature?: string | null
+          label?: string | null
+          language?: string | null
+          mood?: string[] | null
           platform?: Database["public"]["Enums"]["platform_type"]
+          play_count?: number | null
           popularity?: number | null
           preview_url?: string | null
+          release_date?: string | null
           release_year?: number | null
           spotify_id?: string | null
           title?: string
