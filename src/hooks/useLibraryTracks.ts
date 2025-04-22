@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -18,14 +17,20 @@ interface UseLibraryTracksProps {
   };
 }
 
+interface LibraryTracksResult {
+  allTracks: Track[];
+  likedTracks: Track[];
+  tracksToShow: Track[];
+}
+
 export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
   const { user } = useAuth();
   const logger = useLogger("useLibraryTracks");
   
-  const fetchTracks = useCallback(async () => {
+  const fetchTracks = useCallback(async (): Promise<LibraryTracksResult> => {
     if (!user?.id) {
       logger.info('No user logged in, returning empty track list');
-      return { allTracks: [], likedTracks: [] };
+      return { allTracks: [], likedTracks: [], tracksToShow: [] };
     }
     
     logger.info(`Fetching tracks for tab: ${tab} with filters:`, filters);
@@ -129,25 +134,20 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
   const queryKey = useMemo(() => ['library-tracks', tab, user?.id, filters], 
     [tab, user?.id, filters]);
   
-  const { 
-    data, 
-    isLoading, 
-    error,
-    isPreviousData
-  } = useQuery({
+  const query = useQuery<LibraryTracksResult, Error>({
     queryKey,
     queryFn: fetchTracks,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
     staleTime: 1000 * 60, // 1 minute
     enabled: !!user?.id
   });
   
   return {
-    tracks: data?.tracksToShow || [],
-    allTracks: data?.allTracks || [],
-    likedTracks: data?.likedTracks || [],
-    isLoading,
-    isPreviousData,
-    error
+    tracks: query.data?.tracksToShow || [],
+    allTracks: query.data?.allTracks || [],
+    likedTracks: query.data?.likedTracks || [],
+    isLoading: query.isLoading,
+    isPreviousData: query.isFetching && !!query.data,
+    error: query.error
   };
 }
