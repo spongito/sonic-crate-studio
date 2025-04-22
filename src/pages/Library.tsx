@@ -13,12 +13,13 @@ import { useLogger } from "@/hooks/useLogger";
 import { TracksProvider, useTracks } from "@/context/TracksContext";
 import { useLibraryTracks } from "@/hooks/useLibraryTracks";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60, // 1 minute
+      staleTime: 2 * 60 * 1000, // 2 minutes
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -80,11 +81,22 @@ const LibraryView = () => {
   const { 
     tracks, 
     isLoading,
-    isPreviousData 
+    isPreviousData,
+    error
   } = useLibraryTracks({ 
     tab: activeTab, 
     filters 
   });
+  
+  // Show error toast if needed
+  useEffect(() => {
+    if (error) {
+      logger.error("Error loading library tracks:", error);
+      toast.error(error.message.includes("TIMEOUT") 
+        ? "Request timed out. Try again later." 
+        : `Error loading tracks: ${error.message}`);
+    }
+  }, [error, logger]);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
@@ -129,6 +141,7 @@ const LibraryView = () => {
           isLoading={isLoading}
           isPreviousData={isPreviousData}
           onLikeToggle={toggleLike}
+          error={error}
         />
       </div>
     </div>

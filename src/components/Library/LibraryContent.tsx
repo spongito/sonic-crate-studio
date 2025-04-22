@@ -5,6 +5,7 @@ import type { Track } from "@/types/table";
 import { useLogger } from "@/hooks/useLogger";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo } from "react";
+import { ErrorFallback } from "@/components/Library/ErrorFallback";
 
 interface LibraryContentProps {
   activeTab: string;
@@ -12,6 +13,7 @@ interface LibraryContentProps {
   isLoading: boolean;
   isPreviousData: boolean;
   onLikeToggle: (trackId: string, liked: boolean) => void;
+  error?: Error;
 }
 
 export function LibraryContent({ 
@@ -19,7 +21,8 @@ export function LibraryContent({
   tracks, 
   isLoading,
   isPreviousData,
-  onLikeToggle 
+  onLikeToggle,
+  error
 }: LibraryContentProps) {
   const logger = useLogger("LibraryContent");
   
@@ -32,6 +35,16 @@ export function LibraryContent({
   
   const displayTracks = activeTab === 'liked' ? likedTracks : memoizedTracks;
   
+  // If there is an error, show the error fallback
+  if (error) {
+    return (
+      <ErrorFallback
+        error={error}
+        queryKey={['library-tracks', activeTab]}
+      />
+    );
+  }
+
   return (
     <Tabs value={activeTab} className="transition-all duration-300">
       <TabsContent value="all" className="space-y-4 animate-fade-in">

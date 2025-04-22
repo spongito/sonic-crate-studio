@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -28,19 +29,36 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
   const logger = useLogger("useLibraryTracks");
   
   const fetchTracks = useCallback(async (): Promise<LibraryTracksResult> => {
-    if (!user?.id) {
-      logger.info('No user logged in, returning empty track list');
-      return { allTracks: [], likedTracks: [], tracksToShow: [] };
+    if (process.env.NODE_ENV !== 'production') {
+      console.time('fetchTracks');
     }
     
-    logger.info(`Fetching tracks for tab: ${tab} with filters:`, filters);
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
+    // Set timeout of 10 seconds
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Library tracks fetch timeout after 10s');
+      }
+    }, 10000);
     
     try {
+      if (!user?.id) {
+        logger.info('No user logged in, returning empty track list');
+        return { allTracks: [], likedTracks: [], tracksToShow: [] };
+      }
+      
+      logger.info(`Fetching tracks for tab: ${tab} with filters:`, filters);
+      
       // Fetch liked track IDs first
       const { data: likedTracksData, error: likedError } = await supabase
         .from("liked_tracks")
         .select("track_id")
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .abortSignal(signal);
 
       if (likedError) {
         logger.error('Error loading liked tracks:', likedError);
@@ -54,7 +72,8 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
         .from("user_track_history")
         .select("*")
         .eq("user_id", user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(signal);
         
       // Apply filters if provided
       if (filters?.search) {
@@ -79,6 +98,16 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
         historyQuery.eq('key_signature', filters.key);
       }
       
+      // For debugging in development - explain the query plan
+      if (process.env.NODE_ENV !== 'production') {
+        const { data: explainData, error: explainError } = await historyQuery.explain({ analyze: true });
+        if (explainError) {
+          console.error('Query explain error:', explainError);
+        } else {
+          console.log('Query explain plan:', explainData);
+        }
+      }
+      
       const { data: historyTracks, error: historyError } = await historyQuery;
       
       if (historyError) {
@@ -96,7 +125,8 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
         const { data: masterTracks, error: masterError } = await supabase
           .from("tracks_master")
           .select("*")
-          .in("id", likedTracksData.map(item => item.track_id));
+          .in("id", likedTracksData.map(item => item.track_id))
+          .abortSignal(signal);
 
         if (masterError) {
           logger.error('Error loading master tracks:', masterError);
@@ -125,9 +155,17 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
       };
       
     } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error('TIMEOUT: Library tracks fetch took too long');
+      }
       const error = err as Error;
       logger.error('Error fetching tracks:', error);
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
+      if (process.env.NODE_ENV !== 'production') {
+        console.timeEnd('fetchTracks');
+      }
     }
   }, [user?.id, tab, filters, logger]);
 
@@ -138,7 +176,11 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
     queryKey,
     queryFn: fetchTracks,
     placeholderData: (previousData) => previousData,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: 1,
+    suspense: false,
+    gcTime: 5 * 60 * 1000,
+    meta: { requestStartedAt: Date.now() },
     enabled: !!user?.id
   });
   
