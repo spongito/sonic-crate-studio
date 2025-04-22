@@ -1,0 +1,71 @@
+
+import { Track } from "@/types/table";
+import TabPlaylistView from "@/components/TabPlaylistView";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+
+interface ResultsSectionProps {
+  showPlaylist: boolean;
+  playlistData: any;
+}
+
+const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => {
+  const { user } = useAuth();
+
+  const formattedTracks: Track[] = (playlistData?.tracks || []).map((track: any) => ({
+    id: track.id || track.spotify_id || `track-${Math.random()}`,
+    title: track.title || track.name || "Unknown Track",
+    artist: Array.isArray(track.artist) ? track.artist : [track.artist || "Unknown Artist"],
+    album: track.album || "Unknown Album",
+    platform: track.platform || "spotify",
+    image_url: track.image_url || track.cover_url || track.image,
+    bpm: track.bpm || track.audio_features?.bpm,
+    key_signature: track.key_signature || (track.audio_features ? `${track.audio_features.key} ${track.audio_features.mode === 1 ? 'Major' : 'Minor'}` : null),
+    genre: Array.isArray(track.genre) ? track.genre : track.genre ? [track.genre] : null,
+    release_year: track.release_year,
+    duration: track.duration,
+    platform_url: track.platform_url || track.external_url,
+  }));
+
+  const handleAddToLibrary = (trackId: string) => {
+    if (!user) {
+      toast.error("Please sign in to add tracks to your library");
+      return;
+    }
+    toast.success("Track added to your library");
+  };
+  
+  const handleSavePlaylist = (platform: string) => {
+    if (!user) {
+      toast.error("Please sign in to save playlists");
+      return;
+    }
+    toast.success(`Playlist saved to your ${platform} account`);
+  };
+
+  if (!showPlaylist || !playlistData) {
+    return null;
+  }
+
+  return (
+    <div className="w-full px-4 md:px-8 lg:px-12 py-8 mt-6">
+      <TabPlaylistView
+        tracks={formattedTracks}
+        userLikedTrackIds={[]}
+        onLikeChange={(trackId, liked) => {
+          if (!user) {
+            toast.error("Please sign in to like tracks");
+            return;
+          }
+          toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
+        }}
+        onAddToLibrary={handleAddToLibrary}
+        onSavePlaylist={handleSavePlaylist}
+        playlistName={playlistData.name || "Generated Playlist"}
+        className="mt-6"
+      />
+    </div>
+  );
+};
+
+export default ResultsSection;

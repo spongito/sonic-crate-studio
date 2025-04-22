@@ -42,6 +42,14 @@ interface UIInputs {
   };
 }
 
+interface IntentAnalysis {
+  type: IntentType;
+  genres: string[];
+  energy: number;
+  valence: number;
+  bpm_range?: { min: number; max: number };
+}
+
 export class IntentService {
   static classifyIntent(prompt: string): JobType {
     const lowercasePrompt = prompt.toLowerCase();
@@ -143,7 +151,7 @@ export class IntentService {
     }
   }
 
-  private static analyzeIntent(prompt: string, jobType: JobType): IntentAnalysis {
+  public static analyzeIntent(prompt: string, jobType: JobType): IntentAnalysis {
     switch (jobType) {
       case 'activity_search':
         return this.analyzeActivityIntent(prompt);
