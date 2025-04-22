@@ -8,7 +8,7 @@ import type { Track as PlaylistTrack, Playlist } from "@/components/Playlists/ty
 // Helper function to convert between track types
 const convertPlaylistTrackToTableTrack = (track: PlaylistTrack): TableTrack => {
   return {
-    id: track.spotify_id || track.youtube_id || track.id || '',
+    id: track.spotify_id || track.youtube_id || '', // Ensure we have a fallback for id
     title: track.title,
     artist: Array.isArray(track.artist) ? track.artist : [track.artist],
     album: track.album || '',

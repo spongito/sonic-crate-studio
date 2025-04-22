@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PlaylistActions } from "@/components/Playlists/PlaylistActions/PlaylistActions";
-import { type Playlist } from "@/components/Playlists/types";
+import { type Playlist, type Track as PlaylistTrack } from "@/components/Playlists/types";
 import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
 import type { Track } from "@/types/table";
 import { usePlaylistEdit } from "@/hooks/usePlaylistEdit";
@@ -81,13 +81,20 @@ const PlaylistDetail = () => {
         }
         
         // Transform the results JSON into Track[] format
-        const transformedResults = data.results ? convertPlaylistTracks(data.results as any[]) : [];
-
-        setPlaylist({
-          ...data,
-          results: data.results || [],
-        } as Playlist);
+        const processedResults = Array.isArray(data.results) 
+          ? data.results 
+          : (typeof data.results === 'string' ? JSON.parse(data.results) : []);
         
+        const formattedPlaylist: Playlist = {
+          ...data,
+          // Ensure results is processed as an array of Track objects
+          results: processedResults as PlaylistTrack[],
+        };
+        
+        setPlaylist(formattedPlaylist);
+        
+        // Convert tracks for the table
+        const transformedResults = processedResults ? convertPlaylistTracks(processedResults) : [];
         setTracks(transformedResults);
       } catch (error) {
         console.error("Error fetching playlist:", error);
@@ -160,7 +167,7 @@ const PlaylistDetail = () => {
               {/* Playlist Cover Image */}
               <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg relative">
                 <img 
-                  src={(editedCoverUrl || tracks[0]?.image_url) || "/placeholder.svg"} 
+                  src={(editedCoverUrl || (tracks[0]?.image_url || '')) || "/placeholder.svg"} 
                   alt={playlist.name}
                   className="w-full h-full object-cover"
                 />
@@ -225,7 +232,7 @@ const PlaylistDetail = () => {
           <PlaylistEditModal 
             isOpen={isEditing}
             playlistName={playlist.name}
-            coverImageUrl={editedCoverUrl || (tracks[0]?.image_url || '')}
+            coverImageUrl={editedCoverUrl || ((tracks[0]?.image_url) || '')}
             onClose={() => setIsEditing(false)}
             onSave={(name, coverUrl) => {
               // Update local state
