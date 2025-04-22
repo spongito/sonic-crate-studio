@@ -38,18 +38,19 @@ export default function TrackLikeButton({
     setIsLoading(true);
     try {
       // Toggle the local state immediately for a more responsive feel
-      setIsLiked(!isLiked);
+      const newLikedState = !isLiked;
+      setIsLiked(newLikedState);
       
       // Call the toggleLike function from context
-      await toggleLike(trackId, !isLiked);
+      await toggleLike(trackId, !newLikedState);
       
       // If onToggle callback exists, call it
       if (onToggle) {
-        onToggle(trackId, !isLiked);
+        onToggle(trackId, newLikedState);
       }
       
       toast({
-        description: isLiked ? "Removed from liked tracks" : "Added to liked tracks",
+        description: newLikedState ? "Added to liked tracks" : "Removed from liked tracks",
         duration: 2000,
       });
     } catch (error) {
