@@ -62,7 +62,7 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
 
       if (likedError) {
         logger.error('Error loading liked tracks:', likedError);
-        throw likedError;
+        throw new Error(`Liked tracks error: ${likedError.message}`);
       }
 
       const likedTrackIdSet = new Set(likedTracksData?.map(item => item.track_id) || []);
@@ -98,9 +98,12 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
         historyQuery.eq('key_signature', filters.key);
       }
       
-      // For debugging in development - explain the query plan
-      if (process.env.NODE_ENV !== 'production') {
+      // IMPORTANT: Only use explain in development mode with explicit debug flag
+      // This was causing the header issue in the production environment
+      if (process.env.NODE_ENV !== 'production' && process.env.DEBUG_SUPABASE_PLAN === 'true') {
+        logger.info('Debug mode: Executing query explain plan');
         const { data: explainData, error: explainError } = await historyQuery.explain({ analyze: true });
+        
         if (explainError) {
           console.error('Query explain error:', explainError);
         } else {
@@ -108,11 +111,12 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
         }
       }
       
+      // Execute the actual query WITHOUT explain() in production
       const { data: historyTracks, error: historyError } = await historyQuery;
       
       if (historyError) {
         logger.error('Error loading track history:', historyError);
-        throw historyError;
+        throw new Error(`History tracks error: ${historyError.message}`);
       }
       
       // Transform history tracks
@@ -130,7 +134,7 @@ export function useLibraryTracks({ tab, filters }: UseLibraryTracksProps) {
 
         if (masterError) {
           logger.error('Error loading master tracks:', masterError);
-          throw masterError;
+          throw new Error(`Master tracks error: ${masterError.message}`);
         }
 
         const existingTrackIds = new Set(allTracks.map(t => t.id));

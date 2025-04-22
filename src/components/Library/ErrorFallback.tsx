@@ -25,6 +25,20 @@ export function ErrorFallback({ error, queryKey, children }: ErrorFallbackProps)
   // Format error message for display
   const errorMessage = error?.message || 'An unknown error occurred';
   const isTimeout = errorMessage.includes('TIMEOUT');
+  const isPgrstPlanError = errorMessage.includes('application/vnd.pgrst.plan+text');
+  
+  // Get a user-friendly error message
+  const getUserFriendlyMessage = () => {
+    if (isTimeout) {
+      return 'The request took too long to complete. This may be due to a slow connection or high server load.';
+    }
+    
+    if (isPgrstPlanError) {
+      return 'There was an issue with the database query format. Our team has been notified.';
+    }
+    
+    return errorMessage;
+  };
   
   return (
     <div className="w-full py-8 space-y-4">
@@ -33,10 +47,7 @@ export function ErrorFallback({ error, queryKey, children }: ErrorFallbackProps)
           {isTimeout ? 'Request Timeout' : 'Error Loading Data'}
         </AlertTitle>
         <AlertDescription className="mt-2 space-y-4">
-          <p>{isTimeout
-            ? 'The request took too long to complete. This may be due to a slow connection or high server load.'
-            : errorMessage
-          }</p>
+          <p>{getUserFriendlyMessage()}</p>
           
           <div className="flex gap-4 pt-2">
             <Button onClick={handleRetry} className="flex items-center gap-2">
