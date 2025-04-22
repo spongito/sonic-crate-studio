@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ArrowRight, Sliders, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,8 @@ import { Input } from "@/components/ui/input";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { SignInDialog } from "@/components/auth/SignInDialog";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
+import { usePlaylistGenerator } from "@/hooks/usePlaylistGenerator";
 
 interface HeroSearchProps {
   onPlaylistGenerated?: (data: any) => void;
@@ -20,89 +19,41 @@ const HeroSearch = ({ onPlaylistGenerated, setShowPlaylist }: HeroSearchProps) =
   const [platforms] = useState(getDefaultPlatforms());
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const { user, subscription, checkSubscription } = useAuth();
-  const navigate = useNavigate();
+  const { user, subscription } = useAuth();
+  
+  const { 
+    isGenerating, 
+    playlistData, 
+    handleGenerate 
+  } = usePlaylistGenerator();
 
-  const handleGenerate = async () => {
+  const handleSubmit = async () => {
     if (!user) {
       setShowSignIn(true);
       return;
     }
     
-    if (!prompt.trim()) {
-      toast.error("Please enter a prompt");
-      return;
-    }
-    
-    if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
-      toast.info("This is a Premium feature. Upgrade to continue.");
-      navigate("/dashboard");
-      return;
-    }
-    
-    try {
-      setIsGenerating(true);
-      if (setShowPlaylist) setShowPlaylist(false);
-      
-      const enabledPlatforms = platforms.filter(p => p.enabled).map(p => p.id);
-      
-      const { data: processedData, error } = await supabase.functions
-        .invoke('process-music-request', {
-          body: { 
-            prompt,
-            advancedParams: {
-              mode: "club-ready",
-              description: "",
-              genre: "",
-              length: "1.5h",
-              commercialFactor: 50,
-              releaseYearRange: [1990, 2025],
-              useBpmFilter: false,
-              locations: ["global"],
-              activeFilters: {
-                genre: true,
-                location: true,
-                releaseYear: true,
-                commercial: true,
-                references: true,
-                bpm: false
-              }
-            },
-            platforms: enabledPlatforms
-          }
-        });
-      
-      if (error) throw error;
-      
-      if (processedData && processedData.error) {
-        throw new Error(processedData.error);
+    await handleGenerate(prompt, {
+      mode: "club-ready",
+      description: "",
+      genre: "",
+      length: "1.5h",
+      commercialFactor: 50,
+      releaseYearRange: [1990, 2025],
+      useBpmFilter: false,
+      locations: ["global"],
+      activeFilters: {
+        genre: true,
+        location: true,
+        releaseYear: true,
+        commercial: true,
+        references: true,
+        bpm: false
       }
-      
-      if (!processedData) {
-        throw new Error("Failed to generate playlist data: No data returned");
-      }
-      
-      if (!processedData.tracks) {
-        throw new Error("Failed to generate playlist data: No tracks found");
-      }
-      
-      if (!subscription?.is_premium) {
-        await supabase.functions.invoke('increment-playlist-count');
-        await checkSubscription();
-      }
-      
-      if (onPlaylistGenerated) {
-        onPlaylistGenerated(processedData);
-      }
-      
-      toast.success("Playlist generated successfully!");
-      
-    } catch (error: any) {
-      console.error("Generation error:", error);
-      toast.error(error.message || "Failed to generate playlist. Please try again with a different prompt.");
-    } finally {
-      setIsGenerating(false);
+    }, platforms);
+
+    if (onPlaylistGenerated && playlistData) {
+      onPlaylistGenerated(playlistData);
     }
   };
 
@@ -112,78 +63,10 @@ const HeroSearch = ({ onPlaylistGenerated, setShowPlaylist }: HeroSearchProps) =
       return;
     }
     
-    if (!params.prompt.trim()) {
-      toast.error("Please enter a prompt");
-      return;
-    }
-    
-    if (subscription?.remaining_generations === 0 && !subscription?.is_premium) {
-      toast.info("This is a Premium feature. Upgrade to continue.");
-      navigate("/dashboard");
-      return;
-    }
-    
-    try {
-      setIsGenerating(true);
-      if (setShowPlaylist) setShowPlaylist(false);
-      
-      const enabledPlatforms = params.platforms.filter(p => p.enabled).map(p => p.id);
-      
-      const { data: processedData, error } = await supabase.functions
-        .invoke('process-music-request', {
-          body: { 
-            prompt: params.prompt,
-            advancedParams: {
-              mode: params.mode,
-              description: params.description,
-              genre: params.genre,
-              length: params.length,
-              commercialFactor: params.commercialFactor,
-              referenceArtistIds: params.referenceArtistIds,
-              referenceTrackIds: params.referenceTrackIds,
-              releaseYearRange: params.releaseYearRange,
-              bpmRange: params.bpmRange,
-              useBpmFilter: params.useBpmFilter,
-              locations: params.locations,
-              activeFilters: params.activeFilters
-            },
-            platforms: enabledPlatforms
-          }
-        });
-      
-      if (error) {
-        console.error("Processing error details:", error);
-        throw error;
-      }
-      
-      if (processedData && processedData.error) {
-        throw new Error(processedData.error);
-      }
-      
-      if (!processedData) {
-        throw new Error("Failed to generate playlist data: No data returned");
-      }
-      
-      if (!processedData.tracks) {
-        throw new Error("Failed to generate playlist data: No tracks found");
-      }
-      
-      if (!subscription?.is_premium) {
-        await supabase.functions.invoke('increment-playlist-count');
-        await checkSubscription();
-      }
-      
-      if (onPlaylistGenerated) {
-        onPlaylistGenerated(processedData);
-      }
-      
-      toast.success("Playlist generated successfully!");
-      
-    } catch (error: any) {
-      console.error("Generation error:", error);
-      toast.error(error.message || "Failed to generate playlist. Please try again with a different prompt.");
-    } finally {
-      setIsGenerating(false);
+    await handleGenerate(params.prompt, params, platforms);
+
+    if (onPlaylistGenerated && playlistData) {
+      onPlaylistGenerated(playlistData);
     }
   };
 
@@ -195,7 +78,7 @@ const HeroSearch = ({ onPlaylistGenerated, setShowPlaylist }: HeroSearchProps) =
           className="flex-1 bg-background/60 border-white/10 focus:border-gold/30 focus:ring-gold/20 rounded-md"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={isGenerating}
           spellCheck={false}
           autoComplete="off"
@@ -213,7 +96,7 @@ const HeroSearch = ({ onPlaylistGenerated, setShowPlaylist }: HeroSearchProps) =
             </Button>
             <Button 
               className="bg-gold hover:bg-gold-dark text-black font-semibold px-5 py-2 md:px-6 md:py-2"
-              onClick={handleGenerate}
+              onClick={handleSubmit}
               disabled={isGenerating}
             >
               {isGenerating ? (
