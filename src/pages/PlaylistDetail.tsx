@@ -56,6 +56,7 @@ const PlaylistDetail = () => {
               playlistId={playlist.id} 
               onDelete={handleDelete}
               onShare={() => {}}
+              onEdit={() => setIsEditing(true)}
             />
 
             <Separator className="my-6" />

@@ -145,7 +145,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   return (
     <div className="flex items-center space-x-4">
-      <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center">
+      <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center group">
         {previewImage ? (
           <img 
             src={previewImage} 
@@ -159,13 +159,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           </div>
         )}
         {previewImage && (
-          <button 
-            onClick={handleRemoveImage}
-            className="absolute top-1 right-1 bg-destructive text-destructive-foreground p-1 rounded-full hover:bg-destructive/90"
-            type="button"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300">
+            <button 
+              onClick={handleRemoveImage}
+              className="absolute top-1 right-1 bg-destructive text-destructive-foreground p-1 rounded-full hover:bg-destructive/90"
+              type="button"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
       <div>

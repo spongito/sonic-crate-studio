@@ -28,7 +28,7 @@ export function PlaylistHeader({ playlist, tracks, onEditClick, coverImageUrl }:
   return (
     <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
       {/* Cover Image */}
-      <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg relative">
+      <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg relative group">
         {displayImage ? (
           <img 
             src={displayImage}
@@ -45,14 +45,18 @@ export function PlaylistHeader({ playlist, tracks, onEditClick, coverImageUrl }:
             <Music className="h-1/3 w-1/3 text-gray-500" />
           </div>
         )}
-        <Button 
-          variant="secondary" 
-          size="icon" 
-          className="absolute top-2 right-2"
-          onClick={onEditClick}
-        >
-          <Edit className="w-5 h-5" />
-        </Button>
+        
+        {/* Centered edit button with fade-in effect */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300">
+          <Button 
+            variant="secondary" 
+            size="icon"
+            className="opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300"
+            onClick={onEditClick}
+          >
+            <Edit className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Playlist Info */}

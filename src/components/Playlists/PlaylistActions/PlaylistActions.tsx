@@ -1,5 +1,5 @@
 
-import { Share2, Trash2 } from "lucide-react";
+import { Edit, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -15,12 +15,19 @@ import {
 interface PlaylistActionsProps {
   onShare: () => void;
   onDelete?: (id: string) => void;
+  onEdit?: () => void;
   playlistId: string;
 }
 
-export function PlaylistActions({ onShare, onDelete, playlistId }: PlaylistActionsProps) {
+export function PlaylistActions({ onShare, onDelete, onEdit, playlistId }: PlaylistActionsProps) {
   return (
     <div className="flex gap-2 mt-8">
+      {onEdit && (
+        <Button variant="outline" size="icon" onClick={onEdit} className="gap-2">
+          <Edit className="h-4 w-4" />
+        </Button>
+      )}
+      
       {onDelete && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
