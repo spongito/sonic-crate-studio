@@ -23,7 +23,7 @@ export function PlaylistHeader({ playlist, tracks, onEditClick, coverImageUrl }:
   };
 
   const firstTrackImage = tracks?.[0]?.image_url;
-  const displayImage = coverImageUrl || firstTrackImage || getFallbackImage(playlist.id);
+  const displayImage = coverImageUrl || firstTrackImage;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">

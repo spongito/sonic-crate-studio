@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { PlaylistSkeleton } from "@/components/Playlists/PlaylistSkeleton";
 import { Json } from '@/integrations/supabase/types';
-import { Edit } from 'lucide-react';
+import { Edit, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
 import { PlaylistEditModal } from "@/components/Playlists/PlaylistEditModal";
@@ -179,11 +179,22 @@ export const YourPlaylists: React.FC = () => {
             <div className="neo-card overflow-hidden rounded-lg transition-all duration-300">
               <Link to={`/playlists/${playlist.id}`} className="block">
                 <div className="aspect-square overflow-hidden">
-                  <img 
-                    src={playlist.cover_image_url || "https://picsum.photos/seed/" + playlist.id + "/300"} 
-                    alt={playlist.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  {playlist.cover_image_url ? (
+                    <img 
+                      src={playlist.cover_image_url} 
+                      alt={playlist.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        // If image fails to load, use fallback
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://picsum.photos/seed/${playlist.id}/300`;
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-800 to-gray-900">
+                      <Music className="h-1/3 w-1/3 text-gray-500" />
+                    </div>
+                  )}
                 </div>
               </Link>
               <div className="p-4 space-y-1">
