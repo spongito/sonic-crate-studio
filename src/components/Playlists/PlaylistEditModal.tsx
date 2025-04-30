@@ -5,10 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ImageUploader } from "@/components/ui/ImageUploader";
 import { toast } from "sonner";
-import { PlaylistCover, CoverTemplate } from "@/components/PlaylistCover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface PlaylistEditModalProps {
   isOpen: boolean;
@@ -27,8 +23,6 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
 }) => {
   const [name, setName] = useState(playlistName);
   const [coverUrl, setCoverUrl] = useState(coverImageUrl);
-  const [useTemplate, setUseTemplate] = useState(!coverImageUrl);
-  const [selectedTemplate, setSelectedTemplate] = useState<CoverTemplate>('A');
   const [isUploading, setIsUploading] = useState(false);
 
   const handleSave = () => {
@@ -37,28 +31,17 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
       return;
     }
     
-    // If using a template, we don't need to save an actual image URL
-    // We'll save the template type in the database instead
-    const finalCoverUrl = useTemplate 
-      ? `template:${selectedTemplate}` 
-      : coverUrl;
-    
-    onSave(name, finalCoverUrl);
+    onSave(name, coverUrl);
     onClose();
   };
 
   const handleImageUploaded = (url: string) => {
     setCoverUrl(url);
-    setUseTemplate(false);
-  };
-
-  const handleTabChange = (value: string) => {
-    setUseTemplate(value === 'template');
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Playlist</DialogTitle>
           <DialogDescription>
@@ -80,63 +63,18 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
             />
           </div>
 
-          {/* Cover Options */}
-          <Tabs defaultValue={useTemplate ? "template" : "upload"} onValueChange={handleTabChange}>
-            <TabsList className="grid grid-cols-2">
-              <TabsTrigger value="upload">Upload Image</TabsTrigger>
-              <TabsTrigger value="template">Use Template</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="upload" className="pt-4">
-              <ImageUploader 
-                onImageUploaded={handleImageUploaded}
-                currentImageUrl={!useTemplate ? coverUrl : ''}
-                maxSizeMB={8}
-                bucketName="playlist_covers"
-              />
-            </TabsContent>
-            
-            <TabsContent value="template" className="pt-4">
-              <div className="space-y-4">
-                <Label>Select Template</Label>
-                <RadioGroup 
-                  defaultValue={selectedTemplate}
-                  onValueChange={(v) => setSelectedTemplate(v as CoverTemplate)}
-                  className="grid grid-cols-3 gap-4"
-                >
-                  <div className="space-y-2">
-                    <div className="overflow-hidden rounded-md border border-muted">
-                      <PlaylistCover name={name || "Playlist"} template="A" />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="A" id="template-a" />
-                      <Label htmlFor="template-a">Gradient</Label>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="overflow-hidden rounded-md border border-muted">
-                      <PlaylistCover name={name || "Playlist"} template="B" />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="B" id="template-b" />
-                      <Label htmlFor="template-b">Texture</Label>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="overflow-hidden rounded-md border border-muted">
-                      <PlaylistCover name={name || "Playlist"} template="C" />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="C" id="template-c" />
-                      <Label htmlFor="template-c">Pattern</Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* Cover Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Cover Image
+            </label>
+            <ImageUploader 
+              onImageUploaded={handleImageUploaded}
+              currentImageUrl={coverUrl}
+              maxSizeMB={8}
+              bucketName="playlist_covers"
+            />
+          </div>
         </div>
 
         <DialogFooter>
