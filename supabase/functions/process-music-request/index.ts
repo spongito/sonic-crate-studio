@@ -49,6 +49,9 @@ serve(async (req) => {
     // Intent Analysis
     const intent = await createStructuredIntent(prompt, advancedParams);
     console.log("Created structured intent:", JSON.stringify(intent, null, 2));
+    
+    // Store original prompt in the intent
+    intent.original_prompt = prompt;
 
     // Add active filters to intent
     intent.activeFilters = advancedParams.activeFilters || {

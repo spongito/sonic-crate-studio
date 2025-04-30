@@ -194,6 +194,28 @@ export function formatKey(key: number, mode: number) {
 }
 
 export function generatePlaylistName(intent: any) {
+  // Get the original search query
+  const query = intent.original_prompt || "";
+  
+  // Truncate the query if it's too long
+  const truncatedQuery = query.length > 40 ? query.substring(0, 37) + "..." : query;
+  
+  // Get current date and time in a readable format
+  const currentDate = new Date();
+  const dateTimeStr = currentDate.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+  
+  // If we have a meaningful query, use it as the base for the name
+  if (truncatedQuery.length > 0) {
+    return `${truncatedQuery} - ${dateTimeStr}`;
+  }
+  
+  // Otherwise fall back to the previous naming logic
   let name = "";
   
   if (intent.activity_context) {
@@ -229,10 +251,6 @@ export function generatePlaylistName(intent: any) {
     }
   }
   
-  if (name.length < 10) {
-    const date = new Date();
-    name += ` - ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-  }
-  
-  return name.trim();
+  // Always add date/time to the name
+  return `${name.trim()} - ${dateTimeStr}`;
 }

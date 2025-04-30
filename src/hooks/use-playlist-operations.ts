@@ -17,7 +17,27 @@ export const usePlaylistOperations = () => {
 
     try {
       setIsSaving(true);
-      const name = format(new Date(), "MMM d - h:mm a");
+      
+      // Get the current date and time formatted
+      const dateTimeStr = format(new Date(), "MMM d - h:mm a");
+      
+      // Create a name based on the search query
+      const queryText = playlistData.intent?.original_prompt || "";
+      
+      // Use name from backend if available, otherwise create one
+      let name = playlistData.name || "";
+      
+      // If no name is provided or if we want to ensure the query is part of the name
+      if (!name || !name.includes(queryText.substring(0, 10))) {
+        // Truncate the query if it's too long
+        const truncatedQuery = queryText.length > 40 ? 
+          queryText.substring(0, 37) + "..." : queryText;
+        
+        // Create a name with the query and date/time
+        name = truncatedQuery ? 
+          `${truncatedQuery} - ${dateTimeStr}` : 
+          format(new Date(), "MMM d - h:mm a");  // Fallback to just date if no query
+      }
       
       // Ensure all tracks have the required metadata fields
       const processedTracks = playlistData.tracks.map((track: any) => ({

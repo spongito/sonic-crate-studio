@@ -12,6 +12,9 @@ export async function processTracksRequest(prompt: string, advancedParams: any, 
   let seedArtists = null;
   let spotifyToken = null;
 
+  // Store the original prompt in the intent object for naming
+  intent.original_prompt = prompt;
+
   // Handle Spotify search
   if (platforms.includes('spotify')) {
     try {
