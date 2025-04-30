@@ -24,8 +24,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   // Use the existing useImageUpload hook
   const { uploadImage, isUploading, validateImage } = useImageUpload({
     maxSizeMB,
-    bucket: bucketName,
-    requiredAspectRatio: 'square'
+    bucket: bucketName
   });
 
   const handleUploadClick = () => {
@@ -34,12 +33,59 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
+  // Function to crop image to square
+  const cropToSquare = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = Math.min(img.width, img.height);
+        canvas.width = size;
+        canvas.height = size;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        
+        // Calculate cropping position (center of the image)
+        const offsetX = (img.width - size) / 2;
+        const offsetY = (img.height - size) / 2;
+        
+        // Draw the centered square portion of the image
+        ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+        
+        // Convert back to file
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Could not create blob from canvas'));
+            return;
+          }
+          
+          const croppedFile = new File([blob], file.name, {
+            type: file.type,
+            lastModified: Date.now()
+          });
+          
+          resolve(croppedFile);
+        }, file.type);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load image for cropping'));
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
     try {
-      // First validate the image using the hook's validate function
+      // First validate the image 
       const validation = await validateImage(file);
       if (!validation.valid) return;
       
@@ -47,8 +93,18 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
       
-      // Use the hook's upload function
-      const uploadedUrl = await uploadImage(file);
+      // Check if the image needs cropping
+      let fileToUpload = file;
+      if (validation.metadata) {
+        const { width, height } = validation.metadata;
+        if (width !== height) {
+          // If not square, crop to square
+          fileToUpload = await cropToSquare(file);
+        }
+      }
+      
+      // Upload the cropped file
+      const uploadedUrl = await uploadImage(fileToUpload);
       
       if (!uploadedUrl) {
         toast.error('Failed to upload image');
@@ -132,7 +188,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           {isUploading ? 'Uploading...' : 'Upload'}
         </Button>
         <p className="text-xs text-muted-foreground mt-2">
-          JPG, PNG or GIF. Square aspect ratio.<br />Max {maxSizeMB}MB.
+          JPG, PNG or GIF. Images will be cropped to square.<br />Max {maxSizeMB}MB.
         </p>
       </div>
     </div>

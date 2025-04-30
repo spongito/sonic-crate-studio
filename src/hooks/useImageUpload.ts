@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 interface ImageUploadOptions {
   maxSizeMB?: number;
   bucket?: string;
-  requiredAspectRatio?: 'square';
 }
 
 interface UploadMetadata {
@@ -25,8 +24,7 @@ export const useImageUpload = (options: ImageUploadOptions = {}) => {
   
   const {
     maxSizeMB = 8,
-    bucket = 'playlist_covers',
-    requiredAspectRatio
+    bucket = 'playlist_covers'
   } = options;
   
   const validateImage = async (file: File): Promise<{valid: boolean, metadata?: UploadMetadata}> => {
@@ -44,28 +42,20 @@ export const useImageUpload = (options: ImageUploadOptions = {}) => {
       return { valid: false };
     }
     
-    // Check dimensions and aspect ratio
+    // Get image dimensions (but don't validate aspect ratio)
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        const width = img.width;
-        const height = img.height;
-        
-        if (requiredAspectRatio === 'square' && width !== height) {
-          toast.error('Image must be square (width equals height)');
-          resolve({ valid: false });
-        } else {
-          resolve({ 
-            valid: true,
-            metadata: {
-              fileType: file.type,
-              sizeBytes: file.size,
-              width,
-              height,
-              fileName: file.name,
-            }
-          });
-        }
+        resolve({ 
+          valid: true,
+          metadata: {
+            fileType: file.type,
+            sizeBytes: file.size,
+            width: img.width,
+            height: img.height,
+            fileName: file.name,
+          }
+        });
         URL.revokeObjectURL(img.src);
       };
       img.onerror = () => {
@@ -113,9 +103,6 @@ export const useImageUpload = (options: ImageUploadOptions = {}) => {
       const { data: publicUrlData } = supabase.storage
         .from(bucket)
         .getPublicUrl(filePath);
-      
-      // Store metadata if needed
-      // This could be expanded to store metadata in a database table
       
       setProgress(100);
       return publicUrlData.publicUrl;
