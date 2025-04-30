@@ -131,10 +131,17 @@ export function GeneratedPlaylistTable({
             [row.id]: !isSelected,
           });
         } else {
-          // Clear selection and select only this row if no modifier key
-          table.setRowSelection({
-            [row.id]: true,
-          });
+          // Check if this row is already selected
+          const isSelected = table.getState().rowSelection[row.id] ?? false;
+          if (isSelected) {
+            // If already selected, deselect it (clear all selections)
+            table.setRowSelection({});
+          } else {
+            // Clear selection and select only this row if no modifier key
+            table.setRowSelection({
+              [row.id]: true,
+            });
+          }
         }
       }
     }
