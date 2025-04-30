@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,6 +92,10 @@ const PlaylistDetail = () => {
         
         const transformedResults = processedResults ? convertPlaylistTracks(processedResults) : [];
         setTracks(transformedResults);
+        
+        // Set initial values for edited properties
+        setEditedName(formattedPlaylist.name);
+        setEditedCoverUrl(formattedPlaylist.cover_image_url || '');
       } catch (error) {
         console.error("Error fetching playlist:", error);
         toast.error("Failed to load playlist details");
@@ -101,7 +106,7 @@ const PlaylistDetail = () => {
     };
     
     fetchPlaylist();
-  }, [id, user?.id]);
+  }, [id, user?.id, setEditedCoverUrl, setEditedName]);
 
   const handleDelete = async () => {
     if (!id || !playlist) return;
@@ -123,6 +128,43 @@ const PlaylistDetail = () => {
     } catch (error) {
       console.error("Error deleting playlist:", error);
       toast.error("Something went wrong");
+    }
+  };
+
+  const updatePlaylistData = async (name: string, coverUrl: string) => {
+    if (!id || !playlist) return false;
+    
+    try {
+      const { error } = await supabase
+        .from("playlists")
+        .update({ 
+          name: name,
+          cover_image_url: coverUrl 
+        })
+        .eq("id", id);
+      
+      if (error) {
+        console.error("Error updating playlist:", error);
+        toast.error("Failed to update playlist");
+        return false;
+      }
+      
+      // Update local state
+      setPlaylist({
+        ...playlist,
+        name: name,
+        cover_image_url: coverUrl
+      });
+      
+      setEditedName(name);
+      setEditedCoverUrl(coverUrl);
+      
+      toast.success("Playlist updated successfully");
+      return true;
+    } catch (error) {
+      console.error("Error updating playlist:", error);
+      toast.error("Something went wrong");
+      return false;
     }
   };
 
@@ -151,7 +193,7 @@ const PlaylistDetail = () => {
               playlist={playlist}
               tracks={tracks}
               onEditClick={() => setIsEditing(true)}
-              coverImageUrl={editedCoverUrl || (tracks[0]?.image_url || '')}
+              coverImageUrl={editedCoverUrl}
             />
 
             <PlaylistActions 
@@ -178,12 +220,10 @@ const PlaylistDetail = () => {
           <PlaylistEditModal 
             isOpen={isEditing}
             playlistName={playlist.name}
-            coverImageUrl={editedCoverUrl || ((tracks[0]?.image_url) || '')}
+            coverImageUrl={editedCoverUrl || ''}
             onClose={() => setIsEditing(false)}
             onSave={(name, coverUrl) => {
-              setEditedName(name);
-              setEditedCoverUrl(coverUrl);
-              handleSaveChanges();
+              updatePlaylistData(name, coverUrl);
             }}
           />
         )}

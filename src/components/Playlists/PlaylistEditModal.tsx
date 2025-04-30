@@ -3,7 +3,10 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Image as ImageIcon } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface PlaylistEditModalProps {
   isOpen: boolean;
@@ -23,16 +26,49 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
   const [name, setName] = useState(playlistName);
   const [coverUrl, setCoverUrl] = useState(coverImageUrl);
   const [previewImage, setPreviewImage] = useState(coverImageUrl);
+  const [isUploading, setIsUploading] = useState(false);
+  const { user } = useAuth();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCoverUrl(reader.result as string);
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // First show the preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Then handle the upload to Supabase
+    if (user) {
+      try {
+        setIsUploading(true);
+        
+        // Create a unique filename with timestamp
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `playlist_covers/${fileName}`;
+        
+        // Upload the file to Supabase Storage
+        const { data, error } = await supabase.storage
+          .from('playlist_covers')
+          .upload(filePath, file);
+        
+        if (error) throw error;
+        
+        // Get the public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('playlist_covers')
+          .getPublicUrl(filePath);
+        
+        setCoverUrl(publicUrlData.publicUrl);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast.error('Failed to upload image');
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -71,12 +107,16 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
               Cover Image
             </label>
             <div className="flex items-center space-x-4">
-              <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden relative">
-                <img 
-                  src={previewImage || "/placeholder.svg"} 
-                  alt="Playlist Cover" 
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center">
+                {previewImage ? (
+                  <img 
+                    src={previewImage} 
+                    alt="Playlist Cover" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                )}
                 {previewImage && (
                   <button 
                     onClick={() => {
@@ -95,10 +135,11 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
                   accept="image/*" 
                   className="hidden"
                   onChange={handleFileUpload}
+                  disabled={isUploading}
                 />
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" disabled={isUploading}>
                   <Upload className="w-4 h-4" />
-                  Upload
+                  {isUploading ? 'Uploading...' : 'Upload'}
                 </Button>
               </label>
             </div>
@@ -109,7 +150,7 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={isUploading}>
             Save Changes
           </Button>
         </DialogFooter>
