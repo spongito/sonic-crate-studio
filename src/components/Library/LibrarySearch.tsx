@@ -24,12 +24,17 @@ export function LibrarySearch({
   showFilters,
   setShowFilters,
 }: LibrarySearchProps) {
+  const handleClearSearch = () => {
+    setSearch("");
+  };
+  
   return (
     <div className="flex gap-2 w-full sm:w-auto">
       <SearchInput
         placeholder="Search tracks..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+        onClear={handleClearSearch}
         className="w-full sm:w-[300px]"
       />
       

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Music, Search, RefreshCw, LibraryBig, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Track } from "@/types/table";
 
 const LibraryView = () => {
   const { user } = useAuth();
@@ -39,6 +40,91 @@ const LibraryView = () => {
     syncExistingPlaylists
   } = useTracks();
   const initialLoadCompleted = useRef(false);
+
+  // New function to filter tracks based on search and other filters
+  const filteredTracks = useMemo(() => {
+    if (!allTracks || allTracks.length === 0) return [];
+    
+    let result = [...allTracks];
+    
+    // Filter by search term
+    if (search && search.trim() !== '') {
+      const searchLower = search.toLowerCase().trim();
+      logger.debug(`Filtering tracks by search term: "${searchLower}"`);
+      
+      result = result.filter(track => {
+        const titleMatch = track.title?.toLowerCase().includes(searchLower);
+        const artistMatch = Array.isArray(track.artist) 
+          ? track.artist.some(a => a.toLowerCase().includes(searchLower))
+          : track.artist?.toLowerCase().includes(searchLower);
+        const albumMatch = track.album?.toLowerCase().includes(searchLower);
+        
+        return titleMatch || artistMatch || albumMatch;
+      });
+      
+      logger.debug(`Found ${result.length} tracks matching search term "${searchLower}"`);
+    }
+    
+    // Filter by date range if specified
+    if (dateRange.from || dateRange.to) {
+      result = result.filter(track => {
+        if (!track.created_at) return false;
+        
+        const trackDate = new Date(track.created_at);
+        
+        if (dateRange.from && trackDate < dateRange.from) return false;
+        if (dateRange.to && trackDate > dateRange.to) return false;
+        
+        return true;
+      });
+    }
+    
+    // Filter by BPM range if specified
+    if (bpmRange && bpmRange.length === 2) {
+      result = result.filter(track => {
+        if (!track.bpm) return true; // Keep tracks with no BPM info
+        return track.bpm >= bpmRange[0] && track.bpm <= bpmRange[1];
+      });
+    }
+    
+    // Filter by year range if specified
+    if (yearRange && yearRange.length === 2) {
+      result = result.filter(track => {
+        const year = track.release_year || track.year;
+        if (!year) return true; // Keep tracks with no year info
+        return year >= yearRange[0] && year <= yearRange[1];
+      });
+    }
+    
+    // Filter by genre if specified
+    if (genre && genre !== '') {
+      const genreLower = genre.toLowerCase();
+      result = result.filter(track => {
+        if (!track.genre) return false;
+        
+        if (Array.isArray(track.genre)) {
+          return track.genre.some(g => g.toLowerCase().includes(genreLower));
+        }
+        
+        return track.genre.toLowerCase().includes(genreLower);
+      });
+    }
+    
+    // Filter by key signature if specified
+    if (keySignature && keySignature !== '') {
+      result = result.filter(track => {
+        if (!track.key_signature) return false;
+        return track.key_signature.includes(keySignature);
+      });
+    }
+    
+    return result;
+  }, [allTracks, search, dateRange, bpmRange, yearRange, genre, keySignature, logger]);
+
+  // Add a separate useMemo for liked tracks that also applies our filters
+  const filteredLikedTracks = useMemo(() => {
+    return filteredTracks.filter(track => track.liked);
+  }, [filteredTracks]);
 
   // New effect to handle tab change from query parameter
   useEffect(() => {
@@ -242,7 +328,7 @@ const LibraryView = () => {
 
         <LibraryContentComponent
           activeTab={activeTab}
-          tracks={allTracks}
+          tracks={activeTab === 'liked' ? filteredLikedTracks : filteredTracks}
           onLikeToggle={useTracks().toggleLike}
         />
       </div>
