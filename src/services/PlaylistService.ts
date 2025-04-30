@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Playlist } from "@/components/Playlists/types";
+import type { Json } from "@/integrations/supabase/types";
 
 export const fetchPlaylistById = async (id: string) => {
   try {
@@ -30,9 +31,25 @@ export const fetchPlaylistById = async (id: string) => {
 
 export const updatePlaylist = async (id: string, updates: Partial<Playlist>) => {
   try {
+    // Create a new object with properly typed properties
+    const supabaseUpdates: Record<string, any> = {};
+    
+    // Only include the properties that are provided in updates
+    if (updates.name !== undefined) supabaseUpdates.name = updates.name;
+    if (updates.cover_image_url !== undefined) supabaseUpdates.cover_image_url = updates.cover_image_url;
+    if (updates.description !== undefined) supabaseUpdates.description = updates.description;
+    if (updates.is_public !== undefined) supabaseUpdates.is_public = updates.is_public;
+    if (updates.tags !== undefined) supabaseUpdates.tags = updates.tags;
+    if (updates.genres !== undefined) supabaseUpdates.genres = updates.genres;
+    
+    // Handle results specially - convert to JSON if present
+    if (updates.results !== undefined) {
+      supabaseUpdates.results = updates.results as unknown as Json;
+    }
+    
     const { error } = await supabase
       .from("playlists")
-      .update(updates)
+      .update(supabaseUpdates)
       .eq("id", id);
     
     if (error) {
