@@ -193,7 +193,7 @@ const PlaylistDetail = () => {
               playlist={playlist}
               tracks={tracks}
               onEditClick={() => setIsEditing(true)}
-              coverImageUrl={editedCoverUrl}
+              coverImageUrl={playlist.cover_image_url}
             />
 
             <PlaylistActions 
@@ -220,7 +220,7 @@ const PlaylistDetail = () => {
           <PlaylistEditModal 
             isOpen={isEditing}
             playlistName={playlist.name}
-            coverImageUrl={editedCoverUrl || ''}
+            coverImageUrl={playlist.cover_image_url || ''}
             onClose={() => setIsEditing(false)}
             onSave={(name, coverUrl) => {
               updatePlaylistData(name, coverUrl);
