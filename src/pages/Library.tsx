@@ -25,7 +25,7 @@ const LibraryView = () => {
   const [keySignature, setKeySignature] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const logger = useLogger("Library");
-  const { allTracks, recentTracks, isLoading, toggleLike, error } = useTracks();
+  const { allTracks, recentTracks, isLoading, toggleLike, error, refreshTracks } = useTracks();
 
   // New effect to handle tab change from query parameter
   useEffect(() => {
@@ -36,6 +36,14 @@ const LibraryView = () => {
       setActiveTab('liked');
     }
   }, [location.search]);
+
+  // New effect to refresh tracks when the page is loaded
+  useEffect(() => {
+    if (user) {
+      logger.info("Library page loaded, refreshing tracks");
+      refreshTracks();
+    }
+  }, [user, refreshTracks, logger]);
 
   const filters = {
     search,
@@ -112,4 +120,3 @@ const Library = () => {
 };
 
 export default Library;
-

@@ -21,7 +21,7 @@ export const useTrackOperations = (userId: string | undefined) => {
       setIsLoading(true);
       logger.info('Fetching user tracks');
 
-      // Get user's track history
+      // Get user's track history - order by created_at descending to get most recent first
       const { data: historyTracks, error: historyError } = await supabase
         .from("user_track_history")
         .select("*")
@@ -57,8 +57,8 @@ export const useTrackOperations = (userId: string | undefined) => {
       // Process history tracks and mark liked ones
       const processedTracks = historyTracks.map(track => ({
         ...track,
-        id: track.track_id,
-        liked: likedTrackIds.has(track.id || track.track_id),
+        id: track.track_id || track.id,
+        liked: likedTrackIds.has(track.track_id || track.id),
         created_at: track.created_at,
         duration: formatDuration(track)
       }));
@@ -69,6 +69,7 @@ export const useTrackOperations = (userId: string | undefined) => {
       // Get liked tracks
       const likedTracks = processedTracks.filter(track => track.liked);
 
+      logger.success(`Processed ${processedTracks.length} tracks, ${recentTracks.length} recent, ${likedTracks.length} liked`);
       return { allTracks: processedTracks, recentTracks, likedTracks };
     } catch (err) {
       const error = err as Error;

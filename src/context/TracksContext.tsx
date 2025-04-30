@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Track } from '@/types/table';
 import { useLogger } from '@/hooks/useLogger';
@@ -25,24 +25,43 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const logger = useLogger('TracksContext');
   const { isLoading, error, fetchUserTracks, toggleLike: toggleTrackLike } = useTrackOperations(user?.id);
 
-  const refreshTracks = async () => {
+  const refreshTracks = useCallback(async () => {
     logger.info('Manually refreshing tracks');
-    const { allTracks: newAllTracks, recentTracks: newRecentTracks, likedTracks: newLikedTracks } = 
-      await fetchUserTracks();
-    
-    setAllTracks(newAllTracks);
-    setRecentTracks(newRecentTracks);
-    setLikedTracks(newLikedTracks);
-  };
+    try {
+      const { allTracks: newAllTracks, recentTracks: newRecentTracks, likedTracks: newLikedTracks } = 
+        await fetchUserTracks();
+      
+      setAllTracks(newAllTracks);
+      setRecentTracks(newRecentTracks);
+      setLikedTracks(newLikedTracks);
+      logger.success(`Refreshed tracks: ${newAllTracks.length} total, ${newRecentTracks.length} recent, ${newLikedTracks.length} liked`);
+    } catch (error) {
+      logger.error('Failed to refresh tracks:', error);
+    }
+  }, [fetchUserTracks, logger]);
 
   const toggleLike = async (trackId: string, liked: boolean) => {
-    await toggleTrackLike(trackId, liked);
-    await refreshTracks();
+    try {
+      await toggleTrackLike(trackId, liked);
+      await refreshTracks();
+      logger.success(`Track ${trackId} like status toggled to ${!liked}`);
+    } catch (error) {
+      logger.error('Error toggling track like:', error);
+      throw error;
+    }
   };
 
   useEffect(() => {
-    refreshTracks();
-  }, [user?.id]);
+    if (user?.id) {
+      logger.info('User authenticated, fetching tracks');
+      refreshTracks();
+    } else {
+      logger.info('No user, clearing tracks');
+      setAllTracks([]);
+      setRecentTracks([]);
+      setLikedTracks([]);
+    }
+  }, [user?.id, refreshTracks, logger]);
 
   return (
     <TracksContext.Provider
@@ -68,4 +87,3 @@ export const useTracks = (): TracksContextType => {
   }
   return context;
 };
-
