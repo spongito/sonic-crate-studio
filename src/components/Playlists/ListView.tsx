@@ -3,38 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { format } from "date-fns";
 import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Track {
-  title: string;
-  artist: string;
-  album?: string;
-  spotify_id?: string;
-  duration?: string;
-  match_score?: number;
-  audio_features?: {
-    bpm?: number;
-    key?: number;
-    mode?: number;
-  };
-  platform?: string;
-  platform_url?: string;
-  cover_url?: string;
-}
-
-interface Playlist {
-  id: string;
-  name: string;
-  prompt: string;
-  created_at: string;
-  results: Track[];
-  user_id: string;
-  is_public: boolean;
-  updated_at: string;
-  genres: string[];
-  description?: string;
-  settings?: any;
-  tags?: string[];
-}
+import { Link } from "react-router-dom";
+import type { Playlist } from "./types";
 
 interface ListViewProps {
   playlists: Playlist[];
@@ -59,18 +29,23 @@ export function ListView({ playlists, onPlaylistClick }: ListViewProps) {
             <TableRow key={playlist.id}>
               <TableCell className="font-medium">{playlist.name}</TableCell>
               <TableCell className="max-w-[300px] truncate">{playlist.prompt}</TableCell>
-              <TableCell>{playlist.results.length}</TableCell>
+              <TableCell>{Array.isArray(playlist.results) ? playlist.results.length : 0}</TableCell>
               <TableCell>
                 {format(new Date(playlist.created_at), "MMM d, yyyy")}
               </TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onPlaylistClick(playlist)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
+                <Link to={`/playlists/${playlist.id}`}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onPlaylistClick(playlist);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </Link>
               </TableCell>
             </TableRow>
           ))}

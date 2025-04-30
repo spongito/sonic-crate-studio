@@ -8,11 +8,36 @@ import { PlaylistSkeleton } from "./PlaylistSkeleton";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { ViewToggle } from "./ViewToggle";
+import { ListView } from "./ListView";
+import { useIsMobile } from "@/hooks/use-mobile";
+import type { Playlist } from "./types";
+
+// Local storage key for view preference
+const VIEW_PREFERENCE_KEY = "playlist-view-preference";
 
 export const PlaylistList = () => {
-  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  
+  // Initialize view state based on local storage or device type
+  const getInitialView = () => {
+    const savedView = localStorage.getItem(VIEW_PREFERENCE_KEY);
+    if (savedView === "grid" || savedView === "list") {
+      return savedView;
+    }
+    // Default to list view on mobile, grid view on desktop
+    return isMobile ? "list" : "grid";
+  };
+  
+  const [view, setView] = useState<"grid" | "list">(getInitialView);
+
+  // Save view preference to localStorage
+  useEffect(() => {
+    localStorage.setItem(VIEW_PREFERENCE_KEY, view);
+  }, [view]);
 
   useEffect(() => {
     if (!user) {
@@ -47,6 +72,14 @@ export const PlaylistList = () => {
     
     fetchPlaylists();
   }, [user]);
+
+  const handleViewChange = (newView: "grid" | "list") => {
+    setView(newView);
+  };
+
+  const handlePlaylistClick = (playlist: Playlist) => {
+    // Navigate to playlist detail view
+  };
   
   return (
     <div className="space-y-6">
@@ -54,12 +87,15 @@ export const PlaylistList = () => {
         <h2 className="text-2xl font-bold">
           {playlists.length === 0 ? "No playlists yet" : `${playlists.length} Playlists`}
         </h2>
-        <Link to="/music-finder">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Playlist
-          </Button>
-        </Link>
+        <div className="flex items-center gap-4">
+          <ViewToggle view={view} onViewChange={handleViewChange} />
+          <Link to="/music-finder">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Playlist
+            </Button>
+          </Link>
+        </div>
       </div>
       
       {loading ? (
@@ -70,7 +106,7 @@ export const PlaylistList = () => {
         <div className="text-center py-12">
           <p className="text-muted-foreground">Generate your first playlist to see it here.</p>
         </div>
-      ) : (
+      ) : view === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {playlists.map((playlist) => (
             <PlaylistCard
@@ -83,6 +119,11 @@ export const PlaylistList = () => {
             />
           ))}
         </div>
+      ) : (
+        <ListView 
+          playlists={playlists} 
+          onPlaylistClick={handlePlaylistClick} 
+        />
       )}
     </div>
   );
