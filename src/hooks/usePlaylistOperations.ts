@@ -8,7 +8,7 @@ import { useTracks } from '@/context/TracksContext';
 import type { Playlist } from '@/components/Playlists/types';
 import { toast } from 'sonner';
 
-export const usePlaylistOperations = (playlist: Playlist | null, id?: string) => {
+export const usePlaylistOperations = (playlist: Playlist | null = null, id?: string) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -19,14 +19,16 @@ export const usePlaylistOperations = (playlist: Playlist | null, id?: string) =>
     if (!user || !tracks || tracks.length === 0) return;
 
     try {
+      console.log(`Saving ${tracks.length} tracks to history`);
+      
       const formattedTracksForHistory = tracks.map(track => ({
         user_id: user.id,
-        track_id: track.id || track.spotify_id,
+        track_id: track.id || track.spotify_id || `${track.name}-${track.artist}`,
         title: track.title || track.name || "Unknown Track",
         artist: Array.isArray(track.artist) ? track.artist.join(", ") : track.artist || "Unknown Artist",
         album: track.album || "Unknown Album",
         platform: track.platform || "spotify",
-        key_signature: track.key_signature || track.audio_features?.key,
+        key_signature: track.key_signature || (track.audio_features ? `${track.audio_features.key} ${track.audio_features.mode === 1 ? 'Major' : 'Minor'}` : null),
         genre: Array.isArray(track.genre) ? track.genre.join(", ") : track.genre || "",
         image_url: track.image_url || track.cover_url || track.image || "",
         external_url: track.external_url || track.platform_url || "",
@@ -34,16 +36,25 @@ export const usePlaylistOperations = (playlist: Playlist | null, id?: string) =>
         release_year: track.release_year
       }));
 
-      const { error } = await supabase
-        .from("user_track_history")
-        .upsert(formattedTracksForHistory, {
-          onConflict: 'user_id,track_id',
-          ignoreDuplicates: false
-        });
+      // Break into smaller batches of 50 to avoid large payloads
+      const batchSize = 50;
+      for (let i = 0; i < formattedTracksForHistory.length; i += batchSize) {
+        const batch = formattedTracksForHistory.slice(i, i + batchSize);
+        
+        const { error } = await supabase
+          .from("user_track_history")
+          .upsert(batch, {
+            onConflict: 'user_id,track_id',
+            ignoreDuplicates: false
+          });
 
-      if (error) {
-        console.error("Error saving tracks to history:", error);
+        if (error) {
+          console.error("Error saving tracks batch to history:", error);
+          // Continue with next batch despite errors
+        }
       }
+      
+      console.log(`Successfully saved tracks to history`);
     } catch (error) {
       console.error("Failed to save tracks to history:", error);
     }
@@ -137,6 +148,7 @@ export const usePlaylistOperations = (playlist: Playlist | null, id?: string) =>
     handleDelete,
     updatePlaylistData,
     savePlaylist,
-    isSaving
+    isSaving,
+    saveTracksToHistory // Expose the function so it can be used elsewhere
   };
 };

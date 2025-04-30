@@ -13,7 +13,7 @@ import { useLogger } from "@/hooks/useLogger";
 import { TracksProvider, useTracks } from "@/context/TracksContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Music, Search } from "lucide-react";
+import { Music, Search, RefreshCw } from "lucide-react";
 
 const LibraryView = () => {
   const { user } = useAuth();
@@ -28,7 +28,16 @@ const LibraryView = () => {
   const [keySignature, setKeySignature] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const logger = useLogger("Library");
-  const { allTracks, recentTracks, isLoading, toggleLike, error, refreshTracks } = useTracks();
+  const { 
+    allTracks, 
+    recentTracks, 
+    isLoading, 
+    toggleLike, 
+    error, 
+    refreshTracks,
+    isSyncing,
+    syncExistingPlaylists
+  } = useTracks();
   const initialLoadCompleted = useRef(false);
 
   // New effect to handle tab change from query parameter
@@ -67,6 +76,15 @@ const LibraryView = () => {
     }
   }, [error, logger]);
 
+  // Show syncing notification
+  useEffect(() => {
+    if (isSyncing) {
+      toast.info("Syncing your playlist tracks to library. This might take a moment...", {
+        duration: 5000
+      });
+    }
+  }, [isSyncing]);
+
   const filters = {
     search,
     bpmMin: bpmRange[0].toString(),
@@ -80,13 +98,22 @@ const LibraryView = () => {
     camelotMode: false
   };
 
+  const handleSyncClick = () => {
+    syncExistingPlaylists();
+    toast.info("Syncing your playlists to library. Please wait...");
+  };
+
   // Only show loading state on initial load, not on refreshes
-  if (isLoading && allTracks.length === 0 && !initialLoadCompleted.current) {
-    return <LoadingState />;
+  if ((isLoading && allTracks.length === 0 && !initialLoadCompleted.current) || isSyncing) {
+    return (
+      <LoadingState 
+        message={isSyncing ? "Syncing your playlist tracks to the library..." : "Loading your library..."} 
+      />
+    );
   }
 
   // New empty library state with guidance for new users
-  if (!isLoading && allTracks.length === 0 && initialLoadCompleted.current) {
+  if (!isLoading && !isSyncing && allTracks.length === 0 && initialLoadCompleted.current) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-card border rounded-lg p-8 text-center max-w-2xl mx-auto shadow-sm">
@@ -106,6 +133,10 @@ const LibraryView = () => {
                 <Search className="mr-2 h-4 w-4" />
                 Find Music
               </Link>
+            </Button>
+            <Button variant="outline" onClick={handleSyncClick}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Sync Existing Playlists
             </Button>
           </div>
         </div>
