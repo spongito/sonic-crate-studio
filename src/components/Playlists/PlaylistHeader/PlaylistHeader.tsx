@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Edit, Music } from "lucide-react";
+import { PlaylistCover } from "@/components/PlaylistCover";
 
 interface PlaylistHeaderProps {
   playlist: {
@@ -17,19 +18,25 @@ interface PlaylistHeaderProps {
 }
 
 export function PlaylistHeader({ playlist, tracks, onEditClick, coverImageUrl }: PlaylistHeaderProps) {
+  // Check if using a template cover
+  const isTemplateImage = coverImageUrl?.startsWith('template:');
+  const templateType = isTemplateImage ? coverImageUrl?.split(':')[1] as 'A' | 'B' | 'C' : null;
+  
   // Function to get a fallback image based on playlist ID
   const getFallbackImage = (playlistId: string) => {
     return `https://picsum.photos/seed/${playlistId}/400/400`;
   };
 
   const firstTrackImage = tracks?.[0]?.image_url;
-  const displayImage = coverImageUrl || firstTrackImage || getFallbackImage(playlist.id);
+  const displayImage = !isTemplateImage ? (coverImageUrl || firstTrackImage || getFallbackImage(playlist.id)) : null;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
       {/* Cover Image */}
       <div className="aspect-square rounded-lg overflow-hidden bg-muted shadow-lg relative">
-        {displayImage ? (
+        {isTemplateImage && templateType ? (
+          <PlaylistCover name={playlist.name} template={templateType} />
+        ) : displayImage ? (
           <img 
             src={displayImage}
             alt={playlist.name}

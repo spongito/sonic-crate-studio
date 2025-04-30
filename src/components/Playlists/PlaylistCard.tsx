@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Music } from "lucide-react";
+import { PlaylistCover } from "@/components/PlaylistCover";
 
 interface PlaylistCardProps {
   id: string;
@@ -14,6 +15,10 @@ interface PlaylistCardProps {
 }
 
 export function PlaylistCard({ id, title, coverUrl, trackCount, createdAt }: PlaylistCardProps) {
+  // Check if using a template cover
+  const isTemplateImage = coverUrl?.startsWith('template:');
+  const templateType = isTemplateImage ? coverUrl?.split(':')[1] as 'A' | 'B' | 'C' : null;
+  
   // Function to get a consistent fallback image based on playlist ID
   const getFallbackImage = (playlistId: string) => {
     return `https://picsum.photos/seed/${playlistId}/400/400`;
@@ -23,7 +28,9 @@ export function PlaylistCard({ id, title, coverUrl, trackCount, createdAt }: Pla
     <Link to={`/playlists/${id}`}>
       <Card className="neo-card overflow-hidden group transition-all duration-300 hover:scale-[1.02]">
         <AspectRatio ratio={1} className="bg-muted">
-          {coverUrl ? (
+          {isTemplateImage && templateType ? (
+            <PlaylistCover name={title} template={templateType} />
+          ) : coverUrl ? (
             <img 
               src={coverUrl} 
               alt={title}
