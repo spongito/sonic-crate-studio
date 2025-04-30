@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { SearchDialog } from "@/components/Dashboard/AdvancedSearch/SearchDialog";
 import { SignInDialog } from "@/components/auth/SignInDialog";
-import { LoginErrorModal } from "@/components/auth/LoginErrorModal";
 import { useAuth } from "@/context/AuthContext";
 import { getDefaultPlatforms } from "@/components/Dashboard/MusicFinder/PlatformSelector";
 import { usePlaylistGenerator } from "@/hooks/usePlaylistGenerator";
@@ -19,7 +18,6 @@ const HeroSearch = ({ onPlaylistGenerated, setShowPlaylist }: HeroSearchProps) =
   const [platforms] = useState(getDefaultPlatforms());
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
-  const [showLoginError, setShowLoginError] = useState(false);
   const { user, subscription } = useAuth();
   
   const { 
@@ -94,11 +92,6 @@ const HeroSearch = ({ onPlaylistGenerated, setShowPlaylist }: HeroSearchProps) =
       <SignInDialog 
         open={showSignIn} 
         onOpenChange={setShowSignIn}
-      />
-      
-      <LoginErrorModal 
-        open={showLoginError}
-        onOpenChange={setShowLoginError}
       />
     </div>
   );
