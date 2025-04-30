@@ -54,8 +54,10 @@ export const useTrackOperations = (userId: string | undefined) => {
         return { allTracks: [], recentTracks: [], likedTracks: [] };
       }
 
-      if (!historyTracks) {
-        logger.warning('No history tracks returned, but no error either');
+      if (!historyTracks || historyTracks.length === 0) {
+        // This is a normal state when the user has no tracks yet, not an error
+        logger.info('No track history found for user - this is normal for new users');
+        setError(null); // Clear any previous errors
         setIsLoading(false);
         return { allTracks: [], recentTracks: [], likedTracks: [] };
       }

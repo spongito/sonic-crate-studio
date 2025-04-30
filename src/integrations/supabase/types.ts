@@ -111,22 +111,7 @@ export type Database = {
           track_id?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "liked_tracks_track_id_fkey"
-            columns: ["track_id"]
-            isOneToOne: false
-            referencedRelation: "tracks_master"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "liked_tracks_track_id_fkey"
-            columns: ["track_id"]
-            isOneToOne: false
-            referencedRelation: "trending_tracks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       playlist_tracks: {
         Row: {

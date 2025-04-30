@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { RecentlyFoundTracks } from "@/components/Library/RecentlyFoundTracks";
@@ -12,6 +12,8 @@ import { LoadingState } from "@/components/Library/LoadingState";
 import { useLogger } from "@/hooks/useLogger";
 import { TracksProvider, useTracks } from "@/context/TracksContext";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Music, Search } from "lucide-react";
 
 const LibraryView = () => {
   const { user } = useAuth();
@@ -81,6 +83,34 @@ const LibraryView = () => {
   // Only show loading state on initial load, not on refreshes
   if (isLoading && allTracks.length === 0 && !initialLoadCompleted.current) {
     return <LoadingState />;
+  }
+
+  // New empty library state with guidance for new users
+  if (!isLoading && allTracks.length === 0 && initialLoadCompleted.current) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-card border rounded-lg p-8 text-center max-w-2xl mx-auto shadow-sm">
+          <div className="flex justify-center mb-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Music className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-semibold mb-2">Your Library is Empty</h2>
+          <p className="text-muted-foreground mb-6">
+            Start by discovering new tracks using the Music Finder to build your personal library. 
+            Any tracks you find will appear here.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg">
+              <Link to="/music-finder">
+                <Search className="mr-2 h-4 w-4" />
+                Find Music
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

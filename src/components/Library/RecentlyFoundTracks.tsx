@@ -6,6 +6,9 @@ import TrackLikeButton from "@/components/TrackLikeButton";
 import type { Track } from "@/types/table";
 import { useLogger } from "@/hooks/useLogger";
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Music, Search } from "lucide-react";
 
 interface RecentlyFoundTracksProps {
   tracks: Track[];
@@ -28,9 +31,20 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Recently Found Tracks</h2>
-        <div className="p-4 bg-muted/40 rounded-lg text-center">
-          <p className="text-muted-foreground">No recently found tracks yet.</p>
-        </div>
+        <Card className="p-6">
+          <div className="text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Music className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground mb-4">Start discovering new music to see your recent finds here.</p>
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/music-finder">
+                <Search className="mr-2 h-4 w-4" />
+                Find Music
+              </Link>
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
