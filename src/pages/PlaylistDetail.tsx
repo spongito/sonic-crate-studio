@@ -4,12 +4,12 @@ import { Navigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Separator } from "@/components/ui/separator";
 import { PlaylistActions } from "@/components/Playlists/PlaylistActions/PlaylistActions";
-import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
 import { PlaylistEditModal } from "@/components/Playlists/PlaylistEditModal";
 import { PlaylistHeader } from "@/components/Playlists/PlaylistHeader/PlaylistHeader";
 import { LoadingState } from "@/components/Playlists/PlaylistDetail/LoadingState";
 import { NotFoundState } from "@/components/Playlists/PlaylistDetail/NotFoundState";
 import { usePlaylistDetail } from "@/hooks/usePlaylistDetail";
+import TabPlaylistView from "@/components/TabPlaylistView";
 
 const PlaylistDetail = () => {
   const {
@@ -61,15 +61,13 @@ const PlaylistDetail = () => {
 
             <Separator className="my-6" />
 
-            <div>
-              <h2 className="text-xl font-bold mb-4">Tracks</h2>
-              <GeneratedPlaylistTable 
-                tracks={tracks}
-                showControls={false}
-                fullWidth={true}
-                playlistName={playlist.name}
-              />
-            </div>
+            <TabPlaylistView 
+              tracks={tracks}
+              playlistName={playlist.name}
+              showControls={true}
+              showLikeButton={true}
+              showAddToLibrary={true}
+            />
           </div>
         ) : null}
 
