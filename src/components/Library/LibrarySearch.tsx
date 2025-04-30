@@ -1,5 +1,5 @@
 
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, SlidersHorizontal } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,7 +26,7 @@ export function LibrarySearch({
 }: LibrarySearchProps) {
   return (
     <div className="flex gap-2 w-full sm:w-auto">
-      <Input
+      <SearchInput
         placeholder="Search tracks..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}

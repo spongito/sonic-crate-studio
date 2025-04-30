@@ -2,7 +2,7 @@
 import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GeneratedPlaylistTable from "./GeneratedPlaylistTable";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
@@ -80,7 +80,7 @@ export default function TabPlaylistView({
       
       <Tabs value={activePlatform} onValueChange={setActivePlatform} className="w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6">
-          <Input
+          <SearchInput
             placeholder="Search tracks..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

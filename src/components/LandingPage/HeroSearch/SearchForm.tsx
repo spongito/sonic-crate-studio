@@ -1,5 +1,5 @@
 
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { AdvancedButton } from "./AdvancedButton";
 import { GenerateButton } from "./GenerateButton";
 
@@ -22,7 +22,7 @@ export const SearchForm = ({
 }: SearchFormProps) => {
   return (
     <div className="glass-morphism p-3 sm:p-4 flex flex-col gap-4 rounded-lg">
-      <Input
+      <SearchInput
         placeholder="curate a soulful afrobeat set for golden hour"
         className="flex-1 bg-background/60 border-white/10 focus:border-gold/30 focus:ring-gold/20 rounded-md"
         value={prompt}

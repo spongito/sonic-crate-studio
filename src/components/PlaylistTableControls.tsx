@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
@@ -24,7 +24,7 @@ export default function PlaylistTableControls({
 
   return (
     <div className="flex flex-col sm:flex-row items-center py-4 gap-4 px-6">
-      <Input
+      <SearchInput
         placeholder="Search tracks..."
         value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
         onChange={(event) =>

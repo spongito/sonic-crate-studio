@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { PlatformSelectSection } from "../MusicFinder/AdvancedSettings/PlatformSelectSection";
 import { GenreSelect } from "../MusicFinder/AdvancedSettings/GenreSelect";
@@ -8,7 +7,7 @@ import { ReleaseYearRangeSlider } from "../MusicFinder/AdvancedSettings/ReleaseY
 import { BpmFilter } from "../MusicFinder/AdvancedSettings/BpmFilter";
 import { ReferenceSearch, type SpotifySearchResult } from "../MusicFinder/ReferenceSearch";
 import { SearchFilterSection } from "./SearchFilterSection";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { getDefaultPlatforms, Platform } from "../MusicFinder/PlatformSelector";
 
 const genres = [
@@ -152,7 +151,7 @@ export function AdvancedSearchForm({ initialPrompt = "", onSubmit, onCancel }: A
       onSubmit={e => { e.preventDefault(); handleSubmit(); }}
       className="space-y-4 my-4"
     >
-      <Input
+      <SearchInput
         placeholder="What kind of music are you looking for?"
         value={params.prompt}
         onChange={(e) => setParams({ ...params, prompt: e.target.value })}
