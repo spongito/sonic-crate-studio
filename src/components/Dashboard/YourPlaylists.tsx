@@ -5,13 +5,31 @@ import { formatDistanceToNow } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { PlaylistSkeleton } from "@/components/Playlists/PlaylistSkeleton";
+import { Json } from '@/integrations/supabase/types';
 
 interface Playlist {
   id: string;
   name: string;
-  cover_url?: string;
+  cover_image_url?: string;
   created_at: string;
   results: any[];
+}
+
+// Interface to match the actual data from Supabase
+interface PlaylistFromDB {
+  id: string;
+  name: string;
+  cover_image_url?: string;
+  created_at: string;
+  results: Json;
+  description: string;
+  genres: string[];
+  is_public: boolean;
+  prompt: string;
+  settings: Json;
+  tags: string[];
+  updated_at: string;
+  user_id: string;
 }
 
 export const YourPlaylists: React.FC = () => {
@@ -41,7 +59,18 @@ export const YourPlaylists: React.FC = () => {
           return;
         }
         
-        setPlaylists(data || []);
+        // Transform the data to match our Playlist interface
+        const transformedPlaylists: Playlist[] = (data as PlaylistFromDB[]).map(playlist => ({
+          id: playlist.id,
+          name: playlist.name,
+          cover_image_url: playlist.cover_image_url,
+          created_at: playlist.created_at,
+          results: Array.isArray(playlist.results) ? playlist.results : 
+                  typeof playlist.results === 'string' ? JSON.parse(playlist.results) : 
+                  [],
+        }));
+        
+        setPlaylists(transformedPlaylists);
       } catch (error) {
         console.error("Error in dashboard playlists fetch:", error);
       } finally {
@@ -106,7 +135,7 @@ export const YourPlaylists: React.FC = () => {
             <div className="neo-card overflow-hidden rounded-lg transition-all duration-300">
               <div className="aspect-square overflow-hidden">
                 <img 
-                  src={playlist.cover_url || "https://picsum.photos/seed/" + playlist.id + "/300"} 
+                  src={playlist.cover_image_url || "https://picsum.photos/seed/" + playlist.id + "/300"} 
                   alt={playlist.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
