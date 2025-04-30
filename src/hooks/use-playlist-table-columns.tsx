@@ -157,14 +157,22 @@ export function usePlaylistTableColumns({
         </div>
       ),
       cell: ({ row }) => {
+        // Get the social_metric value
         const metric = row.original.social_metric;
+        
+        // Check if it's undefined or null
         if (metric === undefined || metric === null) {
           return <span className="text-muted-foreground text-sm">N/A</span>;
         }
         
-        const formattedMetric = typeof metric === 'number' 
-          ? (metric > 1000 ? `${(metric/1000).toFixed(1)}K` : metric.toString())
-          : String(metric);
+        // Format the metric based on its type and value
+        let formattedMetric: string;
+        if (typeof metric === 'number') {
+          formattedMetric = metric > 1000 ? `${(metric/1000).toFixed(1)}K` : metric.toString();
+        } else {
+          // Convert any non-number metric to string to ensure it's a valid React child
+          formattedMetric = String(metric);
+        }
         
         return (
           <Badge variant="outline" className="bg-muted/30">
