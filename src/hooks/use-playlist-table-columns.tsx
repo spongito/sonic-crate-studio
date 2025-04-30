@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -169,7 +168,7 @@ export function usePlaylistTableColumns({
         // Format the metric based on its type and value
         let formattedMetric: string;
         if (typeof metric === 'number') {
-          formattedMetric = metric > 1000 ? `${(metric/1000).toFixed(1)}K` : metric.toString();
+          formattedMetric = metric > 1000 ? `${(metric/1000).toFixed(1)}K` : String(metric);
         } else {
           // Convert any non-number metric to string to ensure it's a valid React child
           formattedMetric = String(metric);
