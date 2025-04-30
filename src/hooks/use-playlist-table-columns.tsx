@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -148,40 +149,7 @@ export function usePlaylistTableColumns({
       cell: ({ row }) => <span className="text-sm">{row.getValue("duration") || "N/A"}</span>,
       enableSorting: true,
     },
-    {
-      accessorKey: "social_metric",
-      header: ({ column }) => (
-        <div className="flex items-center cursor-pointer" onClick={() => column.toggleSorting()}>
-          Social
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        // Get the social_metric value and ensure it's properly typed
-        const metric = row.original.social_metric;
-        
-        // Check if it's undefined or null
-        if (metric === undefined || metric === null) {
-          return <span className="text-muted-foreground text-sm">N/A</span>;
-        }
-        
-        // Format the metric based on its type and value
-        let formattedMetric: string;
-        if (typeof metric === 'number') {
-          formattedMetric = metric > 1000 ? `${(metric/1000).toFixed(1)}K` : String(metric);
-        } else {
-          // Convert any non-number metric to string to ensure it's a valid React child
-          formattedMetric = String(metric);
-        }
-        
-        return (
-          <Badge variant="outline" className="bg-muted/30">
-            {formattedMetric}
-          </Badge>
-        );
-      },
-      enableSorting: true,
-    },
+    // social_metric column removed
     ...(showLikeButton || showAddToLibrary
       ? [
           {
