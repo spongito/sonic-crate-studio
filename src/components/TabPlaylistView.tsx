@@ -10,12 +10,16 @@ import type { Track } from "@/types/table";
 import { PlaylistTitle } from "./playlist/PlaylistTitle";
 import { PlaylistMenu } from "./playlist/PlaylistMenu";
 import { useTableColumns } from "@/hooks/use-table-columns";
+import { PlaylistEditModal } from "./Playlists/PlaylistEditModal";
+import { toast } from "sonner";
 
 interface TabPlaylistViewProps {
   tracks: Track[];
   playlistName?: string;
+  coverImageUrl?: string;
   onLikeChange?: (trackId: string, liked: boolean) => void;
   onSavePlaylist?: (platform: string) => void;
+  onPlaylistUpdate?: (name: string, coverUrl: string) => Promise<boolean>;
   userLikedTrackIds?: string[];
   className?: string;
 }
@@ -23,8 +27,10 @@ interface TabPlaylistViewProps {
 export default function TabPlaylistView({
   tracks,
   playlistName = "Generated Playlist",
+  coverImageUrl,
   onLikeChange,
   onSavePlaylist,
+  onPlaylistUpdate,
   userLikedTrackIds = [],
   className = "",
 }: TabPlaylistViewProps) {
@@ -32,6 +38,18 @@ export default function TabPlaylistView({
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const { visibleColumns, toggleColumn } = useTableColumns();
   const [isRenaming, setIsRenaming] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [currentPlaylistName, setCurrentPlaylistName] = React.useState(playlistName);
+  const [currentCoverUrl, setCurrentCoverUrl] = React.useState(coverImageUrl);
+
+  // Update local state when props change
+  React.useEffect(() => {
+    setCurrentPlaylistName(playlistName);
+  }, [playlistName]);
+
+  React.useEffect(() => {
+    setCurrentCoverUrl(coverImageUrl);
+  }, [coverImageUrl]);
 
   // Process tracks to include liked status based on userLikedTrackIds
   const processedTracks = React.useMemo(() => {
@@ -67,8 +85,49 @@ export default function TabPlaylistView({
     return filtered;
   }, [processedTracks, activePlatform, searchTerm]);
 
-  const handleTitleChange = (newTitle: string) => {
-    console.log("New playlist title:", newTitle);
+  const handleTitleChange = async (newTitle: string) => {
+    setCurrentPlaylistName(newTitle);
+    
+    if (onPlaylistUpdate) {
+      try {
+        const success = await onPlaylistUpdate(newTitle, currentCoverUrl || '');
+        if (!success) {
+          // Revert to original name if update failed
+          setCurrentPlaylistName(playlistName);
+          toast.error('Failed to update playlist title');
+        }
+      } catch (error) {
+        console.error('Error updating playlist title:', error);
+        // Revert to original name if update failed
+        setCurrentPlaylistName(playlistName);
+        toast.error('Failed to update playlist title');
+      }
+    } else {
+      console.log("New playlist title:", newTitle);
+    }
+  };
+
+  const handleEditSave = async (name: string, coverUrl: string) => {
+    if (onPlaylistUpdate) {
+      try {
+        const success = await onPlaylistUpdate(name, coverUrl);
+        if (success) {
+          setCurrentPlaylistName(name);
+          setCurrentCoverUrl(coverUrl);
+          setIsEditing(false);
+        } else {
+          toast.error('Failed to update playlist');
+        }
+      } catch (error) {
+        console.error('Error updating playlist:', error);
+        toast.error('Failed to update playlist');
+      }
+    } else {
+      // If no update handler provided, just update local state
+      setCurrentPlaylistName(name);
+      setCurrentCoverUrl(coverUrl);
+      setIsEditing(false);
+    }
   };
   
   const handleShare = () => {
@@ -79,7 +138,7 @@ export default function TabPlaylistView({
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center justify-between px-6">
         <PlaylistTitle 
-          title={playlistName} 
+          title={currentPlaylistName}
           onTitleChange={handleTitleChange}
         />
       </div>
@@ -105,6 +164,7 @@ export default function TabPlaylistView({
                 onSave={() => onSavePlaylist?.("all")}
                 onRename={() => setIsRenaming(true)}
                 onShare={handleShare}
+                onEdit={() => setIsEditing(true)}
               />
 
               <DropdownMenu>
@@ -135,7 +195,7 @@ export default function TabPlaylistView({
             tracks={filteredTracks}
             userLikedTrackIds={userLikedTrackIds} 
             onLikeChange={onLikeChange}
-            playlistName={playlistName}
+            playlistName={currentPlaylistName}
             fullWidth={true}
             showLikeButton={true}
             showControls={false}
@@ -149,7 +209,7 @@ export default function TabPlaylistView({
             tracks={filteredTracks}
             userLikedTrackIds={userLikedTrackIds} 
             onLikeChange={onLikeChange}
-            playlistName={playlistName}
+            playlistName={currentPlaylistName}
             fullWidth={true}
             showLikeButton={true}
             showControls={false}
@@ -163,7 +223,7 @@ export default function TabPlaylistView({
             tracks={filteredTracks}
             userLikedTrackIds={userLikedTrackIds} 
             onLikeChange={onLikeChange}
-            playlistName={playlistName}
+            playlistName={currentPlaylistName}
             fullWidth={true}
             showLikeButton={true}
             showControls={false}
@@ -172,6 +232,15 @@ export default function TabPlaylistView({
           />
         </TabsContent>
       </Tabs>
+      
+      {/* Playlist Edit Modal */}
+      <PlaylistEditModal
+        isOpen={isEditing}
+        playlistName={currentPlaylistName}
+        coverImageUrl={currentCoverUrl || ''}
+        onClose={() => setIsEditing(false)}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }

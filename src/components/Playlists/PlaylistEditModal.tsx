@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -23,7 +23,17 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
 }) => {
   const [name, setName] = useState(playlistName);
   const [coverUrl, setCoverUrl] = useState(coverImageUrl);
+  const [previewCoverUrl, setPreviewCoverUrl] = useState(coverImageUrl);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Reset form when modal opens/closes or props change
+  useEffect(() => {
+    if (isOpen) {
+      setName(playlistName);
+      setCoverUrl(coverImageUrl);
+      setPreviewCoverUrl(coverImageUrl);
+    }
+  }, [isOpen, playlistName, coverImageUrl]);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -32,15 +42,23 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
     }
     
     onSave(name, coverUrl);
-    onClose();
   };
 
   const handleImageUploaded = (url: string) => {
     setCoverUrl(url);
+    setPreviewCoverUrl(url); // Update preview immediately
+  };
+
+  const handleCancel = () => {
+    // Reset form
+    setName(playlistName);
+    setCoverUrl(coverImageUrl);
+    setPreviewCoverUrl(coverImageUrl);
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleCancel}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Playlist</DialogTitle>
@@ -70,7 +88,7 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
             </label>
             <ImageUploader 
               onImageUploaded={handleImageUploaded}
-              currentImageUrl={coverUrl}
+              currentImageUrl={previewCoverUrl}
               maxSizeMB={8}
               bucketName="playlist_covers"
             />
@@ -78,7 +96,7 @@ export const PlaylistEditModal: React.FC<PlaylistEditModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isUploading}>

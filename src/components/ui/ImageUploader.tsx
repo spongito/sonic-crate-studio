@@ -1,24 +1,28 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { cn } from "@/lib/utils";
 
 interface ImageUploaderProps {
   onImageUploaded: (url: string) => void;
   currentImageUrl?: string;
   maxSizeMB?: number;
   bucketName?: string;
+  className?: string;
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageUploaded,
   currentImageUrl,
   maxSizeMB = 8,
-  bucketName = 'playlist_covers'
+  bucketName = 'playlist_covers',
+  className,
 }) => {
   const [previewImage, setPreviewImage] = useState<string | null>(currentImageUrl || null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Use the existing useImageUpload hook
@@ -26,6 +30,27 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     maxSizeMB,
     bucket: bucketName
   });
+
+  // Update preview image when currentImageUrl changes (external updates)
+  useEffect(() => {
+    if (currentImageUrl !== previewImage) {
+      if (previewImage) {
+        // Start transition effect
+        setIsTransitioning(true);
+        
+        // After a short delay, update to the new image
+        const timer = setTimeout(() => {
+          setPreviewImage(currentImageUrl || null);
+          setIsTransitioning(false);
+        }, 300); // Matching transition duration
+        
+        return () => clearTimeout(timer);
+      } else {
+        // If no current preview, just set directly
+        setPreviewImage(currentImageUrl || null);
+      }
+    }
+  }, [currentImageUrl, previewImage]);
 
   const handleUploadClick = () => {
     if (fileInputRef.current) {
@@ -89,9 +114,18 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       const validation = await validateImage(file);
       if (!validation.valid) return;
       
+      // Start transition effect
+      setIsTransitioning(true);
+      
+      // Wait a short time for transition to start
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Show preview immediately after validation
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
+      
+      // End transition effect after preview is set
+      setTimeout(() => setIsTransitioning(false), 200);
       
       // Check if the image needs cropping
       let fileToUpload = file;
@@ -109,15 +143,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       if (!uploadedUrl) {
         toast.error('Failed to upload image');
         // Reset preview if upload fails
-        if (!currentImageUrl) {
-          setPreviewImage(null);
-        } else {
-          setPreviewImage(currentImageUrl);
-        }
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setPreviewImage(currentImageUrl || null);
+          setIsTransitioning(false);
+        }, 300);
         return;
       }
       
-      // Call the callback with the uploaded URL
+      // Call the callback with the uploaded URL - this updates parent components
       onImageUploaded(uploadedUrl);
       
       toast.success('Image uploaded successfully');
@@ -125,11 +159,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       console.error('Error uploading image:', error);
       toast.error('Failed to upload image');
       // Reset preview if upload fails
-      if (!currentImageUrl) {
-        setPreviewImage(null);
-      } else {
-        setPreviewImage(currentImageUrl);
-      }
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setPreviewImage(currentImageUrl || null);
+        setIsTransitioning(false);
+      }, 300);
     } finally {
       // Reset the file input
       if (event.target) {
@@ -139,25 +173,44 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   const handleRemoveImage = () => {
-    setPreviewImage(null);
-    onImageUploaded('');
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setPreviewImage(null);
+      setIsTransitioning(false);
+      onImageUploaded('');
+    }, 300);
   };
 
   return (
-    <div className="flex items-center space-x-4">
+    <div className={cn("flex items-center space-x-4", className)}>
       <div className="w-32 h-32 bg-muted rounded-lg overflow-hidden relative flex items-center justify-center group">
-        {previewImage ? (
-          <img 
-            src={previewImage} 
-            alt="Image Preview" 
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <Upload className="h-10 w-10 mb-2" />
-            <span className="text-xs text-center">No image</span>
+        <div className={cn(
+          "w-full h-full transition-opacity duration-300",
+          isTransitioning ? "opacity-0" : "opacity-100"
+        )}>
+          {previewImage ? (
+            <img 
+              src={previewImage} 
+              alt="Image Preview" 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Upload className="h-10 w-10 mb-2" />
+              <span className="text-xs text-center">No image</span>
+            </div>
+          )}
+        </div>
+        
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+            <div className="animate-pulse flex flex-col items-center">
+              <Upload className="h-10 w-10 mb-2 text-muted-foreground" />
+              <span className="text-xs">Uploading...</span>
+            </div>
           </div>
         )}
+        
         {previewImage && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300">
             <button 

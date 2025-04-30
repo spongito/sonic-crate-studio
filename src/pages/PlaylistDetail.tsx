@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Separator } from "@/components/ui/separator";
@@ -28,6 +28,14 @@ const PlaylistDetail = () => {
   } = usePlaylistDetail();
   
   const { toggleLike } = useTracks();
+  const [currentCoverImageUrl, setCurrentCoverImageUrl] = useState<string | null>(null);
+
+  // Initialize the cover image URL when playlist data is loaded
+  useEffect(() => {
+    if (playlist?.cover_image_url) {
+      setCurrentCoverImageUrl(playlist.cover_image_url);
+    }
+  }, [playlist]);
 
   if (unauthorized) {
     return <Navigate to="/playlists" />;
@@ -53,6 +61,14 @@ const PlaylistDetail = () => {
     }
   };
 
+  const handlePlaylistUpdate = async (name: string, coverUrl: string) => {
+    const success = await updatePlaylistData(name, coverUrl);
+    if (success) {
+      setCurrentCoverImageUrl(coverUrl);
+    }
+    return success;
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8">
@@ -66,7 +82,7 @@ const PlaylistDetail = () => {
               playlist={playlist}
               tracks={tracks}
               onEditClick={() => setIsEditing(true)}
-              coverImageUrl={playlist.cover_image_url}
+              coverImageUrl={currentCoverImageUrl}
             />
 
             <PlaylistActions 
@@ -83,6 +99,8 @@ const PlaylistDetail = () => {
               userLikedTrackIds={[]}
               onLikeChange={handleLikeChange}
               playlistName={playlist.name}
+              coverImageUrl={currentCoverImageUrl}
+              onPlaylistUpdate={handlePlaylistUpdate}
               className="pt-2"
             />
           </div>
@@ -92,10 +110,15 @@ const PlaylistDetail = () => {
           <PlaylistEditModal 
             isOpen={isEditing}
             playlistName={playlist.name}
-            coverImageUrl={playlist.cover_image_url || ''}
+            coverImageUrl={currentCoverImageUrl || ''}
             onClose={() => setIsEditing(false)}
             onSave={(name, coverUrl) => {
-              updatePlaylistData(name, coverUrl);
+              updatePlaylistData(name, coverUrl).then(success => {
+                if (success) {
+                  setCurrentCoverImageUrl(coverUrl);
+                  setIsEditing(false);
+                }
+              });
             }}
           />
         )}
