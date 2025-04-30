@@ -17,29 +17,13 @@ export type Track = {
   liked?: boolean;
   platform_url?: string;
   spotify_id?: string;
-  created_at?: string; 
-  duration_seconds?: number;
-  explicit?: boolean;
-  social_metric?: number;
-  energy?: number;
-  danceability?: number; 
-  camelot_key?: string;
-  score?: number; // Track score for sorting
-  source?: string; // Source platform (spotify, youtube_audio)
-  audio_features?: {
-    bpm?: number;
-    tempo?: number;
-    key?: number;
-    mode?: number;
-    key_signature?: string;
-    time_signature?: number;
-    energy?: number;
-    valence?: number;
-    danceability?: number;
-    acousticness?: number;
-    instrumentalness?: number;
-    speechiness?: number;
-  };
+  created_at?: string; // Add this to fix the type error
+  duration_seconds?: number; // Add this to support duration calculation
+  explicit?: boolean; // Whether the track has explicit content
+  social_metric?: number; // A social engagement metric (e.g., TikTok shares)
+  energy?: number; // Track energy level (0-1)
+  danceability?: number; // Track danceability (0-1)
+  camelot_key?: string; // The track's Camelot key notation
 };
 
 export type GeneratedTrack = Track;
@@ -58,5 +42,4 @@ export interface TableProps {
   className?: string;
   onLikeChange?: (trackId: string, liked: boolean) => void;
   columnVisibility?: Record<string, boolean>;
-  failedPlatforms?: string[]; // Add failed platforms property
 }

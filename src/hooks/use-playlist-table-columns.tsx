@@ -158,11 +158,11 @@ export function usePlaylistTableColumns({
       ),
       cell: ({ row }) => {
         const metric = row.original.social_metric;
-        if (metric === undefined || metric === null) return <span className="text-muted-foreground text-sm">N/A</span>;
+        if (!metric && metric !== 0) return <span className="text-muted-foreground text-sm">N/A</span>;
         
         return (
           <Badge variant="outline" className="bg-muted/30">
-            {typeof metric === 'number' ? (metric > 1000 ? `${(metric/1000).toFixed(1)}K` : metric.toString()) : 'N/A'}
+            {metric > 1000 ? `${(metric/1000).toFixed(1)}K` : metric}
           </Badge>
         );
       },
