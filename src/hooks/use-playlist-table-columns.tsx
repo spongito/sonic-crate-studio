@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -158,7 +159,7 @@ export function usePlaylistTableColumns({
       ),
       cell: ({ row }) => {
         // Get the social_metric value and ensure it's properly typed
-        const metric = row.original.social_metric as number | string | null | undefined;
+        const metric = row.original.social_metric;
         
         // Check if it's undefined or null
         if (metric === undefined || metric === null) {
