@@ -84,3 +84,32 @@ export const deletePlaylist = async (id: string) => {
     return false;
   }
 };
+
+export interface UploadMetadata {
+  fileType: string;
+  sizeBytes: number;
+  width: number;
+  height: number;
+}
+
+// This function could be expanded if you want to store image metadata in a separate table
+export const storeImageMetadata = async (
+  playlistId: string, 
+  imageUrl: string, 
+  metadata: UploadMetadata
+) => {
+  try {
+    // You could create a separate table for image_uploads if needed
+    // For now, we'll just log the metadata
+    console.log('Image uploaded with metadata:', {
+      playlistId,
+      imageUrl,
+      metadata
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error storing image metadata:', error);
+    return false;
+  }
+};
