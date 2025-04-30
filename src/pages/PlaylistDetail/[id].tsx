@@ -13,6 +13,7 @@ import { LoadingState } from "@/components/Playlists/PlaylistDetail/LoadingState
 import { NotFoundState } from "@/components/Playlists/PlaylistDetail/NotFoundState";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
+import BackButton from "@/components/common/BackButton";
 
 export default function PlaylistDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -144,6 +145,8 @@ export default function PlaylistDetailPage() {
   return (
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8">
+        <BackButton to="/playlists" />
+        
         {loading ? (
           <LoadingState />
         ) : playlist ? (

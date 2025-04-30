@@ -10,6 +10,7 @@ import { LoadingState } from "@/components/Playlists/PlaylistDetail/LoadingState
 import { NotFoundState } from "@/components/Playlists/PlaylistDetail/NotFoundState";
 import { usePlaylistDetail } from "@/hooks/usePlaylistDetail";
 import TabPlaylistView from "@/components/TabPlaylistView";
+import BackButton from "@/components/common/BackButton";
 
 const PlaylistDetail = () => {
   const {
@@ -41,6 +42,8 @@ const PlaylistDetail = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto px-4 py-8">
+        <BackButton to="/playlists" />
+        
         {loading ? (
           <LoadingState />
         ) : playlist ? (
@@ -63,11 +66,11 @@ const PlaylistDetail = () => {
 
             <TabPlaylistView 
               tracks={tracks}
-              playlistName={playlist.name}
-              className="pt-2"
+              userLikedTrackIds={[]}
               onLikeChange={(trackId, liked) => console.log(`Track ${trackId} liked: ${liked}`)}
               onAddToLibrary={(trackId) => console.log(`Track ${trackId} added to library`)}
-              userLikedTrackIds={[]}
+              playlistName={playlist.name}
+              className="pt-2"
             />
           </div>
         ) : null}
