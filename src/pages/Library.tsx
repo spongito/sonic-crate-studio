@@ -9,6 +9,7 @@ import { DebugPanel } from "@/components/Library/DebugPanel";
 import { LibraryTabs } from "@/components/Library/LibraryTabs";
 import { DebugButton } from "@/components/Library/DebugButton";
 import { LoadingState } from "@/components/Library/LoadingState";
+import { SyncLibraryButton } from "@/components/Library/SyncLibraryButton";
 import { useLogger } from "@/hooks/useLogger";
 import { TracksProvider, useTracks } from "@/context/TracksContext";
 import { toast } from "sonner";
@@ -115,7 +116,10 @@ const LibraryView = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
-      <DebugButton showDebug={showDebug} onToggle={() => setShowDebug(!showDebug)} />
+      <div className="flex justify-between items-center">
+        <DebugButton showDebug={showDebug} onToggle={() => setShowDebug(!showDebug)} />
+        <SyncLibraryButton />
+      </div>
 
       {showDebug && (
         <DebugPanel 
