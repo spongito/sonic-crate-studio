@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Track } from '@/types/table';
 import { useLogger } from '@/hooks/useLogger';
@@ -49,11 +48,42 @@ export function useTracksState(userId: string | undefined) {
     }
   }, [fetchUserTracks, logger, lastRefreshTime, refreshAttempts]);
 
-  const toggleLike = async (trackId: string, liked: boolean) => {
+  const toggleLike = async (trackId: string, isCurrentlyLiked: boolean) => {
     try {
-      await toggleTrackLike(trackId, liked);
-      await refreshTracks();
-      logger.success(`Track ${trackId} like status toggled to ${!liked}`);
+      // Pass the current liked state to toggleTrackLike
+      await toggleTrackLike(trackId, isCurrentlyLiked);
+      
+      // Update local state to reflect the new liked status
+      const newLikedState = !isCurrentlyLiked;
+      
+      // Update tracks in all collections
+      setAllTracks(prev => 
+        prev.map(track => 
+          track.id === trackId ? { ...track, liked: newLikedState } : track
+        )
+      );
+      
+      setRecentTracks(prev => 
+        prev.map(track => 
+          track.id === trackId ? { ...track, liked: newLikedState } : track
+        )
+      );
+      
+      if (newLikedState) {
+        // If newly liked, add to liked tracks if not already there
+        const existingTrack = likedTracks.find(track => track.id === trackId);
+        if (!existingTrack) {
+          const trackToAdd = allTracks.find(track => track.id === trackId);
+          if (trackToAdd) {
+            setLikedTracks(prev => [...prev, { ...trackToAdd, liked: true }]);
+          }
+        }
+      } else {
+        // If unliked, remove from liked tracks
+        setLikedTracks(prev => prev.filter(track => track.id !== trackId));
+      }
+      
+      logger.success(`Track ${trackId} like status toggled to ${newLikedState}`);
     } catch (error) {
       logger.error('Error toggling track like:', error);
       throw error;

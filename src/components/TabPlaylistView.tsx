@@ -33,8 +33,16 @@ export default function TabPlaylistView({
   const { visibleColumns, toggleColumn } = useTableColumns();
   const [isRenaming, setIsRenaming] = React.useState(false);
 
+  // Process tracks to include liked status based on userLikedTrackIds
+  const processedTracks = React.useMemo(() => {
+    return tracks.map(track => ({
+      ...track,
+      liked: userLikedTrackIds?.includes(track.id) || track.liked || false
+    }));
+  }, [tracks, userLikedTrackIds]);
+
   const filteredTracks = React.useMemo(() => {
-    let filtered = tracks;
+    let filtered = processedTracks;
     
     if (activePlatform !== "all") {
       filtered = filtered.filter(track => {
@@ -57,7 +65,7 @@ export default function TabPlaylistView({
     }
     
     return filtered;
-  }, [tracks, activePlatform, searchTerm]);
+  }, [processedTracks, activePlatform, searchTerm]);
 
   const handleTitleChange = (newTitle: string) => {
     console.log("New playlist title:", newTitle);

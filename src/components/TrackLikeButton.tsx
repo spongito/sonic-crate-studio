@@ -42,19 +42,18 @@ export default function TrackLikeButton({
       setIsLiked(newLikedState);
       
       // Call the toggleLike function from context
-      await toggleLike(trackId, !newLikedState);
+      // FIXED: Pass the current track ID and current liked state (not inverted)
+      // The toggleLike function in context will handle the inversion
+      await toggleLike(trackId, isLiked);
       
-      // If onToggle callback exists, call it
+      // If onToggle callback exists, call it with the new liked state
       if (onToggle) {
         onToggle(trackId, newLikedState);
       }
-      
-      // Toast notifications are now handled by parent components
     } catch (error) {
       console.error('Error toggling like:', error);
       // Revert the local state if there was an error
       setIsLiked(isLiked);
-      // Error toast notification is now handled by parent components
     } finally {
       setIsLoading(false);
     }
