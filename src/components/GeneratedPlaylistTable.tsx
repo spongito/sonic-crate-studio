@@ -55,9 +55,9 @@ export function GeneratedPlaylistTable({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
+  const [lastSelectedRowIndex, setLastSelectedRowIndex] = React.useState<number | null>(null);
   const { visibleColumns, toggleColumn } = useTableColumns();
   const columns = usePlaylistTableColumns({ 
-    showSelection, 
     showLikeButton, 
     showAddToLibrary, 
     onLikeToggle, 
@@ -93,7 +93,55 @@ export function GeneratedPlaylistTable({
       columnVisibility: effectiveColumnVisibility,
       rowSelection,
     },
+    enableRowSelection: true,
   });
+
+  // Handle row click with keyboard modifiers for selection
+  const handleRowClick = (event: React.MouseEvent, rowIndex: number) => {
+    const { shiftKey, metaKey, ctrlKey } = event;
+    const isModifierKeyPressed = metaKey || ctrlKey; // Meta for Mac, Ctrl for Windows
+    
+    if (shiftKey && lastSelectedRowIndex !== null) {
+      // Range selection with shift key
+      const start = Math.min(lastSelectedRowIndex, rowIndex);
+      const end = Math.max(lastSelectedRowIndex, rowIndex);
+      
+      // Create a new selection object, preserving existing selections if modifier key is pressed
+      const newSelection = isModifierKeyPressed ? { ...table.getState().rowSelection } : {};
+      
+      // Select all rows in the range
+      for (let i = start; i <= end; i++) {
+        const row = table.getRowModel().rows[i];
+        if (row) {
+          newSelection[row.id] = true;
+        }
+      }
+      
+      // Update the table's row selection state
+      table.setRowSelection(newSelection);
+    } else {
+      // Single row selection
+      const row = table.getRowModel().rows[rowIndex];
+      if (row) {
+        if (isModifierKeyPressed) {
+          // Toggle this row's selection without affecting others if modifier key is pressed
+          const isSelected = table.getState().rowSelection[row.id] ?? false;
+          table.setRowSelection({
+            ...table.getState().rowSelection,
+            [row.id]: !isSelected,
+          });
+        } else {
+          // Clear selection and select only this row if no modifier key
+          table.setRowSelection({
+            [row.id]: true,
+          });
+        }
+      }
+    }
+    
+    // Update the last selected row index
+    setLastSelectedRowIndex(rowIndex);
+  };
 
   return (
     <div className={`w-full space-y-4 ${className}`}>
@@ -128,9 +176,10 @@ export function GeneratedPlaylistTable({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={`hover:bg-muted/50 transition-colors ${
+                    className={`hover:bg-muted/50 transition-colors cursor-pointer ${
                       index % 2 === 0 ? "bg-background" : "bg-muted/20"
                     }`}
+                    onClick={(e) => handleRowClick(e, index)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell 

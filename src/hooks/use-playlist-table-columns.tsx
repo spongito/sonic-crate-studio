@@ -1,14 +1,12 @@
 
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Checkbox } from "@/components/ui/checkbox";
 import TrackCell from "@/components/TrackCell";
 import PlatformCell from "@/components/PlatformCell";
 import TrackLikeButton from "@/components/TrackLikeButton";
 import type { Track } from "@/types/table";
 
 interface UsePlaylistTableColumnsProps {
-  showSelection?: boolean;
   showLikeButton?: boolean;
   showAddToLibrary?: boolean;
   onLikeToggle?: (trackId: string) => void;
@@ -18,7 +16,6 @@ interface UsePlaylistTableColumnsProps {
 }
 
 export function usePlaylistTableColumns({
-  showSelection = true,
   showLikeButton = true,
   showAddToLibrary = false,
   onLikeToggle,
@@ -34,30 +31,6 @@ export function usePlaylistTableColumns({
   };
 
   const columns: ColumnDef<Track>[] = [
-    ...(showSelection
-      ? [
-          {
-            id: "select",
-            header: ({ table }) => (
-              <Checkbox
-                checked={table.getIsAllPageRowsSelected()}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-                className="translate-y-[2px]"
-              />
-            ),
-            cell: ({ row }) => (
-              <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-                className="translate-y-[2px]"
-              />
-            ),
-            enableHiding: false,
-          } as ColumnDef<Track>,
-        ]
-      : []),
     {
       accessorKey: "title",
       header: "Track",
