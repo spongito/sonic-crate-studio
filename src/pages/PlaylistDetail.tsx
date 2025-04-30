@@ -64,9 +64,10 @@ const PlaylistDetail = () => {
             <TabPlaylistView 
               tracks={tracks}
               playlistName={playlist.name}
-              showControls={true}
-              showLikeButton={true}
-              showAddToLibrary={true}
+              className="pt-2"
+              onLikeChange={(trackId, liked) => console.log(`Track ${trackId} liked: ${liked}`)}
+              onAddToLibrary={(trackId) => console.log(`Track ${trackId} added to library`)}
+              userLikedTrackIds={[]}
             />
           </div>
         ) : null}
