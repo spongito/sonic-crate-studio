@@ -6,11 +6,11 @@ import { Track } from "@/types/table";
 
 interface TablePaginationProps {
   table: Table<Track>;
-  showControls: boolean;
+  showPagination?: boolean;
 }
 
-export function TablePagination({ table, showControls }: TablePaginationProps) {
-  if (!table.getFilteredRowModel().rows.length || !showControls) return null;
+export function TablePagination({ table, showPagination = true }: TablePaginationProps) {
+  if (!table.getFilteredRowModel().rows.length || !showPagination) return null;
 
   return (
     <div className="flex items-center justify-end space-x-2 py-4 px-6">

@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GeneratedPlaylistTable from "./GeneratedPlaylistTable";
@@ -134,6 +135,7 @@ export default function TabPlaylistView({
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
+            showPagination={true}
             columnVisibility={visibleColumns}
           />
         </TabsContent>
@@ -149,6 +151,7 @@ export default function TabPlaylistView({
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
+            showPagination={true}
             columnVisibility={visibleColumns}
           />
         </TabsContent>
@@ -164,6 +167,7 @@ export default function TabPlaylistView({
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
+            showPagination={true}
             columnVisibility={visibleColumns}
           />
         </TabsContent>

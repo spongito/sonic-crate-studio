@@ -1,3 +1,4 @@
+
 // --- Imports ---
 import * as React from "react";
 import { useTableColumns } from "@/hooks/use-table-columns";
@@ -32,6 +33,7 @@ export type GeneratedTrack = Track;
 
 interface ExtendedTableProps extends TableProps {
   columnVisibility?: Record<string, boolean>;
+  showPagination?: boolean;
 }
 
 export function GeneratedPlaylistTable({
@@ -43,6 +45,7 @@ export function GeneratedPlaylistTable({
   onAddToLibrary,
   userLikedTrackIds = [],
   showControls = true,
+  showPagination,
   fullWidth = false,
   playlistName,
   className = "",
@@ -62,6 +65,9 @@ export function GeneratedPlaylistTable({
     onAddToLibrary, 
     userLikedTrackIds 
   });
+
+  // Default showPagination to showControls if not explicitly set
+  const shouldShowPagination = showPagination !== undefined ? showPagination : showControls;
 
   // Combine default visibility with passed columnVisibility prop
   const effectiveColumnVisibility = React.useMemo(() => {
@@ -143,7 +149,7 @@ export function GeneratedPlaylistTable({
           </Table>
         </div>
       </div>
-      <TablePagination table={table} showControls={showControls} />
+      <TablePagination table={table} showPagination={shouldShowPagination} />
     </div>
   );
 }
