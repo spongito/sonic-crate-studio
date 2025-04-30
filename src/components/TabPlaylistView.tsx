@@ -15,7 +15,6 @@ interface TabPlaylistViewProps {
   tracks: Track[];
   playlistName?: string;
   onLikeChange?: (trackId: string, liked: boolean) => void;
-  onAddToLibrary?: (trackId: string) => void;
   onSavePlaylist?: (platform: string) => void;
   userLikedTrackIds?: string[];
   className?: string;
@@ -25,7 +24,6 @@ export default function TabPlaylistView({
   tracks,
   playlistName = "Generated Playlist",
   onLikeChange,
-  onAddToLibrary,
   onSavePlaylist,
   userLikedTrackIds = [],
   className = "",
@@ -132,8 +130,6 @@ export default function TabPlaylistView({
             playlistName={playlistName}
             fullWidth={true}
             showLikeButton={true}
-            showAddToLibrary={true}
-            onAddToLibrary={onAddToLibrary}
             showControls={false}
             showPagination={true}
             columnVisibility={visibleColumns}
@@ -148,8 +144,6 @@ export default function TabPlaylistView({
             playlistName={playlistName}
             fullWidth={true}
             showLikeButton={true}
-            showAddToLibrary={true}
-            onAddToLibrary={onAddToLibrary}
             showControls={false}
             showPagination={true}
             columnVisibility={visibleColumns}
@@ -164,8 +158,6 @@ export default function TabPlaylistView({
             playlistName={playlistName}
             fullWidth={true}
             showLikeButton={true}
-            showAddToLibrary={true}
-            onAddToLibrary={onAddToLibrary}
             showControls={false}
             showPagination={true}
             columnVisibility={visibleColumns}

@@ -21,9 +21,6 @@ export function GeneratedPlaylistTable({
   tracks,
   showSelection = true,
   showLikeButton = true,
-  showAddToLibrary = false,
-  onLikeToggle,
-  onAddToLibrary,
   userLikedTrackIds = [],
   showControls = true,
   showPagination,
@@ -36,10 +33,7 @@ export function GeneratedPlaylistTable({
   const { visibleColumns, toggleColumn } = useTableColumns();
   const columns = usePlaylistTableColumns({ 
     showLikeButton, 
-    showAddToLibrary, 
-    onLikeToggle, 
     onLikeChange, 
-    onAddToLibrary, 
     userLikedTrackIds 
   });
 

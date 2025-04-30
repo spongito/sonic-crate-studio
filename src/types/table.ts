@@ -27,9 +27,7 @@ export interface TableProps {
   tracks: Track[];
   showSelection?: boolean;
   showLikeButton?: boolean;
-  showAddToLibrary?: boolean;
   onLikeToggle?: (trackId: string) => void;
-  onAddToLibrary?: (trackId: string) => void;
   userLikedTrackIds?: string[];
   showControls?: boolean;
   fullWidth?: boolean;

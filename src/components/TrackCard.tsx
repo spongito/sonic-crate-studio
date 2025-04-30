@@ -1,8 +1,8 @@
 
-import { Heart } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import TrackLikeButton from "./TrackLikeButton";
 
 // This should match your DB's track row
 type TrackType = {
@@ -77,14 +77,11 @@ export function TrackCard({ track, camelot }: TrackCardProps) {
         <span className="px-2 py-1 text-xs bg-white/10 text-white rounded">{keyLabel}</span>
         <span className="px-2 py-1 text-xs bg-white/10 text-white rounded">{track.release_year || "—"}</span>
       </div>
-      <button
-        className={`ml-3 p-1 rounded-full ${liked ? "text-gold" : "text-white/50"} hover:text-gold`}
-        onClick={handleToggleLike}
-        disabled={loading}
-        title={liked ? "Unlike" : "Like"}
-      >
-        <Heart fill={liked ? "#FFD700" : "none"} className="w-6 h-6" />
-      </button>
+      <TrackLikeButton 
+        trackId={track.id} 
+        liked={liked}
+        onToggle={() => handleToggleLike()}
+      />
     </div>
   );
 }
