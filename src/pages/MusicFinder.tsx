@@ -13,6 +13,7 @@ import { Track } from "@/types/table";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
 import { usePlaylistOperations } from "@/hooks/use-playlist-operations";
 import { toast } from "sonner";
+import { useTracks } from "@/context/TracksContext";
 
 const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
@@ -20,6 +21,7 @@ const MusicFinder = () => {
   const { user, subscription } = useAuth();
   const [platforms, setPlatforms] = useState(getDefaultPlatforms());
   const { savePlaylist, isSaving } = usePlaylistOperations();
+  const { toggleLike } = useTracks();
 
   const [advancedParams, setAdvancedParams] = useState<AdvancedSettingsParams>({
     genre: "",
@@ -102,8 +104,19 @@ const MusicFinder = () => {
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const handleLikeChange = (trackId: string, liked: boolean) => {
-    // Refresh liked tracks if needed - handled by the component itself
+  const handleLikeChange = async (trackId: string, liked: boolean) => {
+    if (!user) {
+      toast.error("Please sign in to like tracks");
+      return;
+    }
+    
+    try {
+      await toggleLike(trackId, !liked);
+      toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
+    } catch (error) {
+      console.error("Error toggling track like:", error);
+      toast.error("Failed to update liked status");
+    }
   };
 
   const handleSavePlaylist = async (platform: string) => {

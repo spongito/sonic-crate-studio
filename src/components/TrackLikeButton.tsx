@@ -2,7 +2,6 @@
 import * as React from "react";
 import { Heart } from "lucide-react";
 import { useTracks } from "@/context/TracksContext";
-import { toast } from "@/components/ui/use-toast";
 import { 
   Tooltip,
   TooltipContent,
@@ -50,19 +49,12 @@ export default function TrackLikeButton({
         onToggle(trackId, newLikedState);
       }
       
-      toast({
-        description: newLikedState ? "Added to liked tracks" : "Removed from liked tracks",
-        duration: 2000,
-      });
+      // Toast notifications are now handled by parent components
     } catch (error) {
       console.error('Error toggling like:', error);
       // Revert the local state if there was an error
       setIsLiked(isLiked);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update liked status",
-      });
+      // Error toast notification is now handled by parent components
     } finally {
       setIsLoading(false);
     }

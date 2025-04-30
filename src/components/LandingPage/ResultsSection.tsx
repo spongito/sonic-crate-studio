@@ -4,6 +4,7 @@ import TabPlaylistView from "@/components/TabPlaylistView";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { usePlaylistOperations } from "@/hooks/use-playlist-operations";
+import { useTracks } from "@/context/TracksContext";
 
 interface ResultsSectionProps {
   showPlaylist: boolean;
@@ -13,6 +14,7 @@ interface ResultsSectionProps {
 const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => {
   const { user } = useAuth();
   const { savePlaylist, isSaving } = usePlaylistOperations();
+  const { toggleLike } = useTracks();
 
   const formattedTracks: Track[] = (playlistData?.tracks || []).map((track: any) => ({
     id: track.id || track.spotify_id || `track-${Math.random()}`,
@@ -43,6 +45,21 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
       toast.error("Failed to save playlist");
     }
   };
+  
+  const handleLikeChange = async (trackId: string, liked: boolean) => {
+    if (!user) {
+      toast.error("Please sign in to like tracks");
+      return;
+    }
+    
+    try {
+      await toggleLike(trackId, !liked);
+      toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
+    } catch (error) {
+      console.error("Error toggling track like:", error);
+      toast.error("Failed to update liked status");
+    }
+  };
 
   if (!showPlaylist || !playlistData) {
     return null;
@@ -53,13 +70,7 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
       <TabPlaylistView
         tracks={formattedTracks}
         userLikedTrackIds={[]}
-        onLikeChange={(trackId, liked) => {
-          if (!user) {
-            toast.error("Please sign in to like tracks");
-            return;
-          }
-          toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
-        }}
+        onLikeChange={handleLikeChange}
         onSavePlaylist={handleSavePlaylist}
         playlistName={playlistData.name || "Generated Playlist"}
         className="mt-6"

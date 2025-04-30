@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Music, Search } from "lucide-react";
+import { toast } from "sonner";
 
 interface RecentlyFoundTracksProps {
   tracks: Track[];
@@ -49,9 +50,15 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
     );
   }
 
-  const handleTrackLikeToggle = (trackId: string, liked: boolean) => {
+  const handleTrackLikeToggle = async (trackId: string, liked: boolean) => {
     logger.debug(`Toggling like for track ${trackId}, currently liked: ${liked}`);
-    onLikeToggle(trackId, liked);
+    try {
+      await onLikeToggle(trackId, liked);
+      // Toast notifications are handled by the parent component (LibraryMain)
+    } catch (error) {
+      logger.error("Error toggling track like:", error);
+      toast.error("Failed to update liked status");
+    }
   };
 
   return (

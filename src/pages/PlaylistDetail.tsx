@@ -11,6 +11,8 @@ import { NotFoundState } from "@/components/Playlists/PlaylistDetail/NotFoundSta
 import { usePlaylistDetail } from "@/hooks/usePlaylistDetail";
 import TabPlaylistView from "@/components/TabPlaylistView";
 import BackButton from "@/components/common/BackButton";
+import { toast } from "sonner";
+import { useTracks } from "@/context/TracksContext";
 
 const PlaylistDetail = () => {
   const {
@@ -24,6 +26,8 @@ const PlaylistDetail = () => {
     handleDelete,
     updatePlaylistData
   } = usePlaylistDetail();
+  
+  const { toggleLike } = useTracks();
 
   if (unauthorized) {
     return <Navigate to="/playlists" />;
@@ -38,6 +42,16 @@ const PlaylistDetail = () => {
       </DashboardLayout>
     );
   }
+
+  const handleLikeChange = async (trackId: string, liked: boolean) => {
+    try {
+      await toggleLike(trackId, !liked);
+      toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
+    } catch (error) {
+      console.error("Error toggling track like:", error);
+      toast.error("Failed to update liked status");
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -67,7 +81,7 @@ const PlaylistDetail = () => {
             <TabPlaylistView 
               tracks={tracks}
               userLikedTrackIds={[]}
-              onLikeChange={(trackId, liked) => console.log(`Track ${trackId} liked: ${liked}`)}
+              onLikeChange={handleLikeChange}
               playlistName={playlist.name}
               className="pt-2"
             />

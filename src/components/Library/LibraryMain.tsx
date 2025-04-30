@@ -120,6 +120,21 @@ export function LibraryMain() {
     refreshTracks();
   };
 
+  const handleLikeToggle = async (trackId: string, liked: boolean) => {
+    if (!user) {
+      toast.error("Please sign in to like tracks");
+      return;
+    }
+    
+    try {
+      await toggleLike(trackId, liked);
+      toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
+    } catch (error) {
+      logger.error("Error toggling like:", error);
+      toast.error("Failed to update liked status");
+    }
+  };
+
   // Only show loading state on initial load, not on refreshes
   if ((isLoading && allTracks.length === 0 && !initialLoadCompleted.current) || isSyncing) {
     return (
@@ -157,7 +172,7 @@ export function LibraryMain() {
 
         <RecentlyFoundTracks 
           tracks={recentTracks} 
-          onLikeToggle={toggleLike} 
+          onLikeToggle={handleLikeToggle} 
         />
 
         <LibraryTabs
@@ -182,7 +197,7 @@ export function LibraryMain() {
         <LibraryContent
           activeTab={activeTab}
           tracks={activeTab === 'liked' ? filteredLikedTracks : filteredTracks}
-          onLikeToggle={toggleLike}
+          onLikeToggle={handleLikeToggle}
         />
       </div>
     </div>
