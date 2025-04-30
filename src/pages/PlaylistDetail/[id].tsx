@@ -24,7 +24,9 @@ export default function PlaylistDetailPage() {
     isEditing,
     setIsEditing,
     editedName,
+    setEditedName,
     editedCoverUrl,
+    setEditedCoverUrl,
     tracks,
     handleSaveChanges,
     handleRemoveTracks
@@ -99,6 +101,36 @@ export default function PlaylistDetailPage() {
     toast.info("Share functionality coming soon!");
   };
 
+  const handleNameChange = async (newName: string) => {
+    if (!id || !playlist || !newName.trim()) return;
+    
+    try {
+      const { error } = await supabase
+        .from("playlists")
+        .update({ name: newName })
+        .eq("id", id);
+        
+      if (error) {
+        console.error("Error updating playlist name:", error);
+        toast.error("Failed to update playlist name");
+        return false;
+      }
+      
+      // Update local state
+      setPlaylist({
+        ...playlist,
+        name: newName
+      });
+      
+      toast.success("Playlist name updated successfully");
+      return true;
+    } catch (error) {
+      console.error("Error updating playlist name:", error);
+      toast.error("Something went wrong");
+      return false;
+    }
+  };
+
   if (notFound) {
     return (
       <DashboardLayout>
@@ -121,6 +153,7 @@ export default function PlaylistDetailPage() {
               tracks={tracks}
               onEditClick={() => setIsEditing(true)}
               coverImageUrl={editedCoverUrl || (tracks[0]?.image_url || '')}
+              onNameChange={handleNameChange}
             />
 
             <PlaylistActions 
@@ -150,7 +183,8 @@ export default function PlaylistDetailPage() {
             coverImageUrl={editedCoverUrl || ((tracks[0]?.image_url) || '')}
             onClose={() => setIsEditing(false)}
             onSave={(name, coverUrl) => {
-              setIsEditing(false);
+              setEditedName(name);
+              setEditedCoverUrl(coverUrl);
               handleSaveChanges();
             }}
           />
