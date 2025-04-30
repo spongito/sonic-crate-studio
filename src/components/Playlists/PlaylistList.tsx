@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { ViewToggle } from "./ViewToggle";
 import { ListView } from "./ListView";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Playlist } from "./types";
+import type { Playlist, Track } from "./types";
+import type { Json } from "@/integrations/supabase/types";
 
 // Local storage key for view preference
 const VIEW_PREFERENCE_KEY = "playlist-view-preference";
@@ -61,8 +62,58 @@ export const PlaylistList = () => {
           return;
         }
         
-        // Fix the TypeScript issue by ensuring data is properly typed as Playlist[]
-        setPlaylists(data as Playlist[]);
+        // Process the results to ensure proper typing
+        const formattedPlaylists: Playlist[] = data.map(item => {
+          // Process the results field to convert from Json to Track[]
+          let processedResults: Track[] = [];
+          
+          if (item.results) {
+            // Handle different possible formats of the results field
+            const resultsData = typeof item.results === 'string' 
+              ? JSON.parse(item.results) 
+              : item.results;
+            
+            processedResults = Array.isArray(resultsData) 
+              ? resultsData.map(track => ({
+                  title: track.title || '',
+                  artist: Array.isArray(track.artist) ? track.artist : [track.artist || ''],
+                  album: track.album || '',
+                  spotify_id: track.spotify_id || '',
+                  youtube_id: track.youtube_id || '',
+                  id: track.id || '',
+                  duration: track.duration || '',
+                  match_score: track.match_score || 0,
+                  audio_features: track.audio_features || {},
+                  platform: track.platform || '',
+                  platform_url: track.platform_url || '',
+                  external_url: track.external_url || '',
+                  cover_url: track.cover_url || '',
+                  release_year: track.release_year || undefined,
+                  genre: track.genre || [],
+                  audio_confidence_score: track.audio_confidence_score || 0,
+                  key_signature: track.key_signature || ''
+                }))
+              : [];
+          }
+          
+          return {
+            id: item.id,
+            name: item.name,
+            prompt: item.prompt,
+            created_at: item.created_at,
+            results: processedResults,
+            description: item.description || '',
+            user_id: item.user_id,
+            is_public: item.is_public,
+            updated_at: item.updated_at,
+            genres: item.genres,
+            settings: item.settings,
+            tags: item.tags || [],
+            cover_image_url: item.cover_image_url
+          };
+        });
+        
+        setPlaylists(formattedPlaylists);
       } catch (error) {
         console.error("Error fetching playlists:", error);
         toast.error("Something went wrong");
@@ -116,7 +167,7 @@ export const PlaylistList = () => {
               id={playlist.id}
               title={playlist.name}
               coverUrl={playlist.cover_image_url}
-              trackCount={(playlist.results as any[]).length}
+              trackCount={playlist.results.length}
               createdAt={playlist.created_at}
             />
           ))}
