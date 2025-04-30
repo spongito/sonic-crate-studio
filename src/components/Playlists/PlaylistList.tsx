@@ -77,7 +77,7 @@ export const PlaylistList = () => {
               key={playlist.id}
               id={playlist.id}
               title={playlist.name}
-              coverUrl={playlist.cover_url}
+              coverUrl={playlist.cover_image_url}
               trackCount={(playlist.results as any[]).length}
               createdAt={playlist.created_at}
             />
