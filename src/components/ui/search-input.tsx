@@ -40,12 +40,12 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:text-foreground"
+            size="sm"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 h-5 w-5 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={handleClear}
             aria-label="Clear search"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
