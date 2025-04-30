@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sync } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { usePlaylistOperations } from '@/hooks/usePlaylistOperations';
@@ -32,7 +32,7 @@ export function SyncLibraryButton() {
       onClick={handleSyncLibrary}
       disabled={isSyncing || !user}
     >
-      <Sync className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+      <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
       {isSyncing ? 'Syncing...' : 'Sync Library'}
     </Button>
   );

@@ -109,7 +109,7 @@ export const usePlaylistOperations = (playlist: Playlist | null = null, id?: str
           if (saveResult.success) {
             totalTracks += results.length;
           } else {
-            logger.warn(`Issue with playlist "${playlist.name}": ${saveResult.message}`);
+            logger.warning(`Issue with playlist "${playlist.name}": ${saveResult.message}`);
           }
         }
       }
@@ -152,7 +152,7 @@ export const usePlaylistOperations = (playlist: Playlist | null = null, id?: str
         const saveResult = await saveTracksToHistory(playlist.results);
         
         if (!saveResult.success) {
-          logger.warn(`Issue saving tracks to history: ${saveResult.message}`);
+          logger.warning(`Issue saving tracks to history: ${saveResult.message}`);
           toast.warning("Playlist updated but there was an issue updating your library");
         } else {
           logger.success("Tracks successfully saved to history");
@@ -212,7 +212,7 @@ export const usePlaylistOperations = (playlist: Playlist | null = null, id?: str
         const saveResult = await saveTracksToHistory(playlistData.tracks);
         
         if (!saveResult.success) {
-          logger.warn(`Issue saving tracks to history: ${saveResult.message}`);
+          logger.warning(`Issue saving tracks to history: ${saveResult.message}`);
           toast.warning("Playlist saved but tracks might not appear in your library");
         } else {
           logger.success("Tracks successfully saved to history");
