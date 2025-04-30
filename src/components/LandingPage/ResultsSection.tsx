@@ -29,14 +29,6 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
     platform_url: track.platform_url || track.external_url,
   }));
 
-  const handleAddToLibrary = (trackId: string) => {
-    if (!user) {
-      toast.error("Please sign in to add tracks to your library");
-      return;
-    }
-    toast.success("Track added to your library");
-  };
-  
   const handleSavePlaylist = async (platform: string) => {
     if (!user) {
       toast.error("Please sign in to save playlists");
@@ -68,7 +60,6 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
           }
           toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
         }}
-        onAddToLibrary={handleAddToLibrary}
         onSavePlaylist={handleSavePlaylist}
         playlistName={playlistData.name || "Generated Playlist"}
         className="mt-6"

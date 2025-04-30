@@ -106,11 +106,6 @@ const MusicFinder = () => {
     // Refresh liked tracks if needed - handled by the component itself
   };
 
-  const handleAddToLibrary = (trackId: string) => {
-    // Handle adding track to library
-    console.log(`Adding track ${trackId} to library`);
-  };
-
   const handleSavePlaylist = async (platform: string) => {
     if (!user) {
       toast.error("Please sign in to save playlists");
@@ -154,7 +149,6 @@ const MusicFinder = () => {
                 tracks={formattedTracks}
                 userLikedTrackIds={likedTrackIds} 
                 onLikeChange={handleLikeChange}
-                onAddToLibrary={handleAddToLibrary}
                 onSavePlaylist={handleSavePlaylist}
                 playlistName={playlistData?.name || "Generated Playlist"}
               />

@@ -68,7 +68,6 @@ const PlaylistDetail = () => {
               tracks={tracks}
               userLikedTrackIds={[]}
               onLikeChange={(trackId, liked) => console.log(`Track ${trackId} liked: ${liked}`)}
-              onAddToLibrary={(trackId) => console.log(`Track ${trackId} added to library`)}
               playlistName={playlist.name}
               className="pt-2"
             />

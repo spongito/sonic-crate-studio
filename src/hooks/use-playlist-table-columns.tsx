@@ -8,19 +8,15 @@ import type { Track } from "@/types/table";
 
 interface UsePlaylistTableColumnsProps {
   showLikeButton?: boolean;
-  showAddToLibrary?: boolean;
   onLikeToggle?: (trackId: string) => void;
   onLikeChange?: (trackId: string, liked: boolean) => void;
-  onAddToLibrary?: (trackId: string) => void;
   userLikedTrackIds?: string[];
 }
 
 export function usePlaylistTableColumns({
   showLikeButton = true,
-  showAddToLibrary = false,
   onLikeToggle,
   onLikeChange,
-  onAddToLibrary,
   userLikedTrackIds = [],
 }: UsePlaylistTableColumnsProps): ColumnDef<Track>[] {
   // Handle like toggle
@@ -88,7 +84,7 @@ export function usePlaylistTableColumns({
       header: "Duration",
       cell: ({ row }) => <span className="text-sm">{row.getValue("duration")}</span>,
     },
-    ...(showLikeButton || showAddToLibrary
+    ...(showLikeButton
       ? [
           {
             id: "actions",
@@ -98,8 +94,6 @@ export function usePlaylistTableColumns({
                 trackId={row.original.id}
                 liked={row.original.liked ?? userLikedTrackIds.includes(row.original.id)}
                 onToggle={handleLikeToggle}
-                onAddToLibrary={onAddToLibrary}
-                showAddToLibrary={showAddToLibrary}
               />
             ),
           } as ColumnDef<Track>,
