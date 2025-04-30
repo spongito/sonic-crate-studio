@@ -16,10 +16,13 @@ export const usePlaylistOperations = (playlist: Playlist | null = null, id?: str
   const { refreshTracks } = useTracks();
 
   const saveTracksToHistory = async (tracks: any[]) => {
-    if (!user || !tracks || tracks.length === 0) return;
+    if (!user || !tracks || tracks.length === 0) {
+      console.log('Cannot save tracks: No user logged in or no tracks provided');
+      return;
+    }
 
     try {
-      console.log(`Saving ${tracks.length} tracks to history`);
+      console.log(`Saving ${tracks.length} tracks to history for user ${user.id}`);
       
       const formattedTracksForHistory = tracks.map(track => ({
         user_id: user.id,
@@ -38,10 +41,14 @@ export const usePlaylistOperations = (playlist: Playlist | null = null, id?: str
 
       // Break into smaller batches of 50 to avoid large payloads
       const batchSize = 50;
+      let totalSuccessful = 0;
+
       for (let i = 0; i < formattedTracksForHistory.length; i += batchSize) {
         const batch = formattedTracksForHistory.slice(i, i + batchSize);
         
-        const { error } = await supabase
+        console.log(`Processing batch ${i/batchSize + 1} of ${Math.ceil(formattedTracksForHistory.length/batchSize)} (${batch.length} tracks)`);
+        
+        const { data, error } = await supabase
           .from("user_track_history")
           .upsert(batch, {
             onConflict: 'user_id,track_id',
@@ -50,13 +57,18 @@ export const usePlaylistOperations = (playlist: Playlist | null = null, id?: str
 
         if (error) {
           console.error("Error saving tracks batch to history:", error);
+          console.error("First track in failed batch:", batch[0]);
           // Continue with next batch despite errors
+        } else {
+          totalSuccessful += batch.length;
         }
       }
       
-      console.log(`Successfully saved tracks to history`);
+      console.log(`Successfully saved ${totalSuccessful} of ${tracks.length} tracks to history`);
+      return totalSuccessful;
     } catch (error) {
       console.error("Failed to save tracks to history:", error);
+      return 0;
     }
   };
 
@@ -127,8 +139,11 @@ export const usePlaylistOperations = (playlist: Playlist | null = null, id?: str
 
       // Save tracks to user history
       if (playlistData.tracks && Array.isArray(playlistData.tracks) && playlistData.tracks.length > 0) {
-        await saveTracksToHistory(playlistData.tracks);
-        await refreshTracks();
+        const savedCount = await saveTracksToHistory(playlistData.tracks);
+        if (savedCount > 0) {
+          await refreshTracks();
+          console.log(`Added ${savedCount} tracks to library from playlist`);
+        }
       }
 
       toast.success("Playlist saved successfully!");

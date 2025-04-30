@@ -65,14 +65,21 @@ export const usePlaylistGenerator = () => {
       }
 
       // Save tracks to history using the shared helper function
-      await saveTracksToHistory(processedData.tracks);
+      if (processedData.tracks && processedData.tracks.length > 0) {
+        // Log the tracks we're trying to save for debugging
+        console.log("Saving generated tracks to history:", processedData.tracks.length);
+        
+        // Save tracks to history
+        const savedCount = await saveTracksToHistory(processedData.tracks);
+        console.log(`Saved ${savedCount} tracks to history from generation`);
+        
+        // Refresh tracks in the library
+        await refreshTracks();
+      }
 
       const formattedTracks = formatTracks(processedData.tracks);
       setPlaylistData({ ...processedData, tracks: formattedTracks });
       setShowPlaylist(true);
-      
-      // Refresh tracks in the library
-      await refreshTracks();
       
       toast.success("Playlist generated successfully!");
       
