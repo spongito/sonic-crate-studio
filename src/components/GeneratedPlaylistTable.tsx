@@ -1,20 +1,12 @@
 
 import * as React from "react";
 import { useTableColumns } from "@/hooks/use-table-columns";
-import {
-  ColumnFiltersState,
-  SortingState,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
 import { usePlaylistTableColumns } from "@/hooks/use-playlist-table-columns";
 import PlaylistTableControls from "./PlaylistTableControls";
 import { TablePagination } from "./table/TablePagination";
 import { PlaylistTableContainer } from "./table/PlaylistTableContainer";
 import { useTableRowSelection } from "@/hooks/use-table-row-selection";
+import { useTableState } from "@/hooks/useTableState";
 import type { Track, TableProps } from "@/types/table";
 
 export type { Track };
@@ -41,9 +33,6 @@ export function GeneratedPlaylistTable({
   onLikeChange,
   columnVisibility,
 }: ExtendedTableProps) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = React.useState({});
   const { visibleColumns, toggleColumn } = useTableColumns();
   const columns = usePlaylistTableColumns({ 
     showLikeButton, 
@@ -65,23 +54,10 @@ export function GeneratedPlaylistTable({
     return visibleColumns;
   }, [columnVisibility, visibleColumns]);
 
-  const table = useReactTable({
+  const { table } = useTableState({
     data: tracks,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility: effectiveColumnVisibility,
-      rowSelection,
-    },
-    enableRowSelection: true,
+    columnVisibility: effectiveColumnVisibility,
   });
 
   const { handleRowClick } = useTableRowSelection(table);
