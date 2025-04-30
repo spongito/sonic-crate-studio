@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FeatureCards } from "@/components/Dashboard/FeatureCards";
 import { RecentlyLikedTracks } from "@/components/Dashboard/RecentlyLikedTracks";
 import { YourPlaylists } from "@/components/Dashboard/YourPlaylists";
+import { ExploreFeatures } from "@/components/Dashboard/ExploreFeatures";
 
 const Dashboard = () => {
   const { checkSubscription, user } = useAuth();
@@ -41,6 +42,9 @@ const Dashboard = () => {
         
         {/* Your Playlists */}
         <YourPlaylists />
+        
+        {/* Explore Features */}
+        <ExploreFeatures />
       </div>
     </DashboardLayout>
   );
