@@ -1,95 +1,84 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { updatePlaylist, deletePlaylist } from '@/services/PlaylistService';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { useTracks } from '@/context/TracksContext';
+import type { Playlist } from '@/components/Playlists/types';
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
-import { format } from "date-fns";
-
-export const usePlaylistOperations = () => {
-  const [isSaving, setIsSaving] = useState(false);
+export const usePlaylistOperations = (playlist: Playlist | null, id: string | undefined) => {
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
   const { user } = useAuth();
+  const { refreshTracks } = useTracks();
 
-  const savePlaylist = async (playlistData: any, isPublic: boolean = false) => {
-    if (!user) {
-      toast.error("You must be logged in to save playlists");
-      return;
-    }
+  const saveTracksToHistory = async (tracks: any[]) => {
+    if (!user || !tracks || tracks.length === 0) return;
 
     try {
-      setIsSaving(true);
-      
-      // Get the current date and time formatted
-      const dateTimeStr = format(new Date(), "MMM d - h:mm a");
-      
-      // Create a name based on the search query
-      const queryText = playlistData.intent?.original_prompt || "";
-      
-      // Use name from backend if available, otherwise create one
-      let name = playlistData.name || "";
-      
-      // If no name is provided or if we want to ensure the query is part of the name
-      if (!name || !name.includes(queryText.substring(0, 10))) {
-        // Truncate the query if it's too long
-        const truncatedQuery = queryText.length > 40 ? 
-          queryText.substring(0, 37) + "..." : queryText;
-        
-        // Create a name with the query and date/time
-        name = truncatedQuery ? 
-          `${truncatedQuery} - ${dateTimeStr}` : 
-          format(new Date(), "MMM d - h:mm a");  // Fallback to just date if no query
-      }
-      
-      // Ensure all tracks have the required metadata fields
-      const processedTracks = playlistData.tracks.map((track: any) => ({
-        ...track,
-        // Normalize field names
-        title: track.title || track.name || "Unknown Track",
-        artist: track.artist || "Unknown Artist",
-        album: track.album || "Unknown Album",
-        spotify_id: track.spotify_id || track.id,
-        match_score: track.match_score || track.score || 100,
-        platform: track.platform || "spotify",
-        platform_url: track.external_url || track.platform_url || `https://open.spotify.com/track/${(track.spotify_id || '').split(':').pop()}`,
-        cover_url: track.image || track.cover_url || "",
-        // Preserve audio features if present
-        audio_features: track.audio_features || {
-          bpm: undefined,
-          key: undefined,
-          mode: undefined
-        }
-      }));
-      
-      const { error } = await supabase.from("playlists").insert({
-        name,
+      const formattedTracksForHistory = tracks.map(track => ({
         user_id: user.id,
-        prompt: playlistData.intent?.original_prompt || "",
-        description: playlistData.intent?.description || "",
-        results: processedTracks,
-        genres: playlistData.intent?.genre ? [playlistData.intent.genre] : [],
-        settings: {
-          ...playlistData.intent,
-          mode: playlistData.intent?.style || "club-ready"
-        },
-        is_public: isPublic
-      });
+        track_id: track.id || track.spotify_id,
+        title: track.title || track.name || "Unknown Track",
+        artist: Array.isArray(track.artist) ? track.artist.join(", ") : track.artist || "Unknown Artist",
+        album: track.album || "Unknown Album",
+        platform: track.platform || "spotify",
+        key_signature: track.key_signature || track.audio_features?.key,
+        genre: Array.isArray(track.genre) ? track.genre.join(", ") : track.genre || "",
+        image_url: track.image_url || track.cover_url || track.image || "",
+        external_url: track.external_url || track.platform_url || "",
+        bpm: track.bpm || track.audio_features?.bpm || track.audio_features?.tempo,
+        release_year: track.release_year
+      }));
 
-      if (error) throw error;
-      
-      toast.success(
-        isPublic 
-          ? "Playlist saved and shared to community!" 
-          : "Playlist saved successfully!"
-      );
+      const { error } = await supabase
+        .from("user_track_history")
+        .upsert(formattedTracksForHistory, {
+          onConflict: 'user_id,track_id',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error("Error saving tracks to history:", error);
+      }
     } catch (error) {
-      console.error("Error saving playlist:", error);
-      toast.error("Failed to save playlist");
-    } finally {
-      setIsSaving(false);
+      console.error("Failed to save tracks to history:", error);
     }
   };
 
+  const handleDelete = async () => {
+    if (!id || !playlist) return;
+    
+    const success = await deletePlaylist(id);
+    if (success) {
+      navigate('/playlists');
+    }
+  };
+
+  const updatePlaylistData = async (name: string, coverUrl: string) => {
+    if (!id || !playlist) return false;
+    
+    const success = await updatePlaylist(id, {
+      name: name,
+      cover_image_url: coverUrl
+    });
+    
+    if (success) {
+      // If we're updating a playlist, ensure its tracks are in the history
+      if (playlist.results && Array.isArray(playlist.results)) {
+        await saveTracksToHistory(playlist.results);
+        await refreshTracks();
+      }
+      return true;
+    }
+    
+    return false;
+  };
+
   return {
-    savePlaylist,
-    isSaving
+    isEditing,
+    setIsEditing,
+    handleDelete,
+    updatePlaylistData
   };
 };
