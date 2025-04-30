@@ -21,11 +21,30 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [allTracks, setAllTracks] = useState<Track[]>([]);
   const [recentTracks, setRecentTracks] = useState<Track[]>([]);
   const [likedTracks, setLikedTracks] = useState<Track[]>([]);
+  const [refreshAttempts, setRefreshAttempts] = useState<number>(0);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const { user } = useAuth();
   const logger = useLogger('TracksContext');
   const { isLoading, error, fetchUserTracks, toggleLike: toggleTrackLike } = useTrackOperations(user?.id);
 
+  // Debounced refresh function with retry limit
   const refreshTracks = useCallback(async () => {
+    // Prevent refreshing more often than once every 2 seconds
+    const now = Date.now();
+    if (now - lastRefreshTime < 2000) {
+      logger.info('Refresh throttled - skipping');
+      return;
+    }
+    
+    // Track this refresh attempt
+    setLastRefreshTime(now);
+    
+    // Limit retry attempts to prevent infinite loops
+    if (refreshAttempts >= 3) {
+      logger.warning(`Refresh attempts exceeded limit (${refreshAttempts}), skipping refresh`);
+      return;
+    }
+
     logger.info('Manually refreshing tracks');
     try {
       const { allTracks: newAllTracks, recentTracks: newRecentTracks, likedTracks: newLikedTracks } = 
@@ -35,10 +54,14 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setRecentTracks(newRecentTracks);
       setLikedTracks(newLikedTracks);
       logger.success(`Refreshed tracks: ${newAllTracks.length} total, ${newRecentTracks.length} recent, ${newLikedTracks.length} liked`);
+      
+      // Reset attempts counter on success
+      setRefreshAttempts(0);
     } catch (error) {
       logger.error('Failed to refresh tracks:', error);
+      setRefreshAttempts(prev => prev + 1);
     }
-  }, [fetchUserTracks, logger]);
+  }, [fetchUserTracks, logger, lastRefreshTime, refreshAttempts]);
 
   const toggleLike = async (trackId: string, liked: boolean) => {
     try {
@@ -52,6 +75,9 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   useEffect(() => {
+    // Reset attempts when user changes
+    setRefreshAttempts(0);
+    
     if (user?.id) {
       logger.info('User authenticated, fetching tracks');
       refreshTracks();
@@ -61,7 +87,8 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setRecentTracks([]);
       setLikedTracks([]);
     }
-  }, [user?.id, refreshTracks, logger]);
+    // Only depend on user ID and refreshTracks to prevent excessive refreshing
+  }, [user?.id, refreshTracks]);
 
   return (
     <TracksContext.Provider

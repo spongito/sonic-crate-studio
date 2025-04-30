@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -11,6 +11,7 @@ import { DebugButton } from "@/components/Library/DebugButton";
 import { LoadingState } from "@/components/Library/LoadingState";
 import { useLogger } from "@/hooks/useLogger";
 import { TracksProvider, useTracks } from "@/context/TracksContext";
+import { toast } from "sonner";
 
 const LibraryView = () => {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ const LibraryView = () => {
   const [showDebug, setShowDebug] = useState(false);
   const logger = useLogger("Library");
   const { allTracks, recentTracks, isLoading, toggleLike, error, refreshTracks } = useTracks();
+  const initialLoadCompleted = useRef(false);
 
   // New effect to handle tab change from query parameter
   useEffect(() => {
@@ -37,13 +39,31 @@ const LibraryView = () => {
     }
   }, [location.search]);
 
-  // New effect to refresh tracks when the page is loaded
+  // New effect to refresh tracks when the page is loaded - only once
   useEffect(() => {
-    if (user) {
-      logger.info("Library page loaded, refreshing tracks");
-      refreshTracks();
+    if (user && !initialLoadCompleted.current) {
+      logger.info("Library page loaded, refreshing tracks once");
+      refreshTracks().catch(err => {
+        logger.error("Initial track refresh failed:", err);
+        toast.error("Could not load your tracks. Please check your connection and try again.");
+      });
+      initialLoadCompleted.current = true;
     }
   }, [user, refreshTracks, logger]);
+
+  // Show error message if there was a problem loading tracks
+  useEffect(() => {
+    if (error) {
+      logger.error("Error in tracks loading:", error);
+      
+      // Check if it's a connection issue
+      if (error.message?.includes("Failed to fetch") || error.message?.includes("Network")) {
+        toast.error("Network connection issue. Please check your internet connection.");
+      } else {
+        toast.error("Error loading tracks. Please try again later.");
+      }
+    }
+  }, [error, logger]);
 
   const filters = {
     search,
@@ -58,7 +78,8 @@ const LibraryView = () => {
     camelotMode: false
   };
 
-  if (isLoading) {
+  // Only show loading state on initial load, not on refreshes
+  if (isLoading && allTracks.length === 0 && !initialLoadCompleted.current) {
     return <LoadingState />;
   }
 

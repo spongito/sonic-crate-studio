@@ -8,6 +8,7 @@ import { formatDuration } from '@/utils/trackUtils';
 export const useTrackOperations = (userId: string | undefined) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const logger = useLogger('useTrackOperations');
 
   const fetchUserTracks = async () => {
@@ -16,6 +17,16 @@ export const useTrackOperations = (userId: string | undefined) => {
       setIsLoading(false);
       return { allTracks: [], recentTracks: [], likedTracks: [] };
     }
+
+    // Prevent fetching more often than once every 1.5 seconds
+    const now = Date.now();
+    if (now - lastFetchTime < 1500) {
+      logger.info('Track fetch throttled - using cached data');
+      setIsLoading(false);
+      return { allTracks: [], recentTracks: [], likedTracks: [] };
+    }
+    
+    setLastFetchTime(now);
 
     try {
       setIsLoading(true);
@@ -29,8 +40,23 @@ export const useTrackOperations = (userId: string | undefined) => {
         .order("created_at", { ascending: false });
 
       if (historyError) {
+        // If there's a network error, we should not continuously retry
+        if (historyError.message?.includes('Failed to fetch')) {
+          logger.error('Network error fetching track history. Will retry later.');
+          setIsLoading(false);
+          setError(new Error('Network connectivity issue. Please check your connection.'));
+          return { allTracks: [], recentTracks: [], likedTracks: [] };
+        }
+        
         logger.error('Error loading track history:', historyError);
         setError(historyError);
+        setIsLoading(false);
+        return { allTracks: [], recentTracks: [], likedTracks: [] };
+      }
+
+      if (!historyTracks) {
+        logger.warning('No history tracks returned, but no error either');
+        setIsLoading(false);
         return { allTracks: [], recentTracks: [], likedTracks: [] };
       }
 
@@ -48,14 +74,15 @@ export const useTrackOperations = (userId: string | undefined) => {
       if (likedError) {
         logger.error('Error loading liked tracks:', likedError);
         setError(likedError);
+        setIsLoading(false);
         return { allTracks: [], recentTracks: [], likedTracks: [] };
       }
       
       // Extract track IDs from the liked tracks response
-      const likedTrackIds = new Set(likedTracksJoin.map(lt => lt.track_id));
+      const likedTrackIds = new Set(likedTracksJoin?.map(lt => lt.track_id) || []);
       
       // Process history tracks and mark liked ones
-      const processedTracks = historyTracks.map(track => ({
+      const processedTracks = (historyTracks || []).map(track => ({
         ...track,
         id: track.track_id || track.id,
         liked: likedTrackIds.has(track.track_id || track.id),
@@ -63,13 +90,17 @@ export const useTrackOperations = (userId: string | undefined) => {
         duration: formatDuration(track)
       }));
 
-      // Get recent tracks (3 most recent instead of 10)
+      // Get recent tracks (3 most recent)
       const recentTracks = processedTracks.slice(0, 3);
       
       // Get liked tracks
       const likedTracks = processedTracks.filter(track => track.liked);
 
       logger.success(`Processed ${processedTracks.length} tracks, ${recentTracks.length} recent, ${likedTracks.length} liked`);
+      
+      // Clear any previous errors
+      setError(null);
+      
       return { allTracks: processedTracks, recentTracks, likedTracks };
     } catch (err) {
       const error = err as Error;
