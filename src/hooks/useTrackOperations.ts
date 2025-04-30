@@ -63,8 +63,8 @@ export const useTrackOperations = (userId: string | undefined) => {
         duration: formatDuration(track)
       }));
 
-      // Get recent tracks (10 most recent)
-      const recentTracks = processedTracks.slice(0, 10);
+      // Get recent tracks (3 most recent instead of 10)
+      const recentTracks = processedTracks.slice(0, 3);
       
       // Get liked tracks
       const likedTracks = processedTracks.filter(track => track.liked);
