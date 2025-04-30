@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { AdvancedSettings, type AdvancedSettingsParams } from "@/components/Dashboard/MusicFinder/AdvancedSettings";
@@ -10,12 +11,15 @@ import { DebugPanel } from "@/components/Dashboard/MusicFinder/DebugPanel";
 import TabPlaylistView from "@/components/TabPlaylistView";
 import { Track } from "@/types/table";
 import { useUserLikedTracks } from "@/hooks/useUserLikedTracks";
+import { usePlaylistOperations } from "@/hooks/use-playlist-operations";
+import { toast } from "sonner";
 
 const MusicFinder = () => {
   const [prompt, setPrompt] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const { user, subscription } = useAuth();
   const [platforms, setPlatforms] = useState(getDefaultPlatforms());
+  const { savePlaylist, isSaving } = usePlaylistOperations();
 
   const [advancedParams, setAdvancedParams] = useState<AdvancedSettingsParams>({
     genre: "",
@@ -93,6 +97,7 @@ const MusicFinder = () => {
     genre: Array.isArray(track.genre) ? track.genre : track.genre ? [track.genre] : null,
     release_year: track.release_year,
     duration: track.duration,
+    platform_url: track.platform_url || track.external_url,
   })) || [];
 
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -106,9 +111,19 @@ const MusicFinder = () => {
     console.log(`Adding track ${trackId} to library`);
   };
 
-  const handleSavePlaylist = (platform: string) => {
-    // Handle saving playlist
-    console.log(`Saving playlist to ${platform}`);
+  const handleSavePlaylist = async (platform: string) => {
+    if (!user) {
+      toast.error("Please sign in to save playlists");
+      return;
+    }
+
+    try {
+      await savePlaylist(playlistData);
+      toast.success(`Playlist saved to your ${platform} account`);
+    } catch (error) {
+      console.error("Error saving playlist:", error);
+      toast.error("Failed to save playlist");
+    }
   };
 
   return (

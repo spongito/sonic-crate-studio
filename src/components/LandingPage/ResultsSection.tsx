@@ -3,6 +3,7 @@ import { Track } from "@/types/table";
 import TabPlaylistView from "@/components/TabPlaylistView";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { usePlaylistOperations } from "@/hooks/use-playlist-operations";
 
 interface ResultsSectionProps {
   showPlaylist: boolean;
@@ -11,6 +12,7 @@ interface ResultsSectionProps {
 
 const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => {
   const { user } = useAuth();
+  const { savePlaylist, isSaving } = usePlaylistOperations();
 
   const formattedTracks: Track[] = (playlistData?.tracks || []).map((track: any) => ({
     id: track.id || track.spotify_id || `track-${Math.random()}`,
@@ -35,12 +37,19 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
     toast.success("Track added to your library");
   };
   
-  const handleSavePlaylist = (platform: string) => {
+  const handleSavePlaylist = async (platform: string) => {
     if (!user) {
       toast.error("Please sign in to save playlists");
       return;
     }
-    toast.success(`Playlist saved to your ${platform} account`);
+
+    try {
+      await savePlaylist(playlistData);
+      toast.success(`Playlist saved to your ${platform} account`);
+    } catch (error) {
+      console.error("Error saving playlist:", error);
+      toast.error("Failed to save playlist");
+    }
   };
 
   if (!showPlaylist || !playlistData) {
