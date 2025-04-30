@@ -1,8 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Save } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Edit } from "lucide-react";
 
 interface PlaylistHeaderProps {
   playlist: {
@@ -19,18 +18,6 @@ interface PlaylistHeaderProps {
 }
 
 export function PlaylistHeader({ playlist, tracks, onEditClick, coverImageUrl, onNameChange }: PlaylistHeaderProps) {
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState(playlist.name);
-
-  const handleSaveName = async () => {
-    if (!onNameChange) return;
-    
-    const success = await onNameChange(editedName);
-    if (success) {
-      setIsEditingName(false);
-    }
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
       {/* Cover Image */}
@@ -53,37 +40,9 @@ export function PlaylistHeader({ playlist, tracks, onEditClick, coverImageUrl, o
       {/* Playlist Info */}
       <div className="space-y-4">
         <div>
-          {isEditingName && onNameChange ? (
-            <div className="flex items-center gap-2">
-              <Input
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                className="text-2xl font-bold py-1 h-auto"
-                autoFocus
-              />
-              <Button 
-                variant="ghost"
-                size="sm"
-                onClick={handleSaveName}
-              >
-                <Save className="h-5 w-5" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold text-white">{playlist.name}</h1>
-              {onNameChange && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="opacity-50 hover:opacity-100"
-                  onClick={() => setIsEditingName(true)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-white">{playlist.name}</h1>
+          </div>
           <p className="text-muted-foreground">
             {playlist.description || playlist.prompt}
           </p>

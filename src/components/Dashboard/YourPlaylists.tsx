@@ -6,10 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { PlaylistSkeleton } from "@/components/Playlists/PlaylistSkeleton";
 import { Json } from '@/integrations/supabase/types';
-import { Check, Edit, Save } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
+import { PlaylistEditModal } from "@/components/Playlists/PlaylistEditModal";
 
 interface Playlist {
   id: string;
@@ -40,8 +40,8 @@ export const YourPlaylists: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
-  const [editedName, setEditedName] = useState<string>('');
+  const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchPlaylists = async () => {
@@ -88,40 +88,43 @@ export const YourPlaylists: React.FC = () => {
   }, [user]);
 
   const handleEditClick = (playlist: Playlist) => {
-    setEditingPlaylistId(playlist.id);
-    setEditedName(playlist.name);
+    setEditingPlaylist(playlist);
+    setIsEditModalOpen(true);
   };
 
-  const handleSaveClick = async (playlistId: string) => {
-    if (!editedName.trim()) {
-      toast.error("Playlist name cannot be empty");
-      return;
-    }
-
+  const handleSaveEditedPlaylist = async (name: string, coverUrl: string) => {
+    if (!editingPlaylist) return;
+    
     try {
       const { error } = await supabase
         .from("playlists")
-        .update({ name: editedName })
-        .eq("id", playlistId)
+        .update({ 
+          name: name,
+          cover_image_url: coverUrl 
+        })
+        .eq("id", editingPlaylist.id)
         .eq("user_id", user?.id);
 
       if (error) {
-        console.error("Error updating playlist name:", error);
-        toast.error("Failed to update playlist name");
+        console.error("Error updating playlist:", error);
+        toast.error("Failed to update playlist");
         return;
       }
 
       // Update local state
       setPlaylists(prevPlaylists => 
         prevPlaylists.map(playlist => 
-          playlist.id === playlistId ? { ...playlist, name: editedName } : playlist
+          playlist.id === editingPlaylist.id 
+            ? { ...playlist, name: name, cover_image_url: coverUrl } 
+            : playlist
         )
       );
 
-      toast.success("Playlist name updated successfully");
-      setEditingPlaylistId(null);
+      toast.success("Playlist updated successfully");
+      setIsEditModalOpen(false);
+      setEditingPlaylist(null);
     } catch (error) {
-      console.error("Error in playlist name update:", error);
+      console.error("Error in playlist update:", error);
       toast.error("Something went wrong");
     }
   };
@@ -185,40 +188,19 @@ export const YourPlaylists: React.FC = () => {
               </Link>
               <div className="p-4 space-y-1">
                 <div className="flex justify-between items-center">
-                  {editingPlaylistId === playlist.id ? (
-                    <div className="flex items-center gap-2 w-full">
-                      <Input
-                        value={editedName}
-                        onChange={(e) => setEditedName(e.target.value)}
-                        className="h-8 text-sm"
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleSaveClick(playlist.id)}
-                        className="h-8 p-0 w-8"
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <Link to={`/playlists/${playlist.id}`} className="block">
-                        <h3 className="font-medium text-white group-hover:text-gold transition-colors">
-                          {playlist.name}
-                        </h3>
-                      </Link>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditClick(playlist)}
-                        className="h-8 p-0 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
+                  <Link to={`/playlists/${playlist.id}`} className="block">
+                    <h3 className="font-medium text-white group-hover:text-gold transition-colors">
+                      {playlist.name}
+                    </h3>
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleEditClick(playlist)}
+                    className="h-8 p-0 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
                 </div>
                 <div className="flex justify-between text-xs text-white/60">
                   <span>{Array.isArray(playlist.results) ? playlist.results.length : 0} tracks</span>
@@ -229,6 +211,19 @@ export const YourPlaylists: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {editingPlaylist && (
+        <PlaylistEditModal
+          isOpen={isEditModalOpen}
+          playlistName={editingPlaylist.name}
+          coverImageUrl={editingPlaylist.cover_image_url || ''}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingPlaylist(null);
+          }}
+          onSave={handleSaveEditedPlaylist}
+        />
+      )}
     </div>
   );
 };

@@ -102,7 +102,7 @@ export default function PlaylistDetailPage() {
   };
 
   const handleNameChange = async (newName: string) => {
-    if (!id || !playlist || !newName.trim()) return;
+    if (!id || !playlist) return false;
     
     try {
       const { error } = await supabase
@@ -153,7 +153,6 @@ export default function PlaylistDetailPage() {
               tracks={tracks}
               onEditClick={() => setIsEditing(true)}
               coverImageUrl={editedCoverUrl || (tracks[0]?.image_url || '')}
-              onNameChange={handleNameChange}
             />
 
             <PlaylistActions 
@@ -186,6 +185,7 @@ export default function PlaylistDetailPage() {
               setEditedName(name);
               setEditedCoverUrl(coverUrl);
               handleSaveChanges();
+              handleNameChange(name); // Update the playlist name in the database
             }}
           />
         )}
