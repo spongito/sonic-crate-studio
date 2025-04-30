@@ -6,8 +6,6 @@ import TrackCell from "@/components/TrackCell";
 import PlatformCell from "@/components/PlatformCell";
 import TrackLikeButton from "@/components/TrackLikeButton";
 import type { Track } from "@/types/table";
-import { ArrowUpDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface UsePlaylistTableColumnsProps {
   showSelection?: boolean;
@@ -57,67 +55,43 @@ export function usePlaylistTableColumns({
               />
             ),
             enableHiding: false,
-            enableSorting: false,
           } as ColumnDef<Track>,
         ]
       : []),
     {
       accessorKey: "title",
-      header: ({ column }) => (
-        <div className="flex items-center cursor-pointer" onClick={() => column.toggleSorting()}>
-          Track
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-        </div>
-      ),
+      header: "Track",
       cell: ({ row }) => (
         <TrackCell track={row.original} />
       ),
       enableHiding: false,
-      enableSorting: true,
     },
     {
       accessorKey: "album",
       header: "Album",
       cell: ({ row }) => <span className="text-sm">{row.getValue("album")}</span>,
-      enableSorting: true,
     },
     {
       accessorKey: "platform",
       header: "Platform",
       cell: ({ row }) => <PlatformCell track={row.original} />,
-      enableSorting: true,
     },
     {
       accessorKey: "bpm",
-      header: ({ column }) => (
-        <div className="flex items-center cursor-pointer" onClick={() => column.toggleSorting()}>
-          BPM
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const bpm = row.getValue("bpm");
-        return bpm ? <span className="text-sm">{bpm}</span> : <span className="text-muted-foreground text-sm">N/A</span>;
-      },
-      enableSorting: true,
+      header: "BPM",
+      cell: ({ row }) => <span className="text-sm">{row.getValue("bpm")}</span>,
     },
     {
       accessorKey: "key_signature",
       header: "Key",
       cell: ({ row }) => {
         const keyValue = row.original.key_signature || row.original.key;
-        return <span className="text-sm">{keyValue || "N/A"}</span>;
+        return <span className="text-sm">{keyValue}</span>;
       },
-      enableSorting: true,
     },
     {
       accessorKey: "genre",
-      header: ({ column }) => (
-        <div className="flex items-center cursor-pointer" onClick={() => column.toggleSorting()}>
-          Genre
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-        </div>
-      ),
+      header: "Genre",
       cell: ({ row }) => {
         const genre = row.original.genre;
         const genreText = Array.isArray(genre)
@@ -125,31 +99,22 @@ export function usePlaylistTableColumns({
           : typeof genre === "string"
           ? genre
           : "";
-        return <span className="text-sm">{genreText || "N/A"}</span>;
+        return <span className="text-sm">{genreText}</span>;
       },
-      enableSorting: true,
     },
     {
       accessorKey: "release_year",
-      header: ({ column }) => (
-        <div className="flex items-center cursor-pointer" onClick={() => column.toggleSorting()}>
-          Year
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-        </div>
-      ),
+      header: "Year",
       cell: ({ row }) => {
         const year = row.original.release_year || row.original.year;
-        return <span className="text-sm">{year || "N/A"}</span>;
+        return <span className="text-sm">{year}</span>;
       },
-      enableSorting: true,
     },
     {
       accessorKey: "duration",
       header: "Duration",
-      cell: ({ row }) => <span className="text-sm">{row.getValue("duration") || "N/A"}</span>,
-      enableSorting: true,
+      cell: ({ row }) => <span className="text-sm">{row.getValue("duration")}</span>,
     },
-    // social_metric column removed
     ...(showLikeButton || showAddToLibrary
       ? [
           {
@@ -164,16 +129,9 @@ export function usePlaylistTableColumns({
                 showAddToLibrary={showAddToLibrary}
               />
             ),
-            enableSorting: false,
           } as ColumnDef<Track>,
         ]
       : []),
-    {
-      id: "preview",
-      header: "Preview",
-      cell: () => null, // This is handled in the main component
-      enableSorting: false,
-    },
   ];
 
   return columns;

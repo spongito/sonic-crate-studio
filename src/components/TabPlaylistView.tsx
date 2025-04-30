@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GeneratedPlaylistTable from "./GeneratedPlaylistTable";
@@ -19,11 +18,6 @@ interface TabPlaylistViewProps {
   onSavePlaylist?: (platform: string) => void;
   userLikedTrackIds?: string[];
   className?: string;
-  failedPlatforms?: string[];
-  topGenres?: string[];
-  playlistId?: string;
-  onGenreFilter?: (genre: string) => void;
-  isPremium?: boolean;
 }
 
 export default function TabPlaylistView({
@@ -34,11 +28,6 @@ export default function TabPlaylistView({
   onSavePlaylist,
   userLikedTrackIds = [],
   className = "",
-  failedPlatforms = [],
-  topGenres = [],
-  playlistId,
-  onGenreFilter,
-  isPremium = false,
 }: TabPlaylistViewProps) {
   const [activePlatform, setActivePlatform] = React.useState<string>("all");
   const [searchTerm, setSearchTerm] = React.useState<string>("");
@@ -140,17 +129,12 @@ export default function TabPlaylistView({
             userLikedTrackIds={userLikedTrackIds} 
             onLikeChange={onLikeChange}
             playlistName={playlistName}
-            playlistId={playlistId}
             fullWidth={true}
             showLikeButton={true}
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
             columnVisibility={visibleColumns}
-            failedPlatforms={failedPlatforms}
-            topGenres={topGenres}
-            onGenreFilter={onGenreFilter}
-            isPremium={isPremium}
           />
         </TabsContent>
         
@@ -160,17 +144,12 @@ export default function TabPlaylistView({
             userLikedTrackIds={userLikedTrackIds} 
             onLikeChange={onLikeChange}
             playlistName={playlistName}
-            playlistId={playlistId}
             fullWidth={true}
             showLikeButton={true}
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
             columnVisibility={visibleColumns}
-            failedPlatforms={failedPlatforms.filter(p => p === "spotify")}
-            topGenres={topGenres}
-            onGenreFilter={onGenreFilter}
-            isPremium={isPremium}
           />
         </TabsContent>
         
@@ -180,17 +159,12 @@ export default function TabPlaylistView({
             userLikedTrackIds={userLikedTrackIds} 
             onLikeChange={onLikeChange}
             playlistName={playlistName}
-            playlistId={playlistId}
             fullWidth={true}
             showLikeButton={true}
             showAddToLibrary={true}
             onAddToLibrary={onAddToLibrary}
             showControls={false}
             columnVisibility={visibleColumns}
-            failedPlatforms={failedPlatforms.filter(p => p === "youtube")}
-            topGenres={topGenres}
-            onGenreFilter={onGenreFilter}
-            isPremium={isPremium}
           />
         </TabsContent>
       </Tabs>
