@@ -1,12 +1,4 @@
 
-import { saveMasterTrack } from '../../supabase/functions/process-music-request/trackMasterDb';
-import { 
-  getSpotifyToken, 
-  searchTracks,
-  getRecommendations,
-  enrichTracksWithAudioFeatures
-} from '../../supabase/functions/process-music-request/spotify-client';
-import { searchYouTubeVideos } from '../../supabase/functions/process-music-request/youtube-client';
 import { mergeAndDedupeTracks, scoreAndSortTracks, createBatches } from './trackMerger';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { JobStatus } from '@/types/job';
@@ -218,4 +210,125 @@ async function updateJobStatus(
     .eq('id', jobId);
   
   if (LOG_DEBUG) console.log(`Job ${jobId} status updated to ${status}`);
+}
+
+// API function stubs - these will actually be called via the edge functions
+async function getSpotifyToken(): Promise<string | null> {
+  try {
+    const response = await fetch('/api/spotify-token');
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.token;
+  } catch (error) {
+    console.error("Error getting Spotify token:", error);
+    return null;
+  }
+}
+
+async function searchTracks(query: string, intent: any, token: string, limit: number): Promise<any[]> {
+  try {
+    const response = await fetch('/api/spotify-search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ query, intent, limit })
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.tracks || [];
+  } catch (error) {
+    console.error("Error searching tracks:", error);
+    return [];
+  }
+}
+
+async function getRecommendations(intent: any, token: string): Promise<any[]> {
+  try {
+    const response = await fetch('/api/spotify-recommendations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ intent })
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.tracks || [];
+  } catch (error) {
+    console.error("Error getting recommendations:", error);
+    return [];
+  }
+}
+
+async function enrichTracksWithAudioFeatures(tracks: any[], token: string): Promise<any[]> {
+  try {
+    const trackIds = tracks.map(track => track.id).filter(Boolean);
+    if (trackIds.length === 0) return tracks;
+    
+    const response = await fetch('/api/spotify-audio-features', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ trackIds })
+    });
+    
+    if (!response.ok) return tracks;
+    const data = await response.json();
+    
+    // Merge audio features back into tracks
+    return tracks.map(track => {
+      const features = data.audioFeatures?.find((f: any) => f.id === track.id);
+      if (features) {
+        return {
+          ...track,
+          audio_features: features
+        };
+      }
+      return track;
+    });
+  } catch (error) {
+    console.error("Error enriching tracks with audio features:", error);
+    return tracks;
+  }
+}
+
+async function searchYouTubeVideos(query: string): Promise<any[]> {
+  try {
+    const response = await fetch('/api/youtube-search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query })
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.videos || [];
+  } catch (error) {
+    console.error("Error searching YouTube videos:", error);
+    return [];
+  }
+}
+
+async function saveMasterTrack(track: any, audioFeatures: any): Promise<string | null> {
+  try {
+    const response = await fetch('/api/save-master-track', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ track, audioFeatures })
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.id;
+  } catch (error) {
+    console.error("Error saving master track:", error);
+    return null;
+  }
 }
