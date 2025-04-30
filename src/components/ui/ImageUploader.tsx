@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
 interface ImageUploaderProps {
   onImageUploaded: (url: string) => void;
@@ -18,8 +19,14 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   bucketName = 'playlist_covers'
 }) => {
   const [previewImage, setPreviewImage] = useState<string | null>(currentImageUrl || null);
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Use the existing useImageUpload hook
+  const { uploadImage, isUploading, validateImage } = useImageUpload({
+    maxSizeMB,
+    bucket: bucketName,
+    requiredAspectRatio: 'square'
+  });
 
   const handleUploadClick = () => {
     if (fileInputRef.current) {
@@ -27,59 +34,32 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
-  const validateImage = async (file: File): Promise<boolean> => {
-    // Check file size (MB)
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    if (file.size > maxSizeBytes) {
-      toast.error(`File size must be less than ${maxSizeMB}MB`);
-      return false;
-    }
-    
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      toast.error('Only JPG, PNG, or GIF files are allowed');
-      return false;
-    }
-    
-    // Check if image is square
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        if (img.width !== img.height) {
-          toast.error('Image must be square (width equals height)');
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-        URL.revokeObjectURL(img.src);
-      };
-      img.onerror = () => {
-        toast.error('Invalid image file');
-        resolve(false);
-      };
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
     try {
-      // First validate the image
-      const isValid = await validateImage(file);
-      if (!isValid) return;
+      // First validate the image using the hook's validate function
+      const validation = await validateImage(file);
+      if (!validation.valid) return;
       
       // Show preview immediately after validation
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
       
-      // Start uploading to Supabase
-      setIsUploading(true);
+      // Use the hook's upload function
+      const uploadedUrl = await uploadImage(file);
       
-      // Use useImageUpload hook here
-      const uploadedUrl = await uploadImageToSupabase(file, bucketName);
+      if (!uploadedUrl) {
+        toast.error('Failed to upload image');
+        // Reset preview if upload fails
+        if (!currentImageUrl) {
+          setPreviewImage(null);
+        } else {
+          setPreviewImage(currentImageUrl);
+        }
+        return;
+      }
       
       // Call the callback with the uploaded URL
       onImageUploaded(uploadedUrl);
@@ -95,7 +75,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         setPreviewImage(currentImageUrl);
       }
     } finally {
-      setIsUploading(false);
       // Reset the file input
       if (event.target) {
         event.target.value = '';
@@ -159,35 +138,3 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     </div>
   );
 };
-
-// Helper function to upload image to Supabase
-async function uploadImageToSupabase(file: File, bucketName: string): Promise<string> {
-  const { supabase } = await import('@/integrations/supabase/client');
-  const { user } = (await import('@/context/AuthContext')).useAuth();
-  
-  if (!user) {
-    throw new Error('User must be authenticated to upload files');
-  }
-  
-  // Create a unique filename with timestamp
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-  const filePath = `${fileName}`;
-  
-  // Upload the file to Supabase Storage
-  const { data, error } = await supabase.storage
-    .from(bucketName)
-    .upload(filePath, file, {
-      upsert: true,
-      contentType: file.type,
-    });
-  
-  if (error) throw error;
-  
-  // Get the public URL
-  const { data: publicUrlData } = supabase.storage
-    .from(bucketName)
-    .getPublicUrl(filePath);
-  
-  return publicUrlData.publicUrl;
-}
