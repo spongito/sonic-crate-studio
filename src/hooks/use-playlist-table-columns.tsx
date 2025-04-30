@@ -157,8 +157,8 @@ export function usePlaylistTableColumns({
         </div>
       ),
       cell: ({ row }) => {
-        // Get the social_metric value
-        const metric = row.original.social_metric;
+        // Get the social_metric value and ensure it's properly typed
+        const metric = row.original.social_metric as number | string | null | undefined;
         
         // Check if it's undefined or null
         if (metric === undefined || metric === null) {
