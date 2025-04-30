@@ -13,14 +13,14 @@ interface ListViewProps {
 
 export function ListView({ playlists, onPlaylistClick }: ListViewProps) {
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
+            <TableHead className="hidden md:table-cell">Description</TableHead>
             <TableHead>Tracks</TableHead>
-            <TableHead>Created</TableHead>
+            <TableHead className="hidden sm:table-cell">Created</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -28,9 +28,9 @@ export function ListView({ playlists, onPlaylistClick }: ListViewProps) {
           {playlists.map((playlist) => (
             <TableRow key={playlist.id}>
               <TableCell className="font-medium">{playlist.name}</TableCell>
-              <TableCell className="max-w-[300px] truncate">{playlist.prompt}</TableCell>
+              <TableCell className="hidden md:table-cell max-w-[300px] truncate">{playlist.prompt}</TableCell>
               <TableCell>{Array.isArray(playlist.results) ? playlist.results.length : 0}</TableCell>
-              <TableCell>
+              <TableCell className="hidden sm:table-cell">
                 {format(new Date(playlist.created_at), "MMM d, yyyy")}
               </TableCell>
               <TableCell>

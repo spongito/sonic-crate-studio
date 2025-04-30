@@ -61,7 +61,8 @@ export const PlaylistList = () => {
           return;
         }
         
-        setPlaylists(data || []);
+        // Fix the TypeScript issue by ensuring data is properly typed as Playlist[]
+        setPlaylists(data as Playlist[]);
       } catch (error) {
         console.error("Error fetching playlists:", error);
         toast.error("Something went wrong");
@@ -83,11 +84,12 @@ export const PlaylistList = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Responsive header layout - stacks on mobile, side-by-side on desktop */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-2xl font-bold">
           {playlists.length === 0 ? "No playlists yet" : `${playlists.length} Playlists`}
         </h2>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between sm:justify-end gap-4">
           <ViewToggle view={view} onViewChange={handleViewChange} />
           <Link to="/music-finder">
             <Button>
