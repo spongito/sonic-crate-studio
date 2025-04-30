@@ -6,10 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useTracks } from '@/context/TracksContext';
 import type { Playlist } from '@/components/Playlists/types';
+import { toast } from 'sonner';
 
-export const usePlaylistOperations = (playlist: Playlist | null, id: string | undefined) => {
+export const usePlaylistOperations = (playlist: Playlist | null, id?: string) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
   const { refreshTracks } = useTracks();
 
@@ -76,10 +78,65 @@ export const usePlaylistOperations = (playlist: Playlist | null, id: string | un
     return false;
   };
 
+  const savePlaylist = async (playlistData: any, isPublic: boolean = false) => {
+    if (!user) {
+      toast.error("Please sign in to save playlists");
+      return false;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Format playlist data for storage
+      const playlistToSave = {
+        name: playlistData.name || "Generated Playlist",
+        user_id: user.id,
+        results: playlistData.tracks || [],
+        cover_image_url: playlistData.cover_image_url || "",
+        is_public: isPublic,
+        description: playlistData.description || "",
+        prompt: playlistData.prompt || "",
+        settings: playlistData.settings || {},
+        tags: playlistData.tags || [],
+        genres: playlistData.genres || []
+      };
+
+      // Save playlist to database
+      const { data, error } = await supabase
+        .from("playlists")
+        .insert(playlistToSave)
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error("Error saving playlist:", error);
+        toast.error("Failed to save playlist");
+        return false;
+      }
+
+      // Save tracks to user history
+      if (playlistData.tracks && Array.isArray(playlistData.tracks) && playlistData.tracks.length > 0) {
+        await saveTracksToHistory(playlistData.tracks);
+        await refreshTracks();
+      }
+
+      toast.success("Playlist saved successfully!");
+      return true;
+    } catch (error) {
+      console.error("Error in save playlist:", error);
+      toast.error("Something went wrong while saving");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return {
     isEditing,
     setIsEditing,
     handleDelete,
-    updatePlaylistData
+    updatePlaylistData,
+    savePlaylist,
+    isSaving
   };
 };
