@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Track } from '@/types/table';
-import { GeneratedPlaylistTable } from '@/components/GeneratedPlaylistTable';
+import GeneratedPlaylistTable from '@/components/playlist-table';
 import { 
   Pagination, 
   PaginationContent, 
