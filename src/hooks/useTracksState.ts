@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Track } from '@/types/table';
 import { useLogger } from '@/hooks/useLogger';
@@ -48,7 +49,7 @@ export function useTracksState(userId: string | undefined) {
     }
   }, [fetchUserTracks, logger, lastRefreshTime, refreshAttempts]);
 
-  const toggleLike = async (trackId: string, isCurrentlyLiked: boolean) => {
+  const toggleLike = async (trackId: string, isCurrentlyLiked: boolean): Promise<void> => {
     try {
       logger.info(`Toggling like for track ${trackId}, currently liked: ${isCurrentlyLiked}`);
       
@@ -86,7 +87,7 @@ export function useTracksState(userId: string | undefined) {
       }
       
       logger.success(`Track ${trackId} like status toggled to ${newLikedState}`);
-      return newLikedState;
+      // Removed the return statement that was causing the type mismatch
     } catch (error) {
       logger.error('Error toggling track like:', error);
       throw error;
