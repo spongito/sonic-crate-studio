@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import GeneratedPlaylistTable from "@/components/GeneratedPlaylistTable";
+import GeneratedPlaylistTable from "@/components/playlist-table";
 import type { Track } from "@/types/table";
 
 interface TabPlaylistContentProps {
