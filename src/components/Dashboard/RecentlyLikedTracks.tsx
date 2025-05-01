@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import TrackLikeButton from '@/components/TrackLikeButton';
 import { formatDuration } from '@/lib/utils';
 import { useTracks } from '@/context/TracksContext';
+import { toast } from 'sonner';
 
 export const RecentlyLikedTracks: React.FC = () => {
   const { likedTracks, toggleLike } = useTracks();
@@ -17,6 +18,16 @@ export const RecentlyLikedTracks: React.FC = () => {
       return formatDuration(duration);
     }
     return duration; // If it's already a string, return as is
+  };
+
+  const handleToggleLike = async (trackId: string, liked: boolean) => {
+    try {
+      await toggleLike(trackId, liked);
+      toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
+    } catch (error) {
+      console.error('Error toggling track like:', error);
+      toast.error("Failed to update track status");
+    }
   };
 
   return (
@@ -80,8 +91,8 @@ export const RecentlyLikedTracks: React.FC = () => {
 
                 <TrackLikeButton
                   trackId={track.id}
-                  liked={true} 
-                  onToggle={(id, liked) => toggleLike(id, liked)}
+                  liked={true}
+                  onToggle={handleToggleLike}
                 />
               </div>
             </div>

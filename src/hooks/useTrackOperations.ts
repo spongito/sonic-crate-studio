@@ -116,7 +116,7 @@ export const useTrackOperations = (userId: string | undefined) => {
   const toggleLike = async (trackId: string, isCurrentlyLiked: boolean) => {
     if (!userId) {
       logger.warning('Cannot toggle like: No user logged in');
-      return;
+      throw new Error('User not logged in');
     }
 
     try {
@@ -124,27 +124,19 @@ export const useTrackOperations = (userId: string | undefined) => {
       
       if (!isCurrentlyLiked) {
         // Like: Add to liked_tracks
-        try {
-          const { error } = await supabase
-            .from("liked_tracks")
-            .insert({ user_id: userId, track_id: trackId });
-            
-          if (error) {
-            // Check if it's a duplicate key constraint error
-            if (error.code === '23505') {
-              // This is a duplicate entry - the track is already liked
-              logger.info(`Track ${trackId} is already liked. Ignoring duplicate.`);
-              return; // Silently succeed as the desired state is achieved
-            }
-            
-            logger.error('Error adding to liked tracks:', error);
-            throw error;
-          }
-        } catch (error) {
-          if ((error as any)?.code === '23505') {
+        const { error } = await supabase
+          .from("liked_tracks")
+          .insert({ user_id: userId, track_id: trackId });
+          
+        if (error) {
+          // Check if it's a duplicate key constraint error
+          if (error.code === '23505') {
+            // This is a duplicate entry - the track is already liked
             logger.info(`Track ${trackId} is already liked. Ignoring duplicate.`);
-            return; // Silently succeed
+            return; // Silently succeed as the desired state is achieved
           }
+          
+          logger.error('Error adding to liked tracks:', error);
           throw error;
         }
       } else {

@@ -48,13 +48,14 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
   
   const handleLikeChange = async (trackId: string, liked: boolean) => {
     if (!user) {
-      toast.error("Please sign in to like tracks");
+      toast.error("Please sign in to save tracks");
       return;
     }
     
     try {
+      // Note: toggleLike expects current state, not the desired state
       await toggleLike(trackId, !liked);
-      toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
+      toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
     } catch (error) {
       console.error("Error toggling track like:", error);
       toast.error("Failed to update liked status");
@@ -65,11 +66,14 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
     return null;
   }
 
+  // Extract liked track IDs if available, otherwise use empty array
+  const userLikedTrackIds = (playlistData.userLikedTrackIds || []);
+
   return (
     <div className="w-full px-4 md:px-8 lg:px-12 py-8 mt-6">
       <TabPlaylistView
         tracks={formattedTracks}
-        userLikedTrackIds={[]}
+        userLikedTrackIds={userLikedTrackIds}
         onLikeChange={handleLikeChange}
         onSavePlaylist={handleSavePlaylist}
         playlistName={playlistData.name || "Generated Playlist"}

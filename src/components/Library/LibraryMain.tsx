@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -122,13 +121,15 @@ export function LibraryMain() {
 
   const handleLikeToggle = async (trackId: string, liked: boolean) => {
     if (!user) {
-      toast.error("Please sign in to like tracks");
+      toast.error("Please sign in to save tracks");
       return;
     }
     
     try {
+      // Note: toggleLike expects the current state, not the new desired state
+      // liked = true means "currently liked", so we pass that to toggleLike
       await toggleLike(trackId, liked);
-      toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
+      toast.success(liked ? "Removed from your favorites" : "Added to your favorites");
     } catch (error) {
       logger.error("Error toggling like:", error);
       toast.error("Failed to update liked status");

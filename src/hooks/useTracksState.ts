@@ -50,6 +50,8 @@ export function useTracksState(userId: string | undefined) {
 
   const toggleLike = async (trackId: string, isCurrentlyLiked: boolean) => {
     try {
+      logger.info(`Toggling like for track ${trackId}, currently liked: ${isCurrentlyLiked}`);
+      
       // Pass the current liked state to toggleTrackLike
       await toggleTrackLike(trackId, isCurrentlyLiked);
       
@@ -84,6 +86,7 @@ export function useTracksState(userId: string | undefined) {
       }
       
       logger.success(`Track ${trackId} like status toggled to ${newLikedState}`);
+      return newLikedState;
     } catch (error) {
       logger.error('Error toggling track like:', error);
       throw error;

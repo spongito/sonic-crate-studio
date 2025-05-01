@@ -87,7 +87,7 @@ export function RecentlyFoundTracks({ tracks, onLikeToggle }: RecentlyFoundTrack
                     <TrackLikeButton
                       trackId={track.id}
                       liked={track.liked || false}
-                      onToggle={() => handleTrackLikeToggle(track.id, track.liked || false)}
+                      onToggle={handleTrackLikeToggle}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground truncate">

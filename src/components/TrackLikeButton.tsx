@@ -37,13 +37,11 @@ export default function TrackLikeButton({
     
     setIsLoading(true);
     try {
-      // Toggle the local state immediately for a more responsive feel
       const newLikedState = !isLiked;
-      setIsLiked(newLikedState);
+      setIsLiked(newLikedState); // Update UI optimistically
       
-      // Call the toggleLike function from context
-      // FIXED: Pass the current track ID and current liked state (not inverted)
-      // The toggleLike function in context will handle the inversion
+      // Call the context's toggleLike function with the current track ID and CURRENT liked state
+      // (not the new state - the context will handle the toggle internally)
       await toggleLike(trackId, isLiked);
       
       // If onToggle callback exists, call it with the new liked state
