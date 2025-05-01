@@ -31,6 +31,15 @@ export function GeneratedPlaylistTable({
   columnVisibility,
 }: ExtendedTableProps) {
   const { visibleColumns, toggleColumn } = useTableColumns();
+  
+  // Enrich tracks with liked status from userLikedTrackIds
+  const tracksWithLikedStatus = React.useMemo(() => {
+    return tracks.map(track => ({
+      ...track,
+      liked: track.liked || (userLikedTrackIds && userLikedTrackIds.includes(track.id)) || false
+    }));
+  }, [tracks, userLikedTrackIds]);
+  
   const columns = usePlaylistTableColumns({ 
     showLikeButton, 
     onLikeChange, 
@@ -49,7 +58,7 @@ export function GeneratedPlaylistTable({
   }, [columnVisibility, visibleColumns]);
 
   const { table } = useTableState({
-    data: tracks,
+    data: tracksWithLikedStatus,
     columns,
     columnVisibility: effectiveColumnVisibility,
   });

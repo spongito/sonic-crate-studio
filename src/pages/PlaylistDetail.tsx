@@ -13,6 +13,8 @@ import TabPlaylistView from "@/components/TabPlaylistView";
 import BackButton from "@/components/common/BackButton";
 import { toast } from "sonner";
 import { useTracks } from "@/context/TracksContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const PlaylistDetail = () => {
   const {
@@ -28,7 +30,10 @@ const PlaylistDetail = () => {
   } = usePlaylistDetail();
   
   const { toggleLike } = useTracks();
+  const { user } = useAuth();
   const [currentCoverImageUrl, setCurrentCoverImageUrl] = useState<string | null>(null);
+  const [userLikedTrackIds, setUserLikedTrackIds] = useState<string[]>([]);
+  const [fetchingLikedTracks, setFetchingLikedTracks] = useState(false);
 
   // Initialize the cover image URL when playlist data is loaded
   useEffect(() => {
@@ -36,6 +41,35 @@ const PlaylistDetail = () => {
       setCurrentCoverImageUrl(playlist.cover_image_url);
     }
   }, [playlist]);
+
+  // Fetch user's liked track IDs when component loads
+  useEffect(() => {
+    const fetchLikedTracks = async () => {
+      if (!user) return;
+      
+      try {
+        setFetchingLikedTracks(true);
+        const { data: likedTracksData, error } = await supabase
+          .from("liked_tracks")
+          .select("track_id")
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Error fetching liked tracks:", error);
+          return;
+        }
+
+        const likedIds = likedTracksData.map(item => item.track_id);
+        setUserLikedTrackIds(likedIds);
+      } catch (error) {
+        console.error("Error in fetchLikedTracks:", error);
+      } finally {
+        setFetchingLikedTracks(false);
+      }
+    };
+
+    fetchLikedTracks();
+  }, [user]);
 
   if (unauthorized) {
     return <Navigate to="/playlists" />;
@@ -53,8 +87,16 @@ const PlaylistDetail = () => {
 
   const handleLikeChange = async (trackId: string, liked: boolean) => {
     try {
-      // TrackLikeButton passes the NEW desired state, toggleLike expects the current state
+      // Since liked is the NEW state after toggling, we need to pass the opposite to toggleLike
       await toggleLike(trackId, !liked);
+      
+      // Update the local state immediately for UI responsiveness
+      if (liked) {
+        setUserLikedTrackIds(prev => [...prev, trackId]);
+      } else {
+        setUserLikedTrackIds(prev => prev.filter(id => id !== trackId));
+      }
+      
       toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
     } catch (error) {
       console.error("Error toggling track like:", error);
@@ -97,7 +139,7 @@ const PlaylistDetail = () => {
 
             <TabPlaylistView 
               tracks={tracks}
-              userLikedTrackIds={[]}
+              userLikedTrackIds={userLikedTrackIds}
               onLikeChange={handleLikeChange}
               playlistName={playlist.name}
               coverImageUrl={currentCoverImageUrl}
