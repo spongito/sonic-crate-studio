@@ -18,7 +18,27 @@ interface TracksContextType {
   syncExistingPlaylists: () => Promise<void>;
 }
 
-const TracksContext = createContext<TracksContextType | undefined>(undefined);
+// Create a default context value for unauthenticated users
+const defaultContextValue: TracksContextType = {
+  allTracks: [],
+  recentTracks: [],
+  likedTracks: [],
+  isLoading: false,
+  error: null,
+  refreshTracks: async () => {
+    console.log("Track refresh not available for unauthenticated users");
+  },
+  toggleLike: async () => {
+    console.log("Like functionality requires authentication");
+    throw new Error("Authentication required to like tracks");
+  },
+  isSyncing: false,
+  syncExistingPlaylists: async () => {
+    console.log("Playlist sync not available for unauthenticated users");
+  }
+};
+
+const TracksContext = createContext<TracksContextType>(defaultContextValue);
 
 export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -56,25 +76,26 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       logger.info('User authenticated, fetching tracks');
       refreshTracks();
     } else {
-      logger.info('No user, clearing tracks');
+      logger.info('No user, providing default context');
     }
     // Only depend on user ID and refreshTracks to prevent excessive refreshing
   }, [user?.id, refreshTracks, setRefreshAttempts, logger]);
 
+  // Provide actual implementation when authenticated, fallback otherwise
+  const contextValue = user ? {
+    allTracks,
+    recentTracks,
+    likedTracks,
+    isLoading: isLoading || isSyncing,
+    error,
+    refreshTracks,
+    toggleLike,
+    isSyncing,
+    syncExistingPlaylists,
+  } : defaultContextValue;
+
   return (
-    <TracksContext.Provider
-      value={{
-        allTracks,
-        recentTracks,
-        likedTracks,
-        isLoading: isLoading || isSyncing,
-        error,
-        refreshTracks,
-        toggleLike,
-        isSyncing,
-        syncExistingPlaylists,
-      }}
-    >
+    <TracksContext.Provider value={contextValue}>
       {children}
     </TracksContext.Provider>
   );
@@ -82,8 +103,5 @@ export const TracksProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const useTracks = (): TracksContextType => {
   const context = useContext(TracksContext);
-  if (context === undefined) {
-    throw new Error('useTracks must be used within a TracksProvider');
-  }
-  return context;
+  return context; // No need to check for undefined since we always provide a default value
 };

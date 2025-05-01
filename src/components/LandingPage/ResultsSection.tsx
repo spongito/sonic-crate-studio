@@ -53,13 +53,11 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
     }
     
     try {
-      // Fixed: Pass the CURRENT state (opposite of new liked state) to toggleLike
-      // toggleLike expects the current state BEFORE toggling
+      // We pass the current state (before toggling) to toggleLike
       await toggleLike(trackId, !liked);
-      toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
+      // The toast is now handled within TrackLikeButton
     } catch (error) {
       console.error("Error toggling track like:", error);
-      toast.error("Failed to update liked status");
     }
   };
 

@@ -2,6 +2,7 @@
 import * as React from "react";
 import { Heart } from "lucide-react";
 import { useTracks } from "@/context/TracksContext";
+import { useAuth } from "@/context/AuthContext";
 import { 
   Tooltip,
   TooltipContent,
@@ -27,6 +28,7 @@ export default function TrackLikeButton({
   liked, 
   onToggle
 }: TrackLikeButtonProps) {
+  const { user } = useAuth();
   const { toggleLike } = useTracks();
   const [isLiked, setIsLiked] = React.useState<boolean>(liked);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -42,6 +44,12 @@ export default function TrackLikeButton({
     
     if (isLoading) return;
     
+    // If user is not authenticated, prompt them to sign in
+    if (!user) {
+      toast.error("Please sign in to save tracks");
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // Toggle the state for optimistic UI update
@@ -55,11 +63,14 @@ export default function TrackLikeButton({
       if (onToggle) {
         onToggle(trackId, newLikedState);
       }
+      
+      // Show success toast
+      toast.success(newLikedState ? "Added to your favorites" : "Removed from your favorites");
     } catch (error) {
       console.error('Error toggling like:', error);
       // Revert the local state if there was an error
       setIsLiked(isLiked);
-      toast.error("Failed to update track status");
+      toast.error("Please sign in to save tracks");
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +93,7 @@ export default function TrackLikeButton({
           </button>
         </TooltipTrigger>
         <TooltipContent>
-          {isLiked ? "Remove from favorites" : "Add to favorites"}
+          {user ? (isLiked ? "Remove from favorites" : "Add to favorites") : "Sign in to save tracks"}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
