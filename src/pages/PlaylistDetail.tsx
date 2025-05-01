@@ -60,7 +60,6 @@ const PlaylistDetail = () => {
         }
 
         const likedIds = likedTracksData.map(item => item.track_id);
-        console.log("Fetched liked track IDs:", likedIds);
         setUserLikedTrackIds(likedIds);
       } catch (error) {
         console.error("Error in fetchLikedTracks:", error);
@@ -86,18 +85,14 @@ const PlaylistDetail = () => {
     );
   }
 
-  // Handle like change with NEW liked state
   const handleLikeChange = async (trackId: string, liked: boolean) => {
     try {
-      console.log(`PlaylistDetail handling like change: ${trackId}, new state: ${liked}`);
-      
-      // Since toggleLike expects the CURRENT state before toggling,
-      // we need to pass the opposite of the new liked state
+      // Since liked is the NEW state after toggling, we need to pass the opposite to toggleLike
       await toggleLike(trackId, !liked);
       
       // Update the local state immediately for UI responsiveness
       if (liked) {
-        setUserLikedTrackIds(prev => Array.from(new Set([...prev, trackId])));
+        setUserLikedTrackIds(prev => [...prev, trackId]);
       } else {
         setUserLikedTrackIds(prev => prev.filter(id => id !== trackId));
       }

@@ -37,14 +37,11 @@ export default function TrackLikeButton({
     
     setIsLoading(true);
     try {
-      // Important fix: Calculate the new liked state for consistent UX
-      const newLikedState = !isLiked;
-      
       // Toggle the state for optimistic UI update
+      const newLikedState = !isLiked;
       setIsLiked(newLikedState);
       
-      // Call the context's toggleLike function with proper arguments
-      // toggleLike expects current state BEFORE toggling
+      // Call the context's toggleLike function with trackId and CURRENT state BEFORE toggling
       await toggleLike(trackId, isLiked);
       
       // If onToggle callback exists, call it with the NEW liked state
