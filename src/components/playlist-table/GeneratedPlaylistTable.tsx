@@ -28,9 +28,17 @@ export function GeneratedPlaylistTable({
   // Process tracks to include liked status
   const { tracksWithLikedStatus } = useTrackProcessor(tracks, userLikedTrackIds);
   
+  // Handler for like changes - passes the change up to parent component
+  const handleLikeChange = React.useCallback((trackId: string, liked: boolean) => {
+    if (onLikeChange) {
+      console.log(`Handling like change in GeneratedPlaylistTable: ${trackId}, liked: ${liked}`);
+      onLikeChange(trackId, liked);
+    }
+  }, [onLikeChange]);
+
   const columns = usePlaylistTableColumns({ 
     showLikeButton, 
-    onLikeChange, 
+    onLikeChange: handleLikeChange, 
     userLikedTrackIds 
   });
 

@@ -85,13 +85,19 @@ export function PaginatedTrackList({
     return pages;
   };
 
+  // Handle like changes with consistent parameter order
+  const handleLikeChange = (trackId: string, liked: boolean) => {
+    logger.debug(`Track ${trackId} like changed to ${liked}`);
+    onLikeToggle(trackId, liked);
+  };
+
   return (
     <div className="space-y-4">
       <GeneratedPlaylistTable
         tracks={currentTracks}
         showControls={showControls}
         fullWidth={true}
-        onLikeChange={onLikeToggle}
+        onLikeChange={handleLikeChange}
       />
       
       {totalPages > 1 && (

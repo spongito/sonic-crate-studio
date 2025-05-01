@@ -21,11 +21,19 @@ export default function TabPlaylistContent({
   playlistName,
   visibleColumns,
 }: TabPlaylistContentProps) {
+  // Handler to pass like changes up to parent
+  const handleLikeChange = React.useCallback((trackId: string, liked: boolean) => {
+    console.log(`Like change in TabPlaylistContent: ${trackId}, liked: ${liked}`);
+    if (onLikeChange) {
+      onLikeChange(trackId, liked);
+    }
+  }, [onLikeChange]);
+  
   return (
     <GeneratedPlaylistTable
       tracks={filteredTracks}
       userLikedTrackIds={userLikedTrackIds}
-      onLikeChange={onLikeChange}
+      onLikeChange={handleLikeChange}
       playlistName={playlistName}
       fullWidth={true}
       showLikeButton={true}
