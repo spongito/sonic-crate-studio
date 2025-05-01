@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -52,8 +53,8 @@ const PlaylistDetail = () => {
 
   const handleLikeChange = async (trackId: string, liked: boolean) => {
     try {
-      // Note: toggleLike expects the current state, not the new desired state
-      await toggleLike(trackId, liked);
+      // TrackLikeButton passes the NEW desired state, toggleLike expects the current state
+      await toggleLike(trackId, !liked);
       toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
     } catch (error) {
       console.error("Error toggling track like:", error);

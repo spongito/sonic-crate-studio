@@ -37,14 +37,15 @@ export default function TrackLikeButton({
     
     setIsLoading(true);
     try {
+      // Toggle the state for optimistic UI update
       const newLikedState = !isLiked;
-      setIsLiked(newLikedState); // Update UI optimistically
+      setIsLiked(newLikedState);
       
-      // Call the context's toggleLike function with the current track ID and CURRENT liked state
-      // (not the new state - the context will handle the toggle internally)
+      // Call the context's toggleLike function with trackId and CURRENT state BEFORE toggling
+      // This is critical - we pass the CURRENT state, not the desired state
       await toggleLike(trackId, isLiked);
       
-      // If onToggle callback exists, call it with the new liked state
+      // If onToggle callback exists, call it with the NEW liked state
       if (onToggle) {
         onToggle(trackId, newLikedState);
       }

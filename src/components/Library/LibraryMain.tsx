@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -126,10 +127,10 @@ export function LibraryMain() {
     }
     
     try {
-      // Note: toggleLike expects the current state, not the new desired state
-      // liked = true means "currently liked", so we pass that to toggleLike
-      await toggleLike(trackId, liked);
-      toast.success(liked ? "Removed from your favorites" : "Added to your favorites");
+      // TrackLikeButton passes the NEW state after toggling,
+      // but toggleLike expects the CURRENT state BEFORE toggling
+      await toggleLike(trackId, !liked);
+      toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
     } catch (error) {
       logger.error("Error toggling like:", error);
       toast.error("Failed to update liked status");

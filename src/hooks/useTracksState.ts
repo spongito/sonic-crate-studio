@@ -49,6 +49,12 @@ export function useTracksState(userId: string | undefined) {
     }
   }, [fetchUserTracks, logger, lastRefreshTime, refreshAttempts]);
 
+  /**
+   * Toggle the like status for a track
+   * @param trackId The ID of the track to toggle
+   * @param isCurrentlyLiked The CURRENT liked state of the track (true = currently liked, false = not currently liked)
+   * @returns Promise that resolves when the database operation completes
+   */
   const toggleLike = async (trackId: string, isCurrentlyLiked: boolean): Promise<void> => {
     try {
       logger.info(`Toggling like for track ${trackId}, currently liked: ${isCurrentlyLiked}`);
@@ -56,10 +62,10 @@ export function useTracksState(userId: string | undefined) {
       // Pass the current liked state to toggleTrackLike
       await toggleTrackLike(trackId, isCurrentlyLiked);
       
-      // Update local state to reflect the new liked status
+      // The new state is the opposite of the current state
       const newLikedState = !isCurrentlyLiked;
       
-      // Update tracks in all collections
+      // Update all three track collections to maintain consistency
       setAllTracks(prev => 
         prev.map(track => 
           track.id === trackId ? { ...track, liked: newLikedState } : track
@@ -87,7 +93,6 @@ export function useTracksState(userId: string | undefined) {
       }
       
       logger.success(`Track ${trackId} like status toggled to ${newLikedState}`);
-      // Removed the return statement that was causing the type mismatch
     } catch (error) {
       logger.error('Error toggling track like:', error);
       throw error;

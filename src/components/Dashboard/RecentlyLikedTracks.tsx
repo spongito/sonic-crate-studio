@@ -22,7 +22,10 @@ export const RecentlyLikedTracks: React.FC = () => {
 
   const handleToggleLike = async (trackId: string, liked: boolean) => {
     try {
-      await toggleLike(trackId, liked);
+      // Important: TrackLikeButton passes the NEW state after toggling
+      // but toggleLike expects the CURRENT state BEFORE toggling
+      // So we need to invert the value here
+      await toggleLike(trackId, !liked);
       toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
     } catch (error) {
       console.error('Error toggling track like:', error);

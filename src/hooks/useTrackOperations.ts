@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Track } from '@/types/table';
@@ -63,8 +64,7 @@ export const useTrackOperations = (userId: string | undefined) => {
 
       logger.info(`Found ${historyTracks.length} history tracks`);
 
-      // Get user's liked tracks (Use LEFT JOIN with user_track_history instead of INNER JOIN)
-      // This way we get all tracks whether they're liked or not
+      // Get user's liked tracks
       const { data: likedTracksData, error: likedError } = await supabase
         .from("liked_tracks")
         .select("track_id")
@@ -94,7 +94,7 @@ export const useTrackOperations = (userId: string | undefined) => {
       // Get recent tracks (3 most recent)
       const recentTracks = processedTracks.slice(0, 3);
       
-      // Get liked tracks
+      // Get liked tracks - filter tracks that match liked track IDs
       const likedTracks = processedTracks.filter(track => track.liked);
 
       logger.success(`Processed ${processedTracks.length} tracks, ${recentTracks.length} recent, ${likedTracks.length} liked`);
@@ -113,7 +113,12 @@ export const useTrackOperations = (userId: string | undefined) => {
     }
   };
 
-  const toggleLike = async (trackId: string, isCurrentlyLiked: boolean) => {
+  /**
+   * Toggle the like status for a track in the database
+   * @param trackId The ID of the track to toggle
+   * @param isCurrentlyLiked The CURRENT liked state (true = currently liked, false = not currently liked)
+   */
+  const toggleLike = async (trackId: string, isCurrentlyLiked: boolean): Promise<void> => {
     if (!userId) {
       logger.warning('Cannot toggle like: No user logged in');
       throw new Error('User not logged in');
