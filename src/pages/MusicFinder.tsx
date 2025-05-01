@@ -111,6 +111,7 @@ const MusicFinder = () => {
     }
     
     try {
+      // Since liked is the NEW state after toggling, we need to pass the opposite to toggleLike
       await toggleLike(trackId, !liked);
       toast.success(liked ? "Added to your liked tracks" : "Removed from your liked tracks");
     } catch (error) {

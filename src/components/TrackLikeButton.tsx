@@ -42,7 +42,6 @@ export default function TrackLikeButton({
       setIsLiked(newLikedState);
       
       // Call the context's toggleLike function with trackId and CURRENT state BEFORE toggling
-      // This is critical - we pass the CURRENT state, not the desired state
       await toggleLike(trackId, isLiked);
       
       // If onToggle callback exists, call it with the NEW liked state

@@ -19,12 +19,16 @@ export function usePlaylistTableColumns({
   onLikeChange,
   userLikedTrackIds = [],
 }: UsePlaylistTableColumnsProps): ColumnDef<Track>[] {
-  // Handle like toggle
-  const handleLikeToggle = (trackId: string) => {
-    const isCurrentlyLiked = userLikedTrackIds.includes(trackId);
-    if (onLikeToggle) onLikeToggle(trackId);
-    if (onLikeChange) onLikeChange(trackId, !isCurrentlyLiked);
-  };
+  // Handle like toggle from TrackLikeButton
+  const handleLikeToggle = React.useCallback((trackId: string, liked: boolean) => {
+    // Pass the new liked state and track ID to the parent component
+    if (onLikeChange) {
+      onLikeChange(trackId, liked);
+    } else if (onLikeToggle) {
+      // For backward compatibility
+      onLikeToggle(trackId);
+    }
+  }, [onLikeChange, onLikeToggle]);
 
   const columns: ColumnDef<Track>[] = [
     {
@@ -89,13 +93,19 @@ export function usePlaylistTableColumns({
           {
             id: "actions",
             header: "Actions",
-            cell: ({ row }) => (
-              <TrackLikeButton
-                trackId={row.original.id}
-                liked={row.original.liked ?? userLikedTrackIds.includes(row.original.id)}
-                onToggle={handleLikeToggle}
-              />
-            ),
+            cell: ({ row }) => {
+              // Determine if the track is liked based on either the track's liked property
+              // or its presence in the userLikedTrackIds array
+              const isLiked = row.original.liked || userLikedTrackIds.includes(row.original.id);
+              
+              return (
+                <TrackLikeButton
+                  trackId={row.original.id}
+                  liked={isLiked}
+                  onToggle={handleLikeToggle}
+                />
+              );
+            },
           } as ColumnDef<Track>,
         ]
       : []),
