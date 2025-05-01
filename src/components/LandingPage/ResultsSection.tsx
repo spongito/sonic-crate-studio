@@ -53,8 +53,8 @@ const ResultsSection = ({ showPlaylist, playlistData }: ResultsSectionProps) => 
     }
     
     try {
-      // Since liked is the NEW state after toggling, we need to pass the opposite to toggleLike
-      // as toggleLike expects the CURRENT state before toggling
+      // Fixed: Pass the CURRENT state (opposite of new liked state) to toggleLike
+      // toggleLike expects the current state BEFORE toggling
       await toggleLike(trackId, !liked);
       toast.success(liked ? "Added to your favorites" : "Removed from your favorites");
     } catch (error) {

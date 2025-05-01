@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 interface TrackLikeButtonProps {
   trackId: string;
@@ -15,6 +16,12 @@ interface TrackLikeButtonProps {
   onToggle?: (trackId: string, liked: boolean) => void;
 }
 
+/**
+ * Track like button component that toggles the liked state of a track
+ * @param trackId - The ID of the track
+ * @param liked - CURRENT liked state of the track (true if liked, false if not liked)
+ * @param onToggle - Optional callback that receives the track ID and the NEW liked state after toggling
+ */
 export default function TrackLikeButton({ 
   trackId, 
   liked, 
@@ -41,7 +48,7 @@ export default function TrackLikeButton({
       const newLikedState = !isLiked;
       setIsLiked(newLikedState);
       
-      // Call the context's toggleLike function with trackId and CURRENT state BEFORE toggling
+      // toggleLike expects the CURRENT state (before toggling)
       await toggleLike(trackId, isLiked);
       
       // If onToggle callback exists, call it with the NEW liked state
@@ -52,6 +59,7 @@ export default function TrackLikeButton({
       console.error('Error toggling like:', error);
       // Revert the local state if there was an error
       setIsLiked(isLiked);
+      toast.error("Failed to update track status");
     } finally {
       setIsLoading(false);
     }
